@@ -502,9 +502,8 @@
     }
     return token;
   }
-  function owned(path) {
-    const sep = path.includes('?') ? '&' : '?';
-    return path + sep + 'owner=' + encodeURIComponent(ownerToken());
+  function ownerHeaders(extra = {}) {
+    return { ...extra, 'X-Transcript-Owner': ownerToken() };
   }
 
   const apiUrl = (path) => API + path;
@@ -669,7 +668,9 @@
   });
   function downloadCurrent(format) {
     if (!currentRecord) return;
-    window.location.href = apiUrl(owned('/api/transcripts/' + currentRecord.id + '/download?format=' + encodeURIComponent(format)));
+    jfetch('/api/transcripts/' + currentRecord.id + '/download-link?format=' + encodeURIComponent(format), { method: 'POST', headers: ownerHeaders() })
+      .then(data => { window.location.href = data.url; })
+      .catch(e => showToast('Download failed: ' + e.message, true));
   }
   els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'));
   els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
@@ -678,7 +679,7 @@
     if (!currentRecord) return;
     els.emailBtn.disabled = true;
     try {
-      const data = await jfetch(owned('/api/email/' + currentRecord.id), { method: 'POST' });
+      const data = await jfetch('/api/email/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
       showToast('Emailed to ' + (data.to || 'you'));
     } catch (e) {
       showToast('Email failed: ' + e.message, true);
@@ -704,7 +705,7 @@
 
   async function loadRecent() {
     try {
-      const data = await jfetch(owned('/api/recent?limit=20'));
+      const data = await jfetch('/api/recent?limit=20', { headers: ownerHeaders() });
       const items = data.items || [];
       els.drawerCount.textContent = items.length ? '· ' + items.length : '';
       if (!items.length) {
@@ -727,7 +728,7 @@
         row.addEventListener('click', async (e) => {
           if (e.target.classList.contains('del')) return;
           try {
-            const full = await jfetch(owned('/api/transcripts/' + item.id));
+            const full = await jfetch('/api/transcripts/' + item.id, { headers: ownerHeaders() });
             renderResult(full);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           } catch (err) { showToast('Could not open: ' + err.message, true); }
@@ -736,7 +737,7 @@
           e.stopPropagation();
           if (!confirm('Delete this transcript?')) return;
           try {
-            await jfetch(owned('/api/transcripts/' + item.id), { method: 'DELETE' });
+            await jfetch('/api/transcripts/' + item.id, { method: 'DELETE', headers: ownerHeaders() });
             if (currentRecord && currentRecord.id === item.id) {
               els.result.classList.remove('show');
               currentRecord = null;

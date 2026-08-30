@@ -1,6 +1,7 @@
 import json
 
 from fastapi.testclient import TestClient
+from urllib.parse import urlparse
 
 import app
 
@@ -114,7 +115,10 @@ def test_download_formats_are_available_for_saved_record(monkeypatch, tmp_path):
     )
     client = TestClient(app.app)
     for fmt, marker in [("txt", "[00:00] hello"), ("md", "# Format Test"), ("srt", "1\n00:00:00,000")]:
-        res = client.get(f"/api/transcripts/{rec['id']}/download?format={fmt}&owner=owner-token-123456789012345678901234")
+        link = client.post(f"/api/transcripts/{rec['id']}/download-link?format={fmt}", headers={"X-Transcript-Owner": "owner-token-123456789012345678901234"})
+        assert link.status_code == 200
+        path = urlparse(link.json()["url"]).path
+        res = client.get(path)
         assert res.status_code == 200
         assert marker in res.text
 
@@ -172,13 +176,17 @@ def test_transcript_reads_downloads_and_deletes_require_owner_capability(monkeyp
     client = TestClient(app.app)
 
     assert client.get(f"/api/transcripts/{rec['id']}").status_code == 403
-    assert client.get(f"/api/transcripts/{rec['id']}/download?format=txt").status_code == 403
+    assert client.post(f"/api/transcripts/{rec['id']}/download-link?format=txt").status_code == 403
     assert client.delete(f"/api/transcripts/{rec['id']}").status_code == 403
 
-    ok = client.get(f"/api/transcripts/{rec['id']}?owner=owner-token-bbbbbbbbbbbbbbbbbbbbbbbb")
+    ok = client.get(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner": "owner-token-bbbbbbbbbbbbbbbbbbbbbbbb"})
     assert ok.status_code == 200
     assert ok.json()["transcript"] == "[00:00] secret transcript body"
-    assert client.delete(f"/api/transcripts/{rec['id']}?owner=owner-token-bbbbbbbbbbbbbbbbbbbbbbbb").status_code == 200
+    link = client.post(f"/api/transcripts/{rec['id']}/download-link?format=txt", headers={"X-Transcript-Owner": "owner-token-bbbbbbbbbbbbbbbbbbbbbbbb"})
+    assert link.status_code == 200
+    assert "owner-token" not in link.json()["url"]
+    assert client.get(urlparse(link.json()["url"]).path).status_code == 200
+    assert client.delete(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner": "owner-token-bbbbbbbbbbbbbbbbbbbbbbbb"}).status_code == 200
 
 
 def test_caption_candidates_prefer_source_language_and_normalize_metadata():
@@ -193,3 +201,51 @@ def test_caption_candidates_prefer_source_language_and_normalize_metadata():
     tracks = app._caption_candidates(meta)
     assert tracks[0]["lang"] == "ko"
     assert app.normalize_caption_language("en-US-njLgzgtehjs") == "en-US"
+
+
+def test_owned_recent_includes_record_id_but_not_transcript(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    rec = app.save_transcript(
+        source="Private Video", source_kind="youtube", method="seed",
+        transcript="[00:00] secret transcript body", duration_seconds=2, processing_seconds=0,
+        media_id="priv1234567", source_url="https://youtu.be/priv1234567", title="Private Video",
+        creator="Tester", language="en", segments=[{"start": 0, "end": 1, "text": "secret transcript body"}],
+        provider_attempts=[], owner_token="owner-token-cccccccccccccccccccccccc",
+    )
+    client = TestClient(app.app)
+    res = client.get("/api/recent?limit=5", headers={"X-Transcript-Owner": "owner-token-cccccccccccccccccccccccc"})
+    assert res.status_code == 200
+    item = res.json()["items"][0]
+    assert item["id"] == rec["id"]
+    assert "transcript" not in item
+    assert "owner_token" not in item
+
+
+def test_stale_language_cache_is_bypassed_for_original_language(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    app.save_transcript(
+        source="Spanish Video", source_kind="youtube", method="seed",
+        transcript="[00:00] english translation", duration_seconds=2, processing_seconds=0,
+        media_id="spanish1234", source_url="https://youtu.be/spanish1234", title="Spanish Video",
+        creator="Tester", language="en-US", segments=[{"start": 0, "end": 1, "text": "english translation"}],
+        provider_attempts=[], owner_token="owner-token-dddddddddddddddddddddddd",
+    )
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"language": "es", "title": "Spanish Video", "webpage_url": url})
+    def fresh(url, video_id, started, work_dir, owner_token=None, meta=None):
+        return app.save_transcript(
+            source="Spanish Video", source_kind="youtube", method="native-caption-automatic_captions",
+            transcript="[00:00] hola mundo", duration_seconds=2, processing_seconds=0,
+            media_id=video_id, source_url=url, title="Spanish Video", creator="Tester", language="es",
+            segments=[{"start": 0, "end": 1, "text": "hola mundo"}], provider_attempts=[],
+            owner_token=owner_token,
+        )
+    monkeypatch.setattr(app, "transcribe_youtube_uncached", fresh)
+    client = TestClient(app.app)
+    res = client.post("/api/transcribe-url", data={"url": "https://youtu.be/spanish1234", "owner": "owner-token-dddddddddddddddddddddddd"})
+    assert res.status_code == 200
+    record = res.json()["record"]
+    assert record["cache_hit"] is False
+    assert record["language"] == "es"
+    assert "hola mundo" in record["transcript"]

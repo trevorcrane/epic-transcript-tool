@@ -24,7 +24,7 @@ from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -48,6 +48,7 @@ ALLOWED_EXTS = AUDIO_EXTS | VIDEO_EXTS | TEXT_EXTS | SUBTITLE_EXTS
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
 
 app = FastAPI(title="Epic Transcript Machine", docs_url=None, redoc_url=None)
+DOWNLOAD_TOKENS: dict[str, dict] = {}
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -57,7 +58,7 @@ app.add_middleware(
         "http://localhost:8090",
     ],
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "X-Transcript-Owner"],
 )
 
 
@@ -278,7 +279,7 @@ def row_to_record(row: sqlite3.Row | dict, cache_hit: bool = False, include_owne
 
 def public_video_cache_summary(row: sqlite3.Row | dict) -> dict:
     rec = row_to_record(row, include_owner_token=False)
-    return {k: rec.get(k) for k in ("created_at", "source", "source_kind", "method", "title", "creator", "language", "word_count", "segment_count", "duration_seconds", "processing_seconds", "media_id", "source_url", "cache_hit")}
+    return {k: rec.get(k) for k in ("id", "created_at", "source", "source_kind", "method", "title", "creator", "language", "word_count", "segment_count", "duration_seconds", "processing_seconds", "media_id", "source_url", "cache_hit")}
 
 
 def valid_owner_token(value: Optional[str]) -> Optional[str]:
@@ -295,12 +296,32 @@ def require_owner(row: sqlite3.Row | dict, owner: Optional[str]) -> None:
         raise HTTPException(403, "This transcript requires its owner link.")
 
 
-def get_cached_transcript(media_id: str) -> Optional[dict]:
+def header_owner(value: Optional[str]) -> Optional[str]:
+    return valid_owner_token(value)
+
+
+def language_base(value: Optional[str]) -> str:
+    lang = normalize_caption_language(value)
+    return "" if lang == "unknown" else lang.split("-", 1)[0]
+
+
+def cache_matches_language(row: sqlite3.Row | dict, expected_language: Optional[str]) -> bool:
+    expected_base = language_base(expected_language)
+    if not expected_base:
+        return True
+    cached_base = language_base(dict(row).get("language"))
+    return cached_base == expected_base
+
+
+def get_cached_transcript(media_id: str, expected_language: Optional[str] = None) -> Optional[dict]:
     if not media_id:
         return None
     with db() as conn:
-        row = conn.execute("SELECT * FROM transcripts WHERE media_id=? ORDER BY created_at DESC LIMIT 1", (media_id,)).fetchone()
-    return row_to_record(row, cache_hit=True) if row else None
+        rows = conn.execute("SELECT * FROM transcripts WHERE media_id=? ORDER BY created_at DESC LIMIT 10", (media_id,)).fetchall()
+    for row in rows:
+        if cache_matches_language(row, expected_language):
+            return row_to_record(row, cache_hit=True)
+    return None
 
 
 def record_for_owner(rec: dict, owner_token: str) -> dict:
@@ -490,14 +511,17 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     return segs, language or "unknown"
 
 
-def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str] = None) -> dict:
+def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str] = None, meta: Optional[dict] = None) -> dict:
     attempts = []
-    meta = {}
-    try:
-        meta = yt_dlp_metadata(url)
+    meta = meta or {}
+    if meta:
         attempts.append({"provider": "metadata", "ok": True})
-    except Exception as e:
-        attempts.append({"provider": "metadata", "ok": False, "error": str(e)[:240]})
+    else:
+        try:
+            meta = yt_dlp_metadata(url)
+            attempts.append({"provider": "metadata", "ok": True})
+        except Exception as e:
+            attempts.append({"provider": "metadata", "ok": False, "error": str(e)[:240]})
     title = meta.get("title") or f"YouTube {video_id}"
     creator = meta.get("uploader") or meta.get("channel")
     duration = meta.get("duration")
@@ -589,12 +613,19 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
     started = time.monotonic()
     video_id = normalize_youtube_video_id(url)
     if video_id:
-        cached = get_cached_transcript(video_id)
+        meta_probe = {}
+        expected_language = None
+        try:
+            meta_probe = yt_dlp_metadata(url)
+            expected_language = meta_probe.get("language") or meta_probe.get("original_language") or meta_probe.get("default_language")
+        except Exception:
+            meta_probe = {}
+        cached = get_cached_transcript(video_id, expected_language=expected_language)
         if cached:
             return JSONResponse({"ok": True, "record": record_for_owner(cached, owner_token)})
         work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
         try:
-            return JSONResponse({"ok": True, "record": transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token)})
+            return JSONResponse({"ok": True, "record": transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)})
         except RuntimeError as e:
             raise HTTPException(422, str(e))
         finally:
@@ -663,8 +694,8 @@ def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = F
         shutil.rmtree(work_dir, ignore_errors=True)
 
 @app.get("/api/recent")
-def api_recent(limit: int = 20, owner: Optional[str] = Query(None)) -> dict:
-    owner_token = valid_owner_token(owner)
+def api_recent(limit: int = 20, x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    owner_token = header_owner(x_transcript_owner)
     if not owner_token:
         return {"items": []}
     limit = max(1, min(int(limit), 100))
@@ -674,23 +705,16 @@ def api_recent(limit: int = 20, owner: Optional[str] = Query(None)) -> dict:
 
 
 @app.get("/api/transcripts/{rec_id}")
-def api_get_transcript(rec_id: str, owner: Optional[str] = Query(None)) -> dict:
+def api_get_transcript(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
     with db() as conn:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Not found.")
-    require_owner(row, owner)
+    require_owner(row, x_transcript_owner)
     return row_to_record(row)
 
 
-@app.get("/api/transcripts/{rec_id}/download")
-def api_download(rec_id: str, format: str = Query("txt", pattern="^(txt|md|srt)$"), owner: Optional[str] = Query(None)) -> PlainTextResponse:
-    with db() as conn:
-        row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
-    if not row:
-        raise HTTPException(404, "Not found.")
-    require_owner(row, owner)
-    rec = row_to_record(row)
+def transcript_download_response(rec: dict, format: str) -> PlainTextResponse:
     safe = re.sub(r"[^A-Za-z0-9._-]+", "_", (rec.get("source") or "transcript"))[:60] or "transcript"
     if format == "md":
         body, media, ext = make_markdown(rec), "text/markdown", "md"
@@ -701,18 +725,42 @@ def api_download(rec_id: str, format: str = Query("txt", pattern="^(txt|md|srt)$
     return PlainTextResponse(body, media_type=media, headers={"Content-Disposition": f'attachment; filename="{safe}.{ext}"'})
 
 
+@app.post("/api/transcripts/{rec_id}/download-link")
+def api_download_link(request: Request, rec_id: str, format: str = Query("txt", pattern="^(txt|md|srt)$"), x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    with db() as conn:
+        row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Not found.")
+    require_owner(row, x_transcript_owner)
+    token = secrets.token_urlsafe(32)
+    DOWNLOAD_TOKENS[token] = {"rec_id": rec_id, "format": format, "expires": time.time() + 300}
+    return {"ok": True, "url": str(request.url_for("api_signed_download", token=token)), "expires_seconds": 300}
+
+
+@app.get("/api/download/{token}")
+def api_signed_download(token: str) -> PlainTextResponse:
+    entry = DOWNLOAD_TOKENS.pop(token, None)
+    if not entry or entry.get("expires", 0) < time.time():
+        raise HTTPException(403, "Download link expired.")
+    with db() as conn:
+        row = conn.execute("SELECT * FROM transcripts WHERE id=?", (entry["rec_id"],)).fetchone()
+    if not row:
+        raise HTTPException(404, "Not found.")
+    return transcript_download_response(row_to_record(row), entry["format"])
+
+
 @app.delete("/api/transcripts/{rec_id}")
-def api_delete(rec_id: str, owner: Optional[str] = Query(None)) -> dict:
+def api_delete(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
     with db() as conn:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
         if not row:
             raise HTTPException(404, "Not found.")
-        require_owner(row, owner)
+        require_owner(row, x_transcript_owner)
         conn.execute("DELETE FROM transcripts WHERE id=?", (rec_id,))
     return {"ok": True}
 
 @app.post("/api/email/{rec_id}")
-def api_email(rec_id: str, owner: Optional[str] = Query(None)) -> dict:
+def api_email(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
     smtp_host, smtp_port_raw, smtp_user, smtp_pass, owner_email = (os.getenv(k) for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "OWNER_EMAIL"))
     if not all([smtp_host, smtp_port_raw, smtp_user, smtp_pass, owner_email]):
         raise HTTPException(400, "SMTP is not configured. Add SMTP_* and OWNER_EMAIL to .env.")
@@ -720,7 +768,7 @@ def api_email(rec_id: str, owner: Optional[str] = Query(None)) -> dict:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Not found.")
-    require_owner(row, owner)
+    require_owner(row, x_transcript_owner)
     rec = row_to_record(row)
     msg = EmailMessage(); msg["Subject"] = f"[Epic Transcript] {(rec.get('source') or '')[:80]}"; msg["From"] = smtp_user; msg["To"] = owner_email
     msg.set_content(f"Source : {rec.get('source')}\nMethod : {rec.get('method')}\nSaved  : {rec.get('created_at')}\n\n{rec.get('transcript','')}")
