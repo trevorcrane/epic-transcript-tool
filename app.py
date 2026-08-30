@@ -402,11 +402,14 @@ def _caption_candidates(meta: dict) -> list[dict]:
         for lang, entries in (meta.get(kind) or {}).items():
             clean_lang = normalize_caption_language(lang)
             base = clean_lang.split("-", 1)[0]
+            raw_is_clean = lang == clean_lang or lang == base
             for entry in entries or []:
                 if entry.get("url") and (entry.get("ext") in {"vtt", "srt", "json3"}):
                     score = 0
                     if source_base and base == source_base:
                         score -= 100
+                    elif not source_base and kind == "subtitles" and base != "en" and raw_is_clean:
+                        score -= 25
                     elif base == "en":
                         score -= 10
                     if kind == "subtitles":
@@ -415,6 +418,14 @@ def _caption_candidates(meta: dict) -> list[dict]:
                         score -= 2
                     tracks.append({"kind": kind, "lang": clean_lang, "raw_lang": lang, "url": entry["url"], "ext": entry.get("ext"), "score": score})
     return sorted(tracks, key=lambda x: (x["score"], x["lang"], x["ext"] != "vtt"))
+
+
+def infer_expected_language(meta: dict) -> Optional[str]:
+    explicit = meta.get("language") or meta.get("original_language") or meta.get("default_language")
+    if explicit:
+        return normalize_caption_language(explicit)
+    candidates = _caption_candidates(meta)
+    return candidates[0]["lang"] if candidates else None
 
 
 def fetch_caption_url_segments(meta: dict) -> tuple[list[dict], str, str]:
@@ -617,7 +628,7 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
         expected_language = None
         try:
             meta_probe = yt_dlp_metadata(url)
-            expected_language = meta_probe.get("language") or meta_probe.get("original_language") or meta_probe.get("default_language")
+            expected_language = infer_expected_language(meta_probe)
         except Exception:
             meta_probe = {}
         cached = get_cached_transcript(video_id, expected_language=expected_language)

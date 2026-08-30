@@ -232,7 +232,7 @@ def test_stale_language_cache_is_bypassed_for_original_language(monkeypatch, tmp
         creator="Tester", language="en-US", segments=[{"start": 0, "end": 1, "text": "english translation"}],
         provider_attempts=[], owner_token="owner-token-dddddddddddddddddddddddd",
     )
-    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"language": "es", "title": "Spanish Video", "webpage_url": url})
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"title": "Spanish Video", "webpage_url": url, "subtitles": {"en-US-njLgzgtehjs": [{"url":"https://example.invalid/en.vtt", "ext":"vtt"}], "es": [{"url":"https://example.invalid/es.vtt", "ext":"vtt"}]}})
     def fresh(url, video_id, started, work_dir, owner_token=None, meta=None):
         return app.save_transcript(
             source="Spanish Video", source_kind="youtube", method="native-caption-automatic_captions",
@@ -249,3 +249,16 @@ def test_stale_language_cache_is_bypassed_for_original_language(monkeypatch, tmp
     assert record["cache_hit"] is False
     assert record["language"] == "es"
     assert "hola mundo" in record["transcript"]
+
+
+def test_caption_candidates_prefer_clean_non_english_manual_when_source_unknown():
+    meta = {
+        "subtitles": {
+            "en-US-njLgzgtehjs": [{"url":"https://example.invalid/en.vtt", "ext":"vtt"}],
+            "es": [{"url":"https://example.invalid/es.vtt", "ext":"vtt"}],
+        },
+        "automatic_captions": {},
+    }
+    tracks = app._caption_candidates(meta)
+    assert tracks[0]["lang"] == "es"
+    assert app.infer_expected_language(meta) == "es"
