@@ -110,9 +110,86 @@ def test_download_formats_are_available_for_saved_record(monkeypatch, tmp_path):
         segments=[{"start": 0, "end": 1, "text": "hello"}, {"start": 2, "end": 3, "text": "world"}],
         provider_attempts=[],
         cache_hit=False,
+        owner_token="owner-token-123456789012345678901234",
     )
     client = TestClient(app.app)
     for fmt, marker in [("txt", "[00:00] hello"), ("md", "# Format Test"), ("srt", "1\n00:00:00,000")]:
-        res = client.get(f"/api/transcripts/{rec['id']}/download?format={fmt}")
+        res = client.get(f"/api/transcripts/{rec['id']}/download?format={fmt}&owner=owner-token-123456789012345678901234")
         assert res.status_code == 200
         assert marker in res.text
+
+
+
+def test_recent_does_not_expose_global_transcripts_without_owner(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    app.save_transcript(
+        source="Private Video",
+        source_kind="youtube",
+        method="seed",
+        transcript="[00:00] secret transcript body",
+        duration_seconds=2,
+        processing_seconds=0,
+        media_id="priv1234567",
+        source_url="https://youtu.be/priv1234567",
+        title="Private Video",
+        creator="Tester",
+        language="en",
+        segments=[{"start": 0, "end": 1, "text": "secret transcript body"}],
+        provider_attempts=[],
+        cache_hit=False,
+        owner_token="owner-token-aaaaaaaaaaaaaaaaaaaaaaaa",
+    )
+    client = TestClient(app.app)
+
+    res = client.get("/api/recent?limit=5")
+
+    assert res.status_code == 200
+    assert res.json() == {"items": []}
+    assert "secret transcript body" not in res.text
+
+
+def test_transcript_reads_downloads_and_deletes_require_owner_capability(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    rec = app.save_transcript(
+        source="Private Video",
+        source_kind="youtube",
+        method="seed",
+        transcript="[00:00] secret transcript body",
+        duration_seconds=2,
+        processing_seconds=0,
+        media_id="priv1234567",
+        source_url="https://youtu.be/priv1234567",
+        title="Private Video",
+        creator="Tester",
+        language="en",
+        segments=[{"start": 0, "end": 1, "text": "secret transcript body"}],
+        provider_attempts=[],
+        cache_hit=False,
+        owner_token="owner-token-bbbbbbbbbbbbbbbbbbbbbbbb",
+    )
+    client = TestClient(app.app)
+
+    assert client.get(f"/api/transcripts/{rec['id']}").status_code == 403
+    assert client.get(f"/api/transcripts/{rec['id']}/download?format=txt").status_code == 403
+    assert client.delete(f"/api/transcripts/{rec['id']}").status_code == 403
+
+    ok = client.get(f"/api/transcripts/{rec['id']}?owner=owner-token-bbbbbbbbbbbbbbbbbbbbbbbb")
+    assert ok.status_code == 200
+    assert ok.json()["transcript"] == "[00:00] secret transcript body"
+    assert client.delete(f"/api/transcripts/{rec['id']}?owner=owner-token-bbbbbbbbbbbbbbbbbbbbbbbb").status_code == 200
+
+
+def test_caption_candidates_prefer_source_language_and_normalize_metadata():
+    meta = {
+        "language": "ko",
+        "subtitles": {},
+        "automatic_captions": {
+            "en-US-njLgzgtehjs": [{"url":"https://example.invalid/en.vtt", "ext":"vtt"}],
+            "ko-orig": [{"url":"https://example.invalid/ko.vtt", "ext":"vtt"}],
+        },
+    }
+    tracks = app._caption_candidates(meta)
+    assert tracks[0]["lang"] == "ko"
+    assert app.normalize_caption_language("en-US-njLgzgtehjs") == "en-US"
