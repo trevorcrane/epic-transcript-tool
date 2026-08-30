@@ -1,0 +1,7 @@
+tunnel: 1a1a5147-a9cf-4139-9ca1-a998cd1cfe01
+credentials-file: /Users/tc-imac/.cloudflared/1a1a5147-a9cf-4139-9ca1-a998cd1cfe01.json
+
+ingress:
+  - hostname: epic-transcript.robyncrane.com
+    service: http://127.0.0.1:8090
+  - service: http_status:404
