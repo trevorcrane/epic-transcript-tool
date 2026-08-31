@@ -592,6 +592,9 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     whisper_bin = resolve_whisper_binary()
     out_dir = Path(tempfile.mkdtemp(prefix="epic-whisper-out-"))
     cmd = [whisper_bin, str(input_path), "--model", model or os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
+    threads = os.getenv("LOCAL_WHISPER_THREADS")
+    if threads:
+        cmd += ["--threads", threads]
     if language:
         cmd += ["--language", language]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")))
@@ -625,12 +628,21 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
     duration = meta.get("duration")
     canonical = meta.get("webpage_url") or f"https://youtu.be/{video_id}"
 
-    providers = [
-        ("native-caption-extractor", lambda: fetch_caption_url_segments(meta)),
-        ("youtube-transcript-api", lambda: youtube_transcript_api_segments(video_id)),
-        ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir, meta.get("language") or meta.get("original_language") or meta.get("default_language"))),
-        ("gemini-youtube", lambda: transcribe_with_gemini_youtube(url)),
-    ]
+    expected_language = infer_expected_language(meta)
+    expected_base = language_base(expected_language)
+    if expected_base and expected_base != "en":
+        providers = [
+            ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir, expected_language)),
+        ]
+        attempts.append({"provider": "native-caption-extractor", "ok": False, "error": "skipped to keep non-English public request bounded after YouTube timedtext 429s"})
+        attempts.append({"provider": "youtube-transcript-api", "ok": False, "error": "skipped for original-language non-English route; default transcript API can return English or stall under IP blocking"})
+    else:
+        providers = [
+            ("native-caption-extractor", lambda: fetch_caption_url_segments(meta)),
+            ("youtube-transcript-api", lambda: youtube_transcript_api_segments(video_id)),
+            ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir, expected_language)),
+        ]
+    providers.append(("gemini-youtube", lambda: transcribe_with_gemini_youtube(url)))
     for name, fn in providers:
         try:
             if name == "native-caption-extractor" and not meta:

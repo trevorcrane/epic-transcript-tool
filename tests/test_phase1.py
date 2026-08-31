@@ -409,3 +409,23 @@ def test_youtube_audio_fallback_passes_language_hint_and_tiny_model(monkeypatch,
     assert calls["model"] == "tiny"
     assert calls["timeout"] == 35
     assert any(a["provider"] == "yt-dlp-subtitles" and "fr" in a["error"] for a in rec["provider_attempts"])
+
+
+def test_local_whisper_passes_threads_when_configured(monkeypatch, tmp_path):
+    audio = tmp_path / "audio.wav"
+    audio.write_bytes(b"fake")
+    fake_bin = tmp_path / "whisper"
+    fake_bin.write_text("#!/bin/sh\nexit 0\n")
+    fake_bin.chmod(0o755)
+    def fake_run(cmd, capture_output, text, timeout):
+        assert "--threads" in cmd
+        assert cmd[cmd.index("--threads") + 1] == "4"
+        out_dir = Path(cmd[cmd.index("--output_dir") + 1])
+        (out_dir / "audio.vtt").write_text("WEBVTT\n\n00:00.000 --> 00:01.000\nHello\n")
+        return subprocess.CompletedProcess(cmd, 0, stdout="Detected language: English\n", stderr="")
+    monkeypatch.setenv("LOCAL_WHISPER_THREADS", "4")
+    monkeypatch.setattr(app, "resolve_whisper_binary", lambda: str(fake_bin))
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    segs, lang = app.transcribe_with_local_whisper(audio)
+    assert lang == "en"
+    assert segs[0]["text"] == "Hello"
