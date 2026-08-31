@@ -922,6 +922,7 @@ def _asset_evidence_points(rec: dict, count: int = 100) -> list[dict]:
     points: list[dict] = []
     usable = [seg for seg in segs if clean_whitespace(seg.get("text", ""))]
     if usable:
+        selected_indexes: list[int] = []
         if len(usable) <= count:
             selected = usable[:]
             i = 0
@@ -929,16 +930,20 @@ def _asset_evidence_points(rec: dict, count: int = 100) -> list[dict]:
                 selected.append(usable[i % len(usable)])
                 i += 1
         else:
-            selected = []
+            selected_indexes = []
             seen = set()
             for i in range(count):
                 idx = round(i * (len(usable) - 1) / (count - 1))
                 while idx in seen and idx + 1 < len(usable):
                     idx += 1
                 seen.add(idx)
-                selected.append(usable[idx])
-        for seg in selected:
-            text = clean_whitespace(seg.get("text", ""))
+                selected_indexes.append(idx)
+            selected = [usable[idx] for idx in selected_indexes]
+        if len(usable) <= count:
+            selected_indexes = [usable.index(seg) for seg in selected]
+        for idx, seg in zip(selected_indexes, selected):
+            window = usable[idx:idx + 4] or [seg]
+            text = clean_whitespace(" ".join(clean_whitespace(item.get("text", "")) for item in window))
             points.append({"timestamp": seconds_to_timestamp(seg.get("start", 0)), "text": text})
     if points:
         return points[:count]
@@ -967,6 +972,13 @@ def _asset_phrase(text: str, max_words: int = 18) -> str:
     return clean or "the most important transcript moment"
 
 
+def _asset_sentence(text: str, max_words: int = 26) -> str:
+    clean = _asset_phrase(text, max_words=max_words).strip()
+    if clean and clean[-1] not in ".!?":
+        clean += "."
+    return clean[:1].upper() + clean[1:] if clean else "The transcript points to a clear next action."
+
+
 def build_100_content_assets(rec: dict) -> list[str]:
     """Return 100 finished, distinct, timestamp-grounded asset drafts without paid AI."""
     categories = [
@@ -983,26 +995,27 @@ def build_100_content_assets(rec: dict) -> list[str]:
         slot = ((i - 1) % 10) + 1
         timestamp = point["timestamp"]
         phrase = _asset_phrase(point["text"])
+        sentence = _asset_sentence(point["text"])
         if kind == "Hook":
-            body = f"What changes when {phrase}? Start here. [{timestamp}]"
+            body = f"Stop selling isolated tasks. Build the system behind this moment: {sentence} [{timestamp}]"
         elif kind == "Short post":
-            body = f"{phrase}. That is the shift: stop treating it like a one-off task and turn it into a repeatable result. [{timestamp}]"
+            body = f"{sentence} The lesson: package the process, not just the service, so the result can repeat. [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: {phrase[:84]} [{timestamp}]"
+            body = f"Subject: The system hiding inside this lesson: {phrase[:58]} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"Open with the moment at [{timestamp}], then show why {phrase} matters and close with one practical next step."
+            body = f"The big idea from [{timestamp}]: {sentence} Turn that into a practical note about building assets that keep working after the first sale."
         elif kind == "Reel script":
-            body = f"Clip opener: “{phrase}.” Beat two: name the problem. Beat three: show the better path. Close: “Build the system before you scale it.” [{timestamp}]"
+            body = f"Script: “Most people miss the system.” Show the [{timestamp}] moment, explain {phrase}, then close with: “Build the repeatable path before you scale.”"
         elif kind == "Carousel slide":
-            body = f"Slide headline: {phrase}. Supporting line: make the idea visible, measurable, and easy to repeat. [{timestamp}]"
+            body = f"Slide headline: Build the repeatable path. Supporting line: {sentence} Proof point: [{timestamp}]."
         elif kind == "Quote card":
-            body = f"“{phrase}.” [{timestamp}]"
+            body = f"“The value is not the task. The value is the repeatable system behind it.” Inspired by: {sentence} [{timestamp}]"
         elif kind == "CTA":
-            body = f"Get the next step: turn the lesson at [{timestamp}] into one documented action before the day ends."
+            body = f"Get the next step: audit one process today and turn this lesson into a measurable follow-up asset: {sentence} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: If {phrase} feels too big, shrink it to the next verified step and prove that step first. [{timestamp}]"
+            body = f"Reply: You do not need the whole system finished today. Start here: {sentence} Prove one small outcome, then document the repeatable step. [{timestamp}]"
         else:
-            body = f"Editor note: package the [{timestamp}] moment as a standalone asset with this takeaway: {phrase}."
+            body = f"Repurpose plan: Post angle, email angle, and short-clip angle all center on this finished takeaway: {sentence} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
