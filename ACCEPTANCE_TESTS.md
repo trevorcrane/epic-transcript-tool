@@ -62,6 +62,13 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 12:51 EDT.
+
+- Owner-facing UI correction: PASS. Public production root, stable Netlify review URL, and immutable Netlify deploy `https://6a95b112692fe0f07390daf5--epic-transcript-machine-review.netlify.app/` returned HTTP 200 with `Your Transcript History`, `Unlock All EPIC Machines`, `placeholder="Enter URL..."`, compact upload control `uploadBtn`, release version footer, `https://epic.media`, production API base marker on Netlify, and no old `drop-zone` marker.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 56 passed. Inline static JavaScript syntax check returned exit 0.
+- Phase 1 public health: PASS. Regression returned HTTP 200, cache hit, 1,460 segments / 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments / 366 words.
+- Phase 3 UI contract: PASS. Public root returned HTTP 200; Rick Astley transcript returned 366 words / 61 segments; combined analysis returned 16 outputs / 40,077 chars; Markdown download returned HTTP 200 / 41,227 bytes; ask-question returned 958 chars.
+
 Run time: 2026-08-31 12:19 EDT.
 
 - VTT download support: PASS. Public Phase 1 DOM/click/mobile/a11y smoke verified `downloadVttBtn`, VTT click wiring, and signed VTT download HTTP 200 / 1,194 bytes for Shorts record `68a1105cf6d5`.

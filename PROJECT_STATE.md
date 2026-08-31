@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 12:38 EDT
+Updated: 2026-08-31 12:51 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -21,7 +21,8 @@ Status: Release-clear on the public no-login product for the current fixture gat
 - New two-hour public long-video proof: `https://www.youtube.com/watch?v=rwfk91ya81s`, job `115c983594bd`, record `5919d7b3c99a`, title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`, duration 7,244 seconds, HTTP 202 async start then job `done`, method `queued-chunked-local-whisper`, cache miss, 13 audio chunks, 1,446 segments, 19,298 words, language `en`. Native captions, YouTube Transcript API, and yt-dlp subtitles failed/skipped, then chunked local Whisper produced a credible beginning and ending. Public TXT, Markdown, and SRT signed downloads verified HTTP 200.
 
 ### Version 2 / Phase 2: Any video or audio
-Status: Advanced, not release-complete. Hosted-container upload path now passes against a seeded persistent `/data` volume, and the public UI now exposes a disclosed browser-only Whisper fallback option for files when the server upload route fails.
+Status: Advanced, not release-complete. Hosted-container upload path now passes against a seeded persistent `/data` volume, and the public UI now has a cleaner owner-facing upload/history path with local browser transcript history, a one-click upload icon beside the URL input, and clear no-cloud-sync disclosure.
+- Public owner-UX sprint from 2026-08-31 12:51 EDT: the public production URL, stable Netlify review URL, and immutable Netlify deploy `https://6a95b112692fe0f07390daf5--epic-transcript-machine-review.netlify.app/` returned HTTP 200 with `Your Transcript History`, `Unlock All EPIC Machines`, `placeholder="Enter URL..."`, `uploadBtn`, release version footer, `https://epic.media`, production API base on Netlify, and no old `drop-zone` marker. Local history stores recent transcripts in `epicTranscriptHistory`, lets users clear/delete local history, and keeps server recent readback as a fallback.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
 - Full upload/media release matrix now has public proof for generated WAV, MP3, M4A, MP4, MOV, WebM, non-English French WAV, a 31-minute MP3 recording, and a supported public non-YouTube MP3 URL. Remaining Phase 2 evidence is fuller browser UX proof.
 - Cleanup/retention hardening advanced on 2026-08-31 08:18 EDT: upload temp directories are covered by an automated removal regression, transcript deletion now also removes saved analyses, SQLite connections now enable foreign-key enforcement, and the public API verified delete cleanup with record `c40edf087acd` / analysis `c3e5e11163a0` returning HTTP 404 after deletion.
@@ -88,6 +89,7 @@ Status: Advanced publicly, not release-complete. Hosted-container UI/API contrac
 - Deployed the synchronized static review build to Netlify site `epic-transcript-machine-review`, deploy `6a9579a7b662aa6824e325ab`, and verified both stable and immutable Netlify URLs anonymously.
 - Added and deployed the Phase 2 browser-only Whisper fallback UI to production/review: `browserLocal` checkbox, clear on-device disclosure, WebGPU/WASM transformer path, browser-only record rendering, and local TXT/Markdown/SRT downloads. Netlify deploy `6a95a49d4bcd595e06c116e6` was verified at stable and immutable URLs with expected markers.
 - Updated `scripts/phase1_matrix.py` to test YouTube links through the public UI's async job path (`/api/transcribe-url-job` plus `/api/jobs/{id}`) instead of relying on the older synchronous URL endpoint for long YouTube sources.
+- Advanced the owner-facing public UI on 2026-08-31 12:51 EDT: URL placeholder now says `Enter URL...`, upload is a compact accessible icon beside the URL bar, the recent drawer now says `Your Transcript History`, local transcript history is stored under `epicTranscriptHistory` with clear/delete controls, the footer shows a release version plus `epic.media`, and an `Unlock All EPIC Machines` expansion strip previews the next machine family without changing transcript/API behavior. Netlify deploy `6a95b112692fe0f07390daf5` verified stable and immutable.
 
 - UX phase visibility advanced on 2026-08-31 11:39 EDT: the public root and Netlify review root now show visible `Version 1 / Phase 1`, `Version 2 / Phase 2`, and `Version 3 / Phase 3` cards directly under the hero proof strip. The public root, stable Netlify review URL, and immutable Netlify deploy `6a95a0c3cf34d705f2de4c9d` returned HTTP 200 and contained the phase cards, theme toggle, expanded FAQ markers, and production API base marker.
 - Public unsupported-upload guidance was hardened and reloaded: `.exe` upload attempts now return HTTP 400 with `Unsupported file type: .exe. Upload one of: .aac, .avi, .flac, .m4a, .md, .mkv, .mov, .mp3, .mp4, .ogg, .opus, .srt, .txt, .vtt, .wav, .webm.`
@@ -122,6 +124,12 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
+
+- `./.venv/bin/python -m pytest -q`: passed, 56 tests on 2026-08-31 12:51 EDT after fixing the design contract to match the new compact upload control.
+- Inline static JavaScript syntax check: passed on 2026-08-31 12:51 EDT with one script block and `node --check` exit 0.
+- Netlify review deploy: passed on 2026-08-31 12:51 EDT. `netlify deploy --dir static --prod --json` deployed site `epic-transcript-machine-review`, deploy `6a95b112692fe0f07390daf5`; stable `https://epic-transcript-machine-review.netlify.app/` and immutable `https://6a95b112692fe0f07390daf5--epic-transcript-machine-review.netlify.app/` both returned HTTP 200 with `Your Transcript History`, `Unlock All EPIC Machines`, `placeholder="Enter URL..."`, `uploadBtn`, no `drop-zone`, release version, `https://epic.media`, and production API base marker.
+- `./.venv/bin/python scripts/phase1_health.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 12:51 EDT. Regression returned HTTP 200, cache hit, 1,460 segments / 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments / 366 words.
+- `./.venv/bin/python scripts/phase3_ui_contract_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 12:51 EDT. Public root returned HTTP 200; Rick Astley transcript returned 366 words / 61 segments; combined analysis returned 16 sections / 40,077 chars; Markdown download returned HTTP 200 / 41,227 bytes; ask-question returned 958 chars.
 
 - `./.venv/bin/python -m py_compile scripts/phase2_url_matrix_smoke.py && ./.venv/bin/python -m pytest -q`: passed, 53 tests on 2026-08-31 11:58 EDT.
 - `./.venv/bin/python scripts/phase2_url_matrix_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 11:58 EDT. Public direct MP3 fixture returned HTTP 200 `audio/mpeg`, async URL job `566c9b18c9a7` completed `done` with record `125f03b51940`, method `local-whisper`, source_kind `url`, language `en`, 18 words, cache miss, and platform-specific TikTok/Instagram/Facebook/X-Twitter guidance returned helpful HTTP 422. Evidence saved to `evidence/phase2-url-matrix-report.json`.
