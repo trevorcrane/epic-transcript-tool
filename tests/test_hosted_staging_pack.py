@@ -155,3 +155,61 @@ def test_hosted_staging_smoke_print_plan_lists_all_release_lanes(tmp_path):
     assert payload["steps"][0]["command"][-2:] == ["scripts/phase1_matrix.py", "https://staging.example.test"]
     assert payload["steps"][1]["command"][-2:] == ["scripts/phase2_upload_smoke.py", "https://staging.example.test"]
     assert payload["steps"][2]["command"][-2:] == ["scripts/phase3_ui_contract_smoke.py", "https://staging.example.test"]
+
+
+def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
+    seed_db = tmp_path / "transcripts.db"
+    seed_package = tmp_path / "hosted-staging-seed.tar.gz"
+    bundle = tmp_path / "hosted-staging-transfer-bundle.tar.gz"
+    make_seed_db(seed_db)
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_pack.py"),
+            "--source-db",
+            str(seed_db),
+            "--out",
+            str(seed_package),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_bundle.py"),
+            "--seed-package",
+            str(seed_package),
+            "--out",
+            str(bundle),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["bundle"] == str(bundle.resolve())
+    assert payload["seed_package"] == str(seed_package.resolve())
+    assert payload["next_steps"][0].startswith("tar -xzf")
+    assert "scripts/hosted_staging_verify.py" in payload["members"]
+    assert "scripts/hosted_staging_smoke.py" in payload["members"]
+    assert "Dockerfile" in payload["members"]
+    assert "docs/HOSTED_BACKEND_MIGRATION.md" in payload["members"]
+    assert "evidence/hosted-staging-seed.tar.gz" in payload["members"]
+    assert "transfer-manifest.json" in payload["members"]
+
+    with tarfile.open(bundle, "r:gz") as tar:
+        names = tar.getnames()
+        assert names == payload["members"]
+        manifest_file = tar.extractfile("transfer-manifest.json")
+        assert manifest_file is not None
+        manifest = json.loads(manifest_file.read().decode())
+
+    assert manifest["seed_package_sha256"] == payload["seed_package_sha256"]
+    assert manifest["verify_command"] == "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>"

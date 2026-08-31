@@ -120,7 +120,28 @@ Current local verification evidence from 2026-08-31 13:21 EDT:
 - Staging cache packaging passed on 2026-08-31 13:06 EDT. `scripts/hosted_staging_pack.py` created the seed tarball and automated manifest, and `tests/test_hosted_staging_pack.py` covers the copy/manifest contract.
 - Host-side seed verification tooling passed on 2026-08-31 13:21 EDT. `scripts/hosted_staging_verify.py` validates the package manifest, SHA-256, transcript count, and required cached media IDs, then extracts `transcripts.db` into the selected persistent data directory before container start.
 - Host-side release-smoke runner passed on 2026-08-31 13:53 EDT. `scripts/hosted_staging_smoke.py` gives the selected host a one-command Phase 1/2/3 staging acceptance run after the seeded container is online and can save the proof with `--out evidence/hosted-staging-smoke-report.json`.
+- Host transfer bundle passed on 2026-08-31 14:08 EDT. `scripts/hosted_staging_bundle.py` creates one handoff tarball with the seed package, Dockerfile, app entrypoint, requirements, host verification script, Phase 1/2/3 smoke scripts, and this migration guide.
+
+## Host transfer bundle
+
+Use this when the selected persistent host is ready but a full git checkout has not been prepared yet:
+
+```bash
+./.venv/bin/python scripts/hosted_staging_bundle.py --seed-package evidence/hosted-staging-seed.tar.gz --out evidence/hosted-staging-transfer-bundle.tar.gz
+```
+
+Current transfer-bundle evidence from 2026-08-31 14:08 EDT:
+
+- Bundle: `evidence/hosted-staging-transfer-bundle.tar.gz`.
+- Bundle size: 4,619,331 bytes.
+- Bundle SHA-256: `04eaf8304d0c16bf02754e19338090186b60bfb0e8717ca2e7fa4b222a26a615`.
+- Seed package SHA-256 inside manifest: `ffdd12b38fb789247803b8b7235e88682b6b418289a1072a9499582178c5e4c9`.
+- Member count: 11.
+- Required members verified: `Dockerfile`, `requirements.txt`, `app.py`, `scripts/hosted_staging_verify.py`, `scripts/hosted_staging_smoke.py`, `scripts/phase1_matrix.py`, `scripts/phase2_upload_smoke.py`, `scripts/phase3_ui_contract_smoke.py`, `docs/HOSTED_BACKEND_MIGRATION.md`, `evidence/hosted-staging-seed.tar.gz`, and `transfer-manifest.json`.
+- Host verify command in manifest: `python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>`.
+- Host smoke command in manifest: `python3 scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json`.
 
 ## Latest smoke report persistence proof
 
 - 2026-08-31 13:53 EDT: `scripts/hosted_staging_smoke.py` was run against the current public product with `--out evidence/hosted-staging-smoke-report.json`. The saved report returned `ok=true`; Phase 1 matrix passed in 24.61s, Phase 2 upload smoke passed in 11.99s, and Phase 3 UI contract passed in 3.44s.
+- 2026-08-31 14:08 EDT: public Phase 1 health still passed after bundle work. Regression returned HTTP 200, cache hit, 1,460 segments / 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments / 366 words. Full suite returned 60 passed.
