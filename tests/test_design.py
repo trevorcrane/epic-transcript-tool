@@ -16,7 +16,7 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
     html = HTML.read_text()
     assert "hero-control" in html
     assert html.index('id="url"') < html.index('id="result"')
-    for required_id in ["form", "url", "grab", "file", "drop", "browserLocal", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
+    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
         assert f'id="{required_id}"' in html
 
 
@@ -48,8 +48,9 @@ def test_chatgpt_reference_layout_version_markers():
     assert "Free Video Transcript" in html
     assert "Machine" in html
     assert "Generator" not in html
-    assert "FAST · FREE · V3" in html
-    assert "Get Video Transcript" in html
+    assert "FAST · FREE · V3" not in html
+    assert "Get Transcript" in html
+    assert "Get Video Transcript" not in html
     assert "Quick and simple. No catch." in html
     assert "Frequently Asked Questions (FAQ)" in html
     assert "faq-stage" in html
@@ -57,12 +58,13 @@ def test_chatgpt_reference_layout_version_markers():
     assert html.index("hero-control") < html.index("How it works") < html.index("Frequently Asked Questions")
 
 
-def test_upload_copy_lists_every_supported_format():
+def test_upload_area_is_minimal_but_keeps_supported_extensions_in_accept_attribute():
     html = HTML.read_text()
     for ext in [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".mp4", ".mov", ".mkv", ".webm", ".avi", ".txt", ".md", ".srt", ".vtt"]:
         assert ext in html
-    for label in ["MP4", "MOV", "WebM", "MKV", "AVI", "MP3", "M4A", "AAC", "FLAC", "OGG", "OPUS", "WAV", "TXT", "MD", "SRT", "VTT"]:
-        assert label in html
+    assert "Click or drag audio, video, or transcript files here" not in html
+    assert "MP4 · MOV · WebM" not in html
+    assert "Choose file" in html
 
 
 def test_reference_faqs_and_theme_toggle_are_present():
@@ -83,34 +85,29 @@ def test_reference_faqs_and_theme_toggle_are_present():
     assert "toggleTheme" in html
     assert "data-theme" in html
     assert "localStorage.setItem('epicTranscriptTheme', theme)" in html
-    assert ".nav { display:flex; }" in html
+    assert ">☀</button>" in html
+    assert "? '☾' : '☀'" in html
+    assert ">☀ Light</button>" not in html
+    assert "? '☾ Dark' : '☀ Light'" not in html
     assert ".theme-toggle { min-width:44px; min-height:44px" in html
+    assert "body[data-theme='light'] .hero-control" in html
+    assert "body[data-theme='light'] .drop-zone" in html
+    assert "body[data-theme='light'] .status" in html
 
 
-def test_browser_local_whisper_fallback_is_disclosed_and_wired():
+def test_vtt_download_is_available_without_upload_clutter():
     html = HTML.read_text()
-    assert "Browser-only fallback" in html
-    assert "File stays on this device" in html
-    assert "WebGPU when available" in html
-    assert "WASM when WebGPU is not available" in html
     assert 'id="downloadVttBtn"' in html
     assert "els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'))" in html
     assert "WEBVTT" in html
-    assert "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2" in html
-    assert "Xenova/whisper-tiny.en" in html
-    assert "browser-whisper-webgpu" in html
-    assert "browser-whisper-wasm" in html
-    assert "canUseBrowserWhisper" in html
-    assert "transcribeInBrowser" in html
+    assert "Browser-only fallback" not in html
+    assert "WebGPU when available" not in html
+    assert "WASM when WebGPU is not available" not in html
 
 
-def test_visible_version_phase_status_is_present():
+def test_visible_version_phase_status_is_removed_from_hero():
     html = HTML.read_text()
-    assert 'aria-label="Version and phase status"' in html
-    assert "Version 1 / Phase 1" in html
-    assert "Bulletproof YouTube transcripts" in html
-    assert "Version 2 / Phase 2" in html
-    assert "Any video or audio" in html
-    assert "Version 3 / Phase 3" in html
-    assert "Video intelligence" in html
-    assert html.index("Version 1 / Phase 1") < html.index("Version 2 / Phase 2") < html.index("Version 3 / Phase 3")
+    assert 'aria-label="Version and phase status"' not in html
+    assert "Bulletproof YouTube transcripts: public gate passed." not in html
+    assert "Any video or audio: uploads and public media verified" not in html
+    assert "Video intelligence: starter outputs live" not in html
