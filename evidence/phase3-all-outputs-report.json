@@ -1,127 +1,127 @@
 {
   "ok": true,
   "base": "https://epic-transcript.robyncrane.com",
-  "video_url": "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD",
-  "elapsed_seconds": 5.85,
+  "video_url": "https://youtu.be/dQw4w9WgXcQ",
+  "elapsed_seconds": 8.31,
   "record": {
-    "id": "0be6ea91d9aa",
-    "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)",
-    "method": "native-caption-automatic_captions",
+    "id": "ad5c76d27ea4",
+    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "method": "native-caption-subtitles",
     "language": "en",
-    "word_count": 15744,
-    "segment_count": 1460,
+    "word_count": 366,
+    "segment_count": 61,
     "cache_hit": true
   },
   "declared_output_count": 17,
   "verified_output_count": 17,
   "verified_outputs": {
     "executive_summary": {
-      "chars": 1633,
+      "chars": 1155,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "main_ideas": {
-      "chars": 1592,
+      "chars": 1046,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "action_items": {
-      "chars": 1521,
+      "chars": 1099,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "chapters": {
-      "chars": 1481,
+      "chars": 1051,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "best_quotes": {
-      "chars": 1605,
+      "chars": 1059,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "stories_examples": {
-      "chars": 1443,
+      "chars": 1021,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "content_framework": {
-      "chars": 1565,
+      "chars": 1109,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "blog_post": {
-      "chars": 1528,
+      "chars": 1106,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "newsletter": {
-      "chars": 1480,
+      "chars": 1062,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "social_posts": {
-      "chars": 1656,
+      "chars": 1110,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "short_form_hooks": {
-      "chars": 1690,
+      "chars": 1144,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "faq": {
-      "chars": 1594,
+      "chars": 1116,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "sales_insights": {
-      "chars": 1413,
+      "chars": 991,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "objections_answers": {
-      "chars": 1562,
+      "chars": 1084,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "trevor_use": {
-      "chars": 1542,
+      "chars": 1120,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     },
     "content_assets_100": {
-      "chars": 23934,
+      "chars": 23699,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
@@ -129,22 +129,142 @@
       "asset_count": 100,
       "unique_asset_bodies": 100,
       "earliest_timestamp_seconds": 1,
-      "latest_timestamp_seconds": 1602,
+      "latest_timestamp_seconds": 207,
       "has_middle_coverage": true,
       "no_placeholder_phrasing": true
     },
     "ask_question": {
-      "chars": 1430,
+      "chars": 958,
       "has_timestamp": true,
       "has_disclaimer": true,
       "has_evidence": true,
       "copy_ready": true
     }
   },
-  "individual_download": {
-    "analysis_id": "5d2ad8005ab1",
-    "status": 200,
-    "bytes": 1633,
-    "content_type": "text/markdown; charset=utf-8"
+  "individual_downloads": {
+    "executive_summary": {
+      "analysis_id": "0cc441456e23",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1233,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "main_ideas": {
+      "analysis_id": "d5bdcf71df6f",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1132,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "action_items": {
+      "analysis_id": "d44d20da154e",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1167,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "chapters": {
+      "analysis_id": "d49d9860873e",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1123,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "best_quotes": {
+      "analysis_id": "b1a44c810ac8",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1145,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "stories_examples": {
+      "analysis_id": "5cb55c036c11",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1089,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "content_framework": {
+      "analysis_id": "63c5438209c3",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1183,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "blog_post": {
+      "analysis_id": "2fae1af5a794",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1174,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "newsletter": {
+      "analysis_id": "0123925e0a04",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1130,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "social_posts": {
+      "analysis_id": "f74788934f40",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1196,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "short_form_hooks": {
+      "analysis_id": "694b9a0cc6b9",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1230,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "faq": {
+      "analysis_id": "80c8cc1f0482",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1194,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "sales_insights": {
+      "analysis_id": "75a093883d24",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1059,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "objections_answers": {
+      "analysis_id": "cf6974b382ae",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1160,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "trevor_use": {
+      "analysis_id": "250386087ef5",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1188,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "content_assets_100": {
+      "analysis_id": "52fbbd972ac7",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 23719,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "ask_question": {
+      "analysis_id": "0de92e46133a",
+      "unauth_status": 403,
+      "owner_status": 200,
+      "bytes": 1032,
+      "content_type": "text/markdown; charset=utf-8"
+    }
+  },
+  "individual_download_privacy": {
+    "verified_count": 17,
+    "unauth_status": 403,
+    "owner_status": 200
   }
 }

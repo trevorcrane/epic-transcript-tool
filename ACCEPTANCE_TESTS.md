@@ -62,6 +62,12 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 17:12 EDT, every-output Phase 3 analysis-download privacy hardening.
+
+- Individual analysis Markdown privacy: PASS across every Phase 3 output. `scripts/phase3_all_outputs_smoke.py` now verifies all 17 declared output downloads fail without `X-Transcript-Owner` and pass with the matching owner header. Public proof used transcript record `ad5c76d27ea4`; 17 declared outputs, 17 verified outputs, 17 unauthenticated download attempts returned HTTP 403, and 17 owner-authenticated downloads returned HTTP 200. Evidence saved at `evidence/phase3-all-outputs-report.json`.
+- Short vs long timestamp coverage: PASS regression. The all-outputs smoke no longer applies a 20-minute late-coverage rule to a short control video, but long transcripts still require real middle/late coverage. Added `tests/test_phase3_all_outputs_smoke_script.py`; targeted script tests returned 2 passed and full suite returned 74 passed.
+- Public phase smokes: PASS. Phase 1 health returned cache-hit PASS for regression/control; Phase 2 release gate returned `all_ok=true`; Phase 3 UI contract returned combined analysis `26b75f123ea5` with authenticated Markdown download HTTP 200 / 41,227 bytes.
+
 Run time: 2026-08-31 16:55 EDT, Phase 3 analysis-download privacy hardening.
 
 - Analysis Markdown privacy: PASS. `/api/analysis/{analysis_id}/download` now requires the same owner token as transcript readback. Public proof generated transcript `5cc527dbd2bf` and analysis `1d88a8375380`; unauthenticated download returned HTTP 403, owner-authenticated download returned HTTP 200 / 1,233 bytes with `text/markdown`. Evidence saved at `evidence/phase3-analysis-download-privacy-report.json`.

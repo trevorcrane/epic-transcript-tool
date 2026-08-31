@@ -13,6 +13,7 @@ import re
 import secrets
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -61,8 +62,11 @@ def request(path: str, *, method: str = "GET", data: dict[str, str] | None = Non
         body = urllib.parse.urlencode(data).encode()
         all_headers["Content-Type"] = "application/x-www-form-urlencoded"
     req = urllib.request.Request(BASE + path, data=body, headers=all_headers, method=method)
-    with urllib.request.urlopen(req, timeout=timeout) as res:
-        return HttpResult(res.status, res.read(), dict(res.headers))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            return HttpResult(res.status, res.read(), dict(res.headers))
+    except urllib.error.HTTPError as exc:
+        return HttpResult(exc.code, exc.read(), dict(exc.headers))
 
 
 def as_json(result: HttpResult) -> dict[str, Any]:
@@ -92,7 +96,7 @@ def complete_transcript() -> dict[str, Any]:
     return rec
 
 
-def validate_analysis(output_type: str, text: str) -> dict[str, Any]:
+def validate_analysis(output_type: str, text: str, *, transcript_duration_seconds: float | None = None) -> dict[str, Any]:
     has_timestamp = bool(re.search(r"\[\d{2}:\d{2}", text))
     has_disclaimer = "AI-generated" in text
     has_evidence = "Transcript evidence" in text or has_timestamp
@@ -127,9 +131,17 @@ def validate_analysis(output_type: str, text: str) -> dict[str, Any]:
                 else:
                     timestamps.append(int(a) * 3600 + int(b) * 60 + int(c))
         require(len(timestamps) >= 90, f"content_assets_100 missing timestamps on assets: {len(timestamps)}")
-        require(min(timestamps) <= 60, "content_assets_100 missing early coverage")
-        require(max(timestamps) >= 20 * 60, "content_assets_100 missing late coverage")
-        require(any(10 * 60 <= ts <= 18 * 60 for ts in timestamps), "content_assets_100 missing middle coverage")
+        duration = transcript_duration_seconds or 0
+        if duration >= 20 * 60:
+            require(min(timestamps) <= 60, "content_assets_100 missing early coverage")
+            require(max(timestamps) >= 20 * 60, "content_assets_100 missing late coverage")
+            require(any(10 * 60 <= ts <= 18 * 60 for ts in timestamps), "content_assets_100 missing middle coverage")
+            has_middle_coverage = any(10 * 60 <= ts <= 18 * 60 for ts in timestamps)
+        else:
+            required_late = max(30, int(duration * 0.6)) if duration else 30
+            require(min(timestamps) <= 30, "content_assets_100 missing early coverage")
+            require(max(timestamps) >= required_late, f"content_assets_100 missing short-transcript late coverage: max={max(timestamps)} required={required_late}")
+            has_middle_coverage = True
         for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
             require(label in text, f"content_assets_100 missing label {label}")
         detail.update({
@@ -137,7 +149,7 @@ def validate_analysis(output_type: str, text: str) -> dict[str, Any]:
             "unique_asset_bodies": len(set(bodies)),
             "earliest_timestamp_seconds": min(timestamps),
             "latest_timestamp_seconds": max(timestamps),
-            "has_middle_coverage": any(10 * 60 <= ts <= 18 * 60 for ts in timestamps),
+            "has_middle_coverage": has_middle_coverage,
             "no_placeholder_phrasing": True,
         })
     return detail
@@ -165,14 +177,31 @@ def main() -> int:
         require(res.get("output_type") == output_type, f"{output_type} response type mismatch: {res.get('output_type')}")
         require(bool(res.get("analysis_id")), f"{output_type} missing analysis_id")
         analysis_ids.append(str(res["analysis_id"]))
-        analyses[output_type] = validate_analysis(output_type, str(res.get("analysis") or ""))
+        analyses[output_type] = validate_analysis(
+            output_type,
+            str(res.get("analysis") or ""),
+            transcript_duration_seconds=rec.get("duration_seconds") or rec.get("duration"),
+        )
 
-    # Verify at least one individual analysis download path, not just combined output.
-    first_id = analysis_ids[0]
-    dl = request(f"/api/analysis/{first_id}/download", headers={"X-Transcript-Owner": owner})
-    dl_text = dl.body.decode(errors="replace")
-    require(dl.status == 200, f"individual analysis download returned {dl.status}")
-    require("AI-generated" in dl_text and "Transcript evidence" in dl_text, "individual download missing expected analysis markers")
+    # Verify every individual analysis download is owner-protected, not just the
+    # first happy-path download. This keeps the Phase 3 release run from
+    # regressing into public bare Markdown links for any output type.
+    download_checks: dict[str, Any] = {}
+    for output_type, analysis_id in zip(EXPECTED_OUTPUTS, analysis_ids):
+        unauth = request(f"/api/analysis/{analysis_id}/download")
+        require(unauth.status == 403, f"{output_type} unauthenticated download returned {unauth.status}, expected 403")
+        dl = request(f"/api/analysis/{analysis_id}/download", headers={"X-Transcript-Owner": owner})
+        dl_text = dl.body.decode(errors="replace")
+        require(dl.status == 200, f"{output_type} owner analysis download returned {dl.status}")
+        has_download_evidence = "Transcript evidence" in dl_text or bool(re.search(r"\[\d{2}:\d{2}", dl_text))
+        require("AI-generated" in dl_text and has_download_evidence, f"{output_type} download missing expected analysis markers")
+        download_checks[output_type] = {
+            "analysis_id": analysis_id,
+            "unauth_status": unauth.status,
+            "owner_status": dl.status,
+            "bytes": len(dl.body),
+            "content_type": dl.headers.get("Content-Type") or dl.headers.get("content-type"),
+        }
 
     report = {
         "ok": True,
@@ -191,7 +220,8 @@ def main() -> int:
         "declared_output_count": len(ids),
         "verified_output_count": len(analyses),
         "verified_outputs": analyses,
-        "individual_download": {"analysis_id": first_id, "status": dl.status, "bytes": len(dl.body), "content_type": dl.headers.get("Content-Type") or dl.headers.get("content-type")},
+        "individual_downloads": download_checks,
+        "individual_download_privacy": {"verified_count": len(download_checks), "unauth_status": 403, "owner_status": 200},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
