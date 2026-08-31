@@ -12,6 +12,7 @@ import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -38,8 +39,11 @@ def request(path: str, *, method: str = "GET", data: dict[str, str] | None = Non
         body = urllib.parse.urlencode(data).encode()
         all_headers["Content-Type"] = "application/x-www-form-urlencoded"
     req = urllib.request.Request(BASE + path, data=body, headers=all_headers, method=method)
-    with urllib.request.urlopen(req, timeout=timeout) as res:
-        return HttpResult(res.status, res.read(), dict(res.headers))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            return HttpResult(res.status, res.read(), dict(res.headers))
+    except urllib.error.HTTPError as exc:
+        return HttpResult(exc.code, exc.read(), dict(exc.headers))
 
 
 def as_json(result: HttpResult) -> dict:
@@ -59,6 +63,30 @@ def header_value(headers: dict[str, str], name: str) -> str:
         if key.lower() == lowered:
             return value
     return ""
+
+
+def verify_analysis_download(analysis_id: str, owner: str) -> dict[str, object]:
+    """Verify long combined-analysis Markdown is private and owner-downloadable."""
+    unauth = request(f"/api/analysis/{analysis_id}/download")
+    if unauth.status != 403:
+        raise SystemExit(f"Unauthenticated long-analysis download returned {unauth.status}, expected 403")
+
+    owner_download = request(f"/api/analysis/{analysis_id}/download", headers={"X-Transcript-Owner": owner})
+    download_text = owner_download.body.decode(errors="replace")
+    download_content_type = header_value(owner_download.headers, "content-type")
+    if owner_download.status != 200 or "text/markdown" not in download_content_type:
+        raise SystemExit(f"Download failed: status={owner_download.status} content-type={download_content_type}")
+    if "# Executive summary" not in download_text or "# Create 100 content assets" not in download_text:
+        raise SystemExit("Downloaded long-analysis Markdown missing combined output markers")
+    if "AI-generated" not in download_text or "Transcript evidence" not in download_text:
+        raise SystemExit("Downloaded long-analysis Markdown missing AI/evidence markers")
+
+    return {
+        "unauthenticated_download_status": unauth.status,
+        "owner_download_status": owner_download.status,
+        "owner_download_bytes": len(owner_download.body),
+        "owner_download_content_type": download_content_type,
+    }
 
 
 def main() -> int:
@@ -93,13 +121,7 @@ def main() -> int:
     if len(text) < 5000 or text.count("AI-generated from the transcript") < 10:
         raise SystemExit(f"Combined long analysis too thin: chars={len(text)} markers={text.count('AI-generated from the transcript')}")
 
-    dl = request(f"/api/analysis/{combined['analysis_id']}/download", headers={"X-Transcript-Owner": OWNER})
-    download_text = dl.body.decode(errors="replace")
-    download_content_type = header_value(dl.headers, "content-type")
-    if dl.status != 200 or "text/markdown" not in download_content_type:
-        raise SystemExit(f"Download failed: status={dl.status} content-type={download_content_type}")
-    if "# Executive summary" not in download_text or "# Create 100 content assets" not in download_text:
-        raise SystemExit("Downloaded long-analysis Markdown missing combined output markers")
+    download_detail = verify_analysis_download(combined["analysis_id"], OWNER)
 
     print(json.dumps({
         "ok": True,
@@ -117,9 +139,11 @@ def main() -> int:
         "combined_chars": len(text),
         "combined_outputs": text.count("AI-generated from the transcript"),
         "latest_analysis_timestamp_seconds": max(stamps),
-        "download_status": dl.status,
-        "download_bytes": len(dl.body),
-        "download_content_type": download_content_type,
+        "download_status": download_detail["owner_download_status"],
+        "download_bytes": download_detail["owner_download_bytes"],
+        "download_content_type": download_detail["owner_download_content_type"],
+        "unauthenticated_download_status": download_detail["unauthenticated_download_status"],
+        "analysis_download_privacy": "owner-required",
     }, indent=2))
     return 0
 
