@@ -824,9 +824,22 @@
   els.questionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); els.askBtn.click(); }
   });
-  els.analysisDownloadBtn.addEventListener('click', () => {
-    if (currentAnalysis && currentAnalysis.analysis_id) {
-      window.location.href = apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download');
+  els.analysisDownloadBtn.addEventListener('click', async () => {
+    if (!currentAnalysis || !currentAnalysis.analysis_id) return;
+    try {
+      const res = await fetch(apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download'), { headers: ownerHeaders() });
+      if (!res.ok) throw new Error(res.statusText || 'Download failed');
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="?([^";]+)"?/i);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = match ? match[1] : 'analysis.md';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      showToast('Analysis download ready ✓');
+    } catch (e) {
+      showToast('Analysis download failed: ' + e.message, true);
     }
   });
   els.analysisCopyBtn.addEventListener('click', async () => {

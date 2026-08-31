@@ -60,7 +60,7 @@ def main() -> int:
     if text.count("AI-generated from the transcript") < 10 or len(text) < 3000:
         raise SystemExit(f"Combined analysis too thin: chars={len(text)} markers={text.count('AI-generated from the transcript')}")
 
-    dl = request(f"/api/analysis/{combined['analysis_id']}/download")
+    dl = request(f"/api/analysis/{combined['analysis_id']}/download", headers={"X-Transcript-Owner": OWNER})
     download_text = dl.body.decode(errors="replace")
     if dl.status != 200 or "text/markdown" not in dl.headers.get("content-type", ""):
         raise SystemExit(f"Download failed: status={dl.status} content-type={dl.headers.get('content-type')}")

@@ -128,7 +128,7 @@ def upload_text_and_cleanup() -> dict:
             gproc = curl([f"{BASE}/api/transcripts/{rec_id}", "-H", f"X-Transcript-Owner: {OWNER}", "-w", "\n%{http_code}\n"], timeout=60)
             _, transcript_status = split_body_status(gproc.stdout)
         if analysis_id:
-            dlproc = curl([f"{BASE}/api/analysis/{analysis_id}/download", "-w", "\n%{http_code}\n"], timeout=60)
+            dlproc = curl([f"{BASE}/api/analysis/{analysis_id}/download", "-H", f"X-Transcript-Owner: {OWNER}", "-w", "\n%{http_code}\n"], timeout=60)
             _, analysis_download_status = split_body_status(dlproc.stdout)
         return {
             "upload_status": upload_status,

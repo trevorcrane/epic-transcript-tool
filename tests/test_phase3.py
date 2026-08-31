@@ -187,7 +187,9 @@ def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):
     rec = seed_record(tmp_path, monkeypatch)
     client = TestClient(app.app)
     made = client.post(f"/api/analyze/{rec['id']}", data={"output_type":"action_items"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"}).json()
-    res = client.get(f"/api/analysis/{made['analysis_id']}/download")
+    unauth = client.get(f"/api/analysis/{made['analysis_id']}/download")
+    assert unauth.status_code == 403
+    res = client.get(f"/api/analysis/{made['analysis_id']}/download", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
     assert res.status_code == 200
     assert "Action" in res.text or "proposal" in res.text
 
@@ -203,7 +205,7 @@ def test_phase3_combined_outputs_can_be_saved_copied_and_downloaded(monkeypatch,
     assert "# Create 100 content assets" in data["analysis"]
     assert "Ask the video" not in data["analysis"]
     assert data["analysis"].count("AI-generated from the transcript") >= 10
-    res = client.get(f"/api/analysis/{data['analysis_id']}/download")
+    res = client.get(f"/api/analysis/{data['analysis_id']}/download", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
     assert res.status_code == 200
     assert "# Executive summary" in res.text
     assert "# Create 100 content assets" in res.text

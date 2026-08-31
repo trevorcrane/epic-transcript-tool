@@ -62,6 +62,13 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 16:55 EDT, Phase 3 analysis-download privacy hardening.
+
+- Analysis Markdown privacy: PASS. `/api/analysis/{analysis_id}/download` now requires the same owner token as transcript readback. Public proof generated transcript `5cc527dbd2bf` and analysis `1d88a8375380`; unauthenticated download returned HTTP 403, owner-authenticated download returned HTTP 200 / 1,233 bytes with `text/markdown`. Evidence saved at `evidence/phase3-analysis-download-privacy-report.json`.
+- Public UI analysis download: PASS. The UI now downloads analysis Markdown through authenticated `fetch` with `ownerHeaders()` and a local blob download, instead of redirecting to a bare analysis URL. Public root and Netlify review roots returned HTTP 200 with the authenticated download marker and `Analysis download ready` toast.
+- Regression suite: PASS. Targeted Phase 3 tests returned 9 passed; full suite returned 72 passed; inline static JavaScript syntax check returned exit 0.
+- Public phase smokes: PASS. Phase 3 UI contract returned combined analysis `8c53b95479b5`, authenticated Markdown download HTTP 200 / 41,227 bytes, and ask-question 958 chars. Phase 2 release gate still returned `all_ok=true`. Public recovery watchdog returned `/health` ready true and async job `d6b1c073cdfc` done, no restart needed.
+
 Run time: 2026-08-31 16:36 EDT, recovery watchdog follow-up.
 
 - Public recovery watchdog: PASS. Added `scripts/public_recovery_watchdog.py` and regression coverage. The watchdog checks public `/health`, starts a no-login async transcript job, detects the known `unable to open database file` failure mode, can kickstart `com.epic.transcript-api`, rechecks recovery, and redacts owner token values in saved/printed evidence. Public run with `--no-restart` passed: health ready true, required `missing=[]`, async job `9c625df2a520` completed `done`, record `cc44a0eb75e6`, method `native-caption-subtitles`, 61 segments, 366 words, no restart needed. Evidence saved at `evidence/public-recovery-watchdog-report.json`. Full suite returned 72 passed.
@@ -299,6 +306,7 @@ Pass criteria:
 - Verbatim quotes are not fabricated.
 
 Current evidence:
+- 2026-08-31 16:55 EDT: Phase 3 analysis-download privacy PASS. Analysis Markdown downloads now enforce owner-token access. Public proof: unauthenticated analysis download HTTP 403, owner-authenticated download HTTP 200 / 1,233 bytes for analysis `1d88a8375380`; public UI contract and combined-analysis smokes passed with authenticated Markdown downloads. Evidence: `evidence/phase3-analysis-download-privacy-report.json`.
 - 2026-08-31 16:18 EDT: Phase 3 citation-coverage gate advanced with `scripts/phase3_citation_coverage_smoke.py https://epic-transcript.robyncrane.com`. PASS public no-login proof: regression transcript returned record `508da366d525`, method `native-caption-automatic_captions`, 15,744 words, 1,460 segments, cache hit; all 17 analysis outputs returned HTTP 200 with `AI-generated from the transcript`, timestamp evidence, and citations matching transcript segment starts; `content_assets_100` returned exactly 100 assets with 100 unique timestamps and early/middle/late coverage from 1s to 1,602s; combined analysis `c46c7e033f60` had 337 timestamp citations and Markdown download returned HTTP 200 / 47,364 bytes. Evidence saved to `evidence/phase3-citation-coverage-report.json`. Automated suite returned 66 passed.
 - 2026-08-31 16:36 EDT: Production recovery watchdog added and verified. `scripts/public_recovery_watchdog.py` now checks public `/health`, starts/polls a no-login async transcript job, detects the known SQLite database-open failure, can kickstart `com.epic.transcript-api`, and redacts owner token values from evidence. Public run passed without needing restart: job `9c625df2a520`, record `cc44a0eb75e6`, 366 words, 61 segments.
 - 2026-08-31 16:18 EDT: Production async worker recovery proof. One public async job failed with `unable to open database file`; Hermes restarted `com.epic.transcript-api`, verified local `/health` ready true, and verified public async job `060e02c3fbec` completed `done` with record `90018add194a`, 366 words, 61 segments.

@@ -1724,11 +1724,12 @@ def api_analyze_all(rec_id: str, x_transcript_owner: Optional[str] = Header(None
 
 
 @app.get("/api/analysis/{analysis_id}/download")
-def api_analysis_download(analysis_id: str) -> PlainTextResponse:
+def api_analysis_download(analysis_id: str, x_transcript_owner: Optional[str] = Header(None)) -> PlainTextResponse:
     with db() as conn:
         row = conn.execute("SELECT * FROM analyses WHERE id=?", (analysis_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Analysis not found.")
+    require_owner(row, x_transcript_owner)
     safe = re.sub(r"[^A-Za-z0-9._-]+", "_", row["output_type"])[:60] or "analysis"
     return PlainTextResponse(row["analysis"], media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="{safe}.md"'})
 
