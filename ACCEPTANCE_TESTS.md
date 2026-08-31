@@ -65,6 +65,7 @@ Credible ending:
 Run time: 2026-08-31 11:58 EDT.
 
 - Phase 2 browser-only fallback: PASS deployed and disclosed. Public production root, stable Netlify review, and immutable Netlify deploy `6a95a49d4bcd595e06c116e6` returned HTTP 200 / 51,917 bytes with `browserLocal`, `Browser-only fallback`, `File stays on this device`, `WebGPU when available`, `WASM when WebGPU is not available`, `browser-whisper-webgpu`, `browser-whisper-wasm`, and `Xenova/whisper-tiny.en` markers.
+- Phase 2 direct/social URL matrix: PASS. Added and ran `scripts/phase2_url_matrix_smoke.py`. Public direct MP3 fixture returned HTTP 200 `audio/mpeg`; async URL job `566c9b18c9a7` completed with record `125f03b51940`, method `local-whisper`, source_kind `url`, language `en`, 18 words, 2 segments. TikTok, Instagram, Facebook, and X/Twitter sample URLs each returned platform-specific helpful HTTP 422 guidance telling the user to upload the file. Evidence saved to `evidence/phase2-url-matrix-report.json`.
 - Browser fallback regression: PASS. `test_browser_local_whisper_fallback_is_disclosed_and_wired` now checks disclosure, CDN import, WebGPU/WASM method markers, `canUseBrowserWhisper`, and `transcribeInBrowser` wiring.
 - Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 50 passed.
 - Public Phase 2 release smoke: PASS. `scripts/phase2_release_gate_smoke.py https://epic-transcript.robyncrane.com` returned `all_ok=true`; root format copy passed, `/health` had required `missing: []`, `.exe` upload returned helpful HTTP 400, unsupported URL returned helpful HTTP 422, and owner cleanup readback returned transcript and analysis HTTP 404 for record `1623e1918e47` / analysis `1106b732f435`.
@@ -354,3 +355,20 @@ Current status: in progress.
 - Cache migration requirement: OPEN. The first hosted staging target must receive `transcripts.db` in its persistent `/data` volume before release verification, because a cold empty cache currently fails selected YouTube fixtures under current provider/IP conditions.
 - Staging hosted deployment: OPEN. Needs selected persistent host and public no-login staging URL.
 - DNS cutover from iMac tunnel: OPEN. Do only after hosted staging passes Phase 1, Phase 2, and Phase 3 smoke tests.
+
+
+### 2026-08-31 release-pack sprint evidence
+
+- Immutable deploy: `https://6a95a4ee9dbf9a64e3232e0e--epic-transcript-machine-review.netlify.app`.
+- Latest committed HEAD after Phase 3 and Phase 2 async URL work: `3af8b10247f12d83b62e800a6634228411390a00`.
+- Automated suite: PASS, `53 passed in 4.40s`.
+- Public root/health: PASS, HTTP 200; health ready true; required missing empty; local Whisper available; Gemini optional, not required.
+- FAQ/UI: PASS. Public root has no `Generator` marker, has `Machine`, primary-gradient `accent-text`, all seven reference FAQ questions, `themeToggle`, persisted `epicTranscriptTheme`, mobile-visible 44px theme switch, async URL job markers, browser-local fallback disclosure, WebGPU marker, WASM marker, and Transformers.js browser Whisper marker.
+- Phase 1 matrix: PASS. `scripts/phase1_matrix.py https://epic-transcript.robyncrane.com` returned `all_ok=true`.
+- Browser/mobile CDP proof: PASS. Desktop submitted French fixture and Copy matched clipboard. Mobile 390x844 submitted genuine Shorts fixture and Copy matched clipboard. No horizontal overflow. Screenshots/report saved in `evidence/browser-mobile-qc/`.
+- Static contrast/focus/touch proof: PASS. `scripts/phase1_dom_click_mobile_a11y_smoke.py` returned critical contrast ratios above 4.5:1, visible focus-ring contract, reduced-motion support, mobile breakpoints, full-width submit, and signed TXT/Markdown/SRT downloads.
+- Phase 2 upload/download/cleanup proof: PASS. `scripts/phase2_upload_smoke.py` and `scripts/phase2_release_gate_smoke.py` passed publicly for WAV, MP3, M4A, MP4, MOV, WebM, cache repeat, signed downloads, unsupported upload guidance, unsupported URL guidance, and transcript/analysis cleanup readback.
+- Phase 2 async URL/social matrix: PASS. `scripts/phase2_url_matrix_smoke.py` returned `all_ok=true`; direct public MP3 URL passed through `/api/transcribe-url-job`; TikTok, Instagram, Facebook, and X/Twitter returned helpful upload/direct-media guidance.
+- Browser-local fallback: IMPLEMENTED, pending independent full model execution. UI exposes a browser-only fallback checkbox; code uses `navigator.gpu` for WebGPU when present and Transformers.js WASM when WebGPU is unavailable; disclosure says the file stays on-device and model progress is shown.
+- Phase 3 all outputs: PASS for deterministic starter quality. `scripts/phase3_all_outputs_smoke.py` returned OK with 17/17 outputs, timestamp evidence, disclaimer, copy-ready output, and Markdown download. `content_assets_100` now returns exactly 100 numbered assets and no `starter map` language.
+- Phase 3 long transcript coverage: PASS. `scripts/phase3_long_analysis_smoke.py` against the two-hour record returned 46,253 chars, 16 combined outputs, latest evidence timestamp 7,242 seconds, and Markdown download HTTP 200.

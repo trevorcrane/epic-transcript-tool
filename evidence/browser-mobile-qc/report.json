@@ -6,7 +6,7 @@
       "w": 1440,
       "h": 950,
       "bodyW": 1440,
-      "bodyH": 2468,
+      "bodyH": 2517,
       "hasAsync": true,
       "hasJobPoll": true,
       "oldSync": false
@@ -56,28 +56,28 @@
         "copyBtn": {
           "visible": true,
           "left": 185,
-          "top": 2085.359375,
+          "top": 2135.046875,
           "width": 72.8828125,
           "height": 40
         },
         "downloadBtn": {
           "visible": true,
           "left": 267.8828125,
-          "top": 2085.359375,
+          "top": 2135.046875,
           "width": 62,
           "height": 40
         },
         "downloadMdBtn": {
           "visible": true,
           "left": 339.8828125,
-          "top": 2085.359375,
+          "top": 2135.046875,
           "width": 121.3828125,
           "height": 40
         },
         "downloadSrtBtn": {
           "visible": true,
           "left": 471.265625,
-          "top": 2085.359375,
+          "top": 2135.046875,
           "width": 60.7109375,
           "height": 40
         }
@@ -87,7 +87,7 @@
       "https://epic-transcript.robyncrane.com/api/setup",
       "https://epic-transcript.robyncrane.com/api/recent?limit=20",
       "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
-      "https://epic-transcript.robyncrane.com/api/jobs/8910001af9a2"
+      "https://epic-transcript.robyncrane.com/api/jobs/759507de1f74"
     ],
     "screenshots": {
       "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/desktop-initial.png",
@@ -101,7 +101,7 @@
       "w": 390,
       "h": 844,
       "bodyW": 390,
-      "bodyH": 3202,
+      "bodyH": 3308,
       "hasAsync": true,
       "hasJobPoll": true,
       "oldSync": false
@@ -151,28 +151,28 @@
         "copyBtn": {
           "visible": true,
           "left": 37,
-          "top": 2795.3515625,
+          "top": 2901.5703125,
           "width": 72.8828125,
           "height": 40
         },
         "downloadBtn": {
           "visible": true,
           "left": 119.8828125,
-          "top": 2795.3515625,
+          "top": 2901.5703125,
           "width": 62,
           "height": 40
         },
         "downloadMdBtn": {
           "visible": true,
           "left": 191.8828125,
-          "top": 2795.3515625,
+          "top": 2901.5703125,
           "width": 121.3828125,
           "height": 40
         },
         "downloadSrtBtn": {
           "visible": true,
           "left": 37,
-          "top": 2845.3515625,
+          "top": 2951.5703125,
           "width": 60.7109375,
           "height": 40
         }
@@ -182,12 +182,12 @@
       "https://epic-transcript.robyncrane.com/api/setup",
       "https://epic-transcript.robyncrane.com/api/recent?limit=20",
       "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
-      "https://epic-transcript.robyncrane.com/api/jobs/0ee1232456aa"
+      "https://epic-transcript.robyncrane.com/api/jobs/050cf827718e"
     ],
     "screenshots": {
       "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-initial.png",
       "result": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-result.png"
     }
   },
-  "generatedAt": "2026-08-31T15:51:31.512Z"
+  "generatedAt": "2026-08-31T16:00:56.732Z"
 }
