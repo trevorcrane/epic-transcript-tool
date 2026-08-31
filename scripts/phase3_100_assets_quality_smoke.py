@@ -16,6 +16,7 @@ VIDEO = sys.argv[2] if len(sys.argv) > 2 else "https://youtu.be/v34Eg12mhDM?si=l
 OWNER = "phase3-assets-quality-" + secrets.token_hex(12)
 UA = "Mozilla/5.0 Epic Transcript Phase3 Assets Quality Smoke"
 OUT = Path("evidence/phase3-100-assets-quality-report.json")
+RESPONSE_OUT = Path("evidence/phase3-100-assets-quality-response.md")
 
 
 def post(path: str, data: dict[str, str], headers: dict[str, str] | None = None, timeout: int = 120):
@@ -118,6 +119,8 @@ def main() -> int:
         "sample_last_10": numbered[-10:],
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
+    RESPONSE_OUT.write_text(text, encoding="utf-8")
+    report["full_response_path"] = str(RESPONSE_OUT)
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
     return 0

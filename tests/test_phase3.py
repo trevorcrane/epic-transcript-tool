@@ -120,19 +120,25 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
         assert forbidden not in lower
     unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
     assert len(unique_bodies) >= 90
-    covered_indexes = {
-        int(match.group(1))
+    timestamps = [
+        int(match.group(1)) * 60 + int(match.group(2))
         for line in numbered
-        for match in [__import__("re").search(r"Strategy lesson (\d+)", line)]
-        if match
-    }
-    assert len(covered_indexes) >= 45
-    assert any(i <= 10 for i in covered_indexes)
-    assert any(35 <= i <= 55 for i in covered_indexes)
-    assert any(i >= 79 for i in covered_indexes)
+        for match in __import__("re").finditer(r"\[(\d{2}):(\d{2})\]", line)
+    ]
+    assert len(timestamps) == 100
+    assert sum(1 for ts in timestamps if ts <= 900) >= 10
+    assert sum(1 for ts in timestamps if 1800 <= ts <= 3600) >= 10
+    assert sum(1 for ts in timestamps if ts >= 4500) >= 10
+    assert "Strategy lesson" not in text
     assert "Email subject" in text and "Subject:" in text
     assert "CTA" in text and "Get" in text
     assert "Objection reply" in text and "Reply:" in text
+    hooks = [line for line in numbered if "**Hook" in line]
+    hook_stems = {line.split(":", 1)[0] for line in hooks}
+    assert len(hook_stems) == 10
+    subjects = [line for line in numbered if "**Email subject" in line]
+    subject_stems = {line.split("Subject:", 1)[1].split(" - ", 1)[0].strip() for line in subjects}
+    assert len(subject_stems) == 10
 
 
 def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):

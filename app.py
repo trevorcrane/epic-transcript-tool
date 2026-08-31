@@ -1002,6 +1002,39 @@ def _asset_sentence(text: str, max_words: int = 26) -> str:
     return clean[:1].upper() + clean[1:] if clean else "The transcript points to a clear next action."
 
 
+def _asset_takeaway(text: str, index: int) -> str:
+    """Convert rough transcript evidence into a finished, readable takeaway."""
+    lower = text.lower()
+    rules = [
+        (("valuation", "worth", "sde", "multiple"), "Lead with enterprise value. The strongest offer shows how the system grows what the business is worth, not just what the software can do."),
+        (("retain", "retention", "close", "higher rate"), "Position the system as retention and closing leverage. Buyers stay longer when the process keeps producing measurable outcomes."),
+        (("local business", "local businesses", "gym", "fitness"), "Local businesses need a follow-up machine. The opportunity is speed, consistency, and proof after every lead comes in."),
+        (("follow up", "lead", "leads", "customer"), "Speed-to-lead is the wedge. A simple response system can turn missed demand into booked conversations."),
+        (("paid ads", "landing page", "website", "traffic"), "Traffic is only the first step. The offer becomes valuable when the landing page, follow-up, and conversion path work together."),
+        (("referral", "referrals"), "Referrals can become a built-in growth loop. The system should ask, track, and follow up without waiting on manual reminders."),
+        (("portfolio", "agency owners", "roll", "sell"), "Build assets that can survive outside one owner. Repeatable systems make a service business easier to combine, scale, and sell."),
+        (("ai agent", "ai agents", "automation", "automated"), "Do not sell an AI agent as a novelty. Sell the business system it powers and the outcome it can repeat."),
+        (("process", "system", "framework"), "Turn the process into the product. A documented system is easier to sell, fulfill, improve, and delegate."),
+        (("case study", "study", "harvard", "proof"), "Proof sharpens the offer. Use evidence to show why the system matters and why delay costs money."),
+        (("appointment", "meet", "friday", "schedule"), "Make the next step automatic. Confirmations, reminders, and booked appointments protect the revenue path."),
+        (("team", "train", "training"), "The team needs the playbook, not just the tool. Training turns the system from a demo into daily execution."),
+        (("market", "competitor", "competitive"), "Differentiate with the complete operating system. Competitors can copy tools faster than they can copy execution."),
+        (("offer", "service", "sell"), "Sell the outcome package. The offer should make the buyer see the result, the process, and the proof in one motion."),
+    ]
+    for needles, takeaway in rules:
+        if any(n in lower for n in needles):
+            return takeaway
+    fallbacks = [
+        "Package one clear insight into one repeatable action. The asset should make the viewer know what to do next.",
+        "Turn the moment into a simple operating principle. The strongest content makes the process easier to remember and apply.",
+        "Connect the lesson to a measurable business result. Useful content should move from idea to action quickly.",
+        "Make the invisible system visible. The content should show the mechanism behind the result, not just the outcome.",
+        "Use the moment to clarify the buyer's next decision. The asset should reduce confusion and point toward action.",
+        "Frame the lesson as a practical upgrade. The point is not more information, it is a better way to execute.",
+    ]
+    return fallbacks[index % len(fallbacks)]
+
+
 def build_100_content_assets(rec: dict) -> list[str]:
     """Return 100 finished, distinct, timestamp-grounded asset drafts without paid AI."""
     categories = [
@@ -1019,26 +1052,27 @@ def build_100_content_assets(rec: dict) -> list[str]:
         timestamp = point["timestamp"]
         phrase = _asset_phrase(point["text"])
         sentence = _asset_sentence(point["text"])
+        takeaway = _asset_takeaway(point["text"], i)
         if kind == "Hook":
-            body = f"Stop selling isolated tasks. Build the system that makes the result repeat. Grounded at [{timestamp}]: {sentence}"
+            body = f"Stop selling isolated tasks. Build the system that makes the result repeat. {takeaway} [{timestamp}]"
         elif kind == "Short post":
-            body = f"Package the process, not just the service. {sentence} That is how a one-time delivery becomes a repeatable asset. [{timestamp}]"
+            body = f"{takeaway} That is how a one-time delivery becomes a repeatable asset. [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: The system hiding inside this lesson: {phrase[:58]} [{timestamp}]"
+            body = f"Subject: {takeaway.split('.')[0][:76]} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"The big idea: systems make expertise easier to sell, deliver, and retain. Ground it in [{timestamp}]: {sentence}"
+            body = f"The big idea: {takeaway} Use the timestamped moment as the opening proof, then close with one practical next step. [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Script: “Most people miss the system.” Show the [{timestamp}] proof, name the gap around {phrase}, then close: “Build the repeatable path before you scale.”"
+            body = f"Script: “Most people miss the system.” Show the proof at [{timestamp}], explain the business gap, then close with: “Build the repeatable path before you scale.” Takeaway: {takeaway}"
         elif kind == "Carousel slide":
-            body = f"Slide headline: Build the repeatable path. Supporting line: {sentence} Proof point: [{timestamp}]."
+            body = f"Slide headline: Build the repeatable path. Supporting line: {takeaway} Proof point: [{timestamp}]."
         elif kind == "Quote card":
-            body = f"“The value is not the task. The value is the repeatable system behind it.” Source proof: {sentence} [{timestamp}]"
+            body = f"“The value is not the task. The value is the repeatable system behind it.” Context: {takeaway} [{timestamp}]"
         elif kind == "CTA":
-            body = f"Get the next step: audit one process today and turn this lesson into a measurable follow-up asset. Source proof: {sentence} [{timestamp}]"
+            body = f"Get the next step: audit one process today and turn this lesson into a measurable follow-up asset. {takeaway} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: You do not need the whole system finished today. Start with one verified outcome, then document the repeatable step. Source proof: {sentence} [{timestamp}]"
+            body = f"Reply: You do not need the whole system finished today. Start with one verified outcome, then document the repeatable step. {takeaway} [{timestamp}]"
         else:
-            body = f"Repurpose plan: post angle, email angle, and short-clip angle all center on one finished takeaway: {sentence} [{timestamp}]"
+            body = f"Repurpose plan: post angle, email angle, and short-clip angle all center on one finished takeaway. {takeaway} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
