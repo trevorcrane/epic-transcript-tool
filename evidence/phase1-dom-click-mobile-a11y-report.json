@@ -1,10 +1,10 @@
 {
   "base": "https://epic-transcript.robyncrane.com",
   "video_url": "https://www.youtube.com/shorts/1WW76Rz4nqM",
-  "owner": "phase1-dom-click-68d4113c1f9609ec3a38b824",
+  "owner": "phase1-dom-click-4f4c05e0c13952080611fc75",
   "root": {
     "status": 200,
-    "bytes": 47905,
+    "bytes": 48368,
     "url": "https://epic-transcript.robyncrane.com/"
   },
   "dom": {
@@ -94,11 +94,11 @@
   },
   "transcribe_start": {
     "status": 202,
-    "body_head": "{\"ok\":true,\"job\":{\"id\":\"ab7e7036ad6c\",\"status\":\"running\",\"url\":\"https://www.youtube.com/shorts/1WW76Rz4nqM\",\"created_at\":1788193243.65733,\"started_at\":1788193243.657451}}"
+    "body_head": "{\"ok\":true,\"job\":{\"id\":\"4836782f6c4a\",\"status\":\"running\",\"url\":\"https://www.youtube.com/shorts/1WW76Rz4nqM\",\"created_at\":1788193442.651181,\"started_at\":1788193442.651307}}"
   },
   "record": {
-    "job_id": "ab7e7036ad6c",
-    "id": "68a1105cf6d5",
+    "job_id": "4836782f6c4a",
+    "id": "5ece7faf5bb5",
     "title": "HOW TO: Edit with AI in YouTube Shorts",
     "method": "local-whisper",
     "language": "en",

@@ -254,3 +254,12 @@ Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk pe
 - PASS: Phase 3 UI contract smoke was updated for the new `Get Transcript` button label and passed publicly. Rick Astley cached transcript returned 366 words / 61 segments; combined analysis returned 16 outputs / 31,087 chars; Markdown download returned HTTP 200 / 33,103 bytes; ask-question returned 958 chars.
 - PASS: Public production root, stable Netlify review, and immutable Netlify deploy `https://6a95aa18ce55f098dbd49568--epic-transcript-machine-review.netlify.app/` returned HTTP 200 with `Free Video Transcript`, `Machine`, `Get Transcript`, `Choose file`, `downloadVttBtn`, `TXT / MD / SRT / VTT`, theme icons, async job wiring, and analysis wiring. Old `Get Video Transcript`, `FAST · FREE · V3`, and hero phase cards are absent per the corrected visual gate.
 - PASS: Automated suite returned `53 passed in 6.64s`; inline static JavaScript syntax check returned exit 0.
+
+
+### 2026-08-31 visual correction gate evidence
+- Commit under test: `198de6bb39ab2a0ad7537aa1a5620a16d1030b89` before evidence commit. Immutable deploy: `https://6a95aa4dd39478518111db2a--epic-transcript-machine-review.netlify.app`.
+- Visual corrections: `FAST · FREE · V3` / `FAST. FREE. VERSION THREE.` removed; `Get Video Transcript` removed; CTA now says `Get Transcript`; upload box stripped to `Choose file` plus the actual file control; long extension list removed from visible copy; visible version/phase strip removed; theme switch is icon-only (`☀`/`☾`) with accessible labels and persisted `epicTranscriptTheme`; logo mark replaced with the original white-circle audio-wave SVG style from Trevor's reference.
+- Light-mode contrast proof: CDP visual report measured input, upload/status, result card, and transcript text as dark accessible text (`rgb(23, 23, 25)`) in light mode.
+- Browser/mobile screenshots: `evidence/visual-correction-gate/desktop-dark.png`, `desktop-light.png`, `desktop-light-result.png`, `mobile-dark.png`, `mobile-light.png`; report `evidence/visual-correction-gate/report.json` returned `ok=true`.
+- Regression-video proof: public CDP run submitted French regression video `vgIle-XrvQI`, got status `Done`, method `local-whisper`, transcript length `1,578`, and result/transcript dark text in light mode. Browser-mobile acceptance rerun also passed desktop French copy and mobile Shorts copy with no horizontal overflow.
+- Full suite: `53 passed in 5.71s` during post-deploy verification. Phase 1 DOM/mobile/a11y smoke passed, including VTT signed downloads.

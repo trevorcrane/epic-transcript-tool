@@ -382,3 +382,12 @@ Current status: in progress.
 - Browser-local fallback: IMPLEMENTED, pending independent full model execution. UI exposes a browser-only fallback checkbox; code uses `navigator.gpu` for WebGPU when present and Transformers.js WASM when WebGPU is unavailable; disclosure says the file stays on-device and model progress is shown.
 - Phase 3 all outputs: PASS for deterministic starter quality. `scripts/phase3_all_outputs_smoke.py` returned OK with 17/17 outputs, timestamp evidence, disclaimer, copy-ready output, and Markdown download. `content_assets_100` now returns exactly 100 numbered assets and no `starter map` language.
 - Phase 3 long transcript coverage: PASS. `scripts/phase3_long_analysis_smoke.py` against the two-hour record returned 46,253 chars, 16 combined outputs, latest evidence timestamp 7,242 seconds, and Markdown download HTTP 200.
+
+
+### 2026-08-31 visual correction gate evidence
+- Commit under test: `198de6bb39ab2a0ad7537aa1a5620a16d1030b89` before evidence commit. Immutable deploy: `https://6a95aa4dd39478518111db2a--epic-transcript-machine-review.netlify.app`.
+- Visual corrections: `FAST · FREE · V3` / `FAST. FREE. VERSION THREE.` removed; `Get Video Transcript` removed; CTA now says `Get Transcript`; upload box stripped to `Choose file` plus the actual file control; long extension list removed from visible copy; visible version/phase strip removed; theme switch is icon-only (`☀`/`☾`) with accessible labels and persisted `epicTranscriptTheme`; logo mark replaced with the original white-circle audio-wave SVG style from Trevor's reference.
+- Light-mode contrast proof: CDP visual report measured input, upload/status, result card, and transcript text as dark accessible text (`rgb(23, 23, 25)`) in light mode.
+- Browser/mobile screenshots: `evidence/visual-correction-gate/desktop-dark.png`, `desktop-light.png`, `desktop-light-result.png`, `mobile-dark.png`, `mobile-light.png`; report `evidence/visual-correction-gate/report.json` returned `ok=true`.
+- Regression-video proof: public CDP run submitted French regression video `vgIle-XrvQI`, got status `Done`, method `local-whisper`, transcript length `1,578`, and result/transcript dark text in light mode. Browser-mobile acceptance rerun also passed desktop French copy and mobile Shorts copy with no horizontal overflow.
+- Full suite: `53 passed in 5.71s` during post-deploy verification. Phase 1 DOM/mobile/a11y smoke passed, including VTT signed downloads.
