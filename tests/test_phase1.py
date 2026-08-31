@@ -589,6 +589,25 @@ def test_chunked_whisper_offsets_audio_chunks(monkeypatch, tmp_path):
     assert rec["provider_attempts"][-1]["chunks"] == 2
 
 
+def test_unsupported_upload_returns_helpful_exact_supported_formats(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    client = TestClient(app.app)
+
+    res = client.post(
+        "/api/transcribe-upload",
+        data={"owner": "owner-token-unsupported-upload-aaaa"},
+        files={"file": ("not-media.exe", b"not media", "application/octet-stream")},
+    )
+
+    assert res.status_code == 400
+    detail = res.json()["detail"]
+    assert "Unsupported file type: .exe" in detail
+    assert "Upload one of:" in detail
+    for ext in [".aac", ".avi", ".flac", ".m4a", ".md", ".mkv", ".mov", ".mp3", ".mp4", ".ogg", ".opus", ".srt", ".txt", ".vtt", ".wav", ".webm"]:
+        assert ext in detail
+
+
 def test_upload_temp_directory_is_removed_after_processing(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()

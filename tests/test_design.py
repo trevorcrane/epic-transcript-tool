@@ -46,7 +46,8 @@ def test_design_has_dark_presentation_and_light_results_surfaces():
 def test_chatgpt_reference_layout_version_markers():
     html = HTML.read_text()
     assert "Free Video Transcript" in html
-    assert "Generator" in html
+    assert "Machine" in html
+    assert "Generator" not in html
     assert "FAST · FREE · V3" in html
     assert "Get Video Transcript" in html
     assert "Quick and simple. No catch." in html
@@ -54,3 +55,40 @@ def test_chatgpt_reference_layout_version_markers():
     assert "faq-stage" in html
     assert "step-grid" in html
     assert html.index("hero-control") < html.index("How it works") < html.index("Frequently Asked Questions")
+
+
+def test_upload_copy_lists_every_supported_format():
+    html = HTML.read_text()
+    for ext in [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".mp4", ".mov", ".mkv", ".webm", ".avi", ".txt", ".md", ".srt", ".vtt"]:
+        assert ext in html
+    for label in ["MP4", "MOV", "WebM", "MKV", "AVI", "MP3", "M4A", "AAC", "FLAC", "OGG", "OPUS", "WAV", "TXT", "MD", "SRT", "VTT"]:
+        assert label in html
+
+
+def test_reference_faqs_and_theme_toggle_are_present():
+    html = HTML.read_text()
+    for faq in [
+        "How do I transcribe a YouTube video to text?",
+        "How do I download a YouTube transcript?",
+        "Is the YouTube transcript machine free?",
+        "What is a YouTube video transcript?",
+        "What are YouTube subtitles?",
+        "What are YouTube closed captions?",
+        "Why can't I download a transcript directly from YouTube?",
+    ]:
+        assert faq in html
+    assert 'id="themeToggle"' in html
+    assert "toggleTheme" in html
+    assert "data-theme" in html
+
+
+def test_visible_version_phase_status_is_present():
+    html = HTML.read_text()
+    assert 'aria-label="Version and phase status"' in html
+    assert "Version 1 / Phase 1" in html
+    assert "Bulletproof YouTube transcripts" in html
+    assert "Version 2 / Phase 2" in html
+    assert "Any video or audio" in html
+    assert "Version 3 / Phase 3" in html
+    assert "Video intelligence" in html
+    assert html.index("Version 1 / Phase 1") < html.index("Version 2 / Phase 2") < html.index("Version 3 / Phase 3")

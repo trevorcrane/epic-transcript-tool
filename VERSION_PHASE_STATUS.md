@@ -1,63 +1,48 @@
 # EPIC Transcript Machine Version / Phase Status
 
-Updated: 2026-08-31 00:38 EDT
+Updated: 2026-08-31 11:39 EDT
 
 ## Version 1 / Phase 1: Bulletproof YouTube Transcripts
-Status: In release verification.
-
-Done means the public production URL passes the full YouTube matrix, not just a build or localhost test.
+Status: Release-clear for the current public no-login fixture gate.
 
 Current evidence:
 - Public URL: https://epic-transcript.robyncrane.com/
-- Regression video passed publicly with correct title, 1,460 segments, 15,744 words, increasing timestamps, and cache hit.
-- Manual-caption control passed publicly with 61 segments and 366 words.
-- TXT, Markdown, and SRT downloads passed for the regression record.
-- Public no-login access passed after launchd API and tunnel hardening.
-- Public Phase 1 matrix is 8 of 9 release-valid. Latest run completed without Cloudflare 524s after stale Whisper workers were cleared; invalid and unavailable URLs return helpful HTTP 422 guidance.
-- Epic Call IQ-inspired UI redesign is live.
+- Regression video passes publicly with correct title, 1,460 segments, 15,744 words, increasing timestamps, and cache hit.
+- Manual-caption control passes publicly with 61 segments and 366 words.
+- Non-English YouTube, genuine Shorts, two-hour long-video async transcription, downloads, desktop copy-flow, and mobile touch-flow have public pass evidence.
+- Latest 2026-08-31 11:39 EDT Phase 1 health run passed again after API reload.
+- Visible phase cards are now live on the public root and Netlify review page.
 
 Remaining:
-- Replace or prove a release-valid original-language non-English matrix source. Current Despacito public run returns helpful long-video/upload guidance, and earlier cache evidence could return `en-US`, which is not valid non-English evidence.
-- Complete browser copy-flow, mobile touch-flow, and fuller accessibility evidence.
-- Move from iMac plus Cloudflare Tunnel to a hosted durable backend when ready for whole-project final release.
+- Keep monitoring YouTube provider volatility.
+- Move from iMac plus Cloudflare Tunnel to a hosted durable backend after seeded staging passes.
 
 ## Version 2 / Phase 2: Any Video or Audio
-Status: Started.
-
-Done means uploads and technically/legal accessible non-YouTube media work with clear progress, cache, cleanup, copy, TXT, Markdown, and SRT.
+Status: Advanced, not final-release complete.
 
 Current evidence:
-- Uploaded MP3 passed through local Whisper in prior local evidence.
-- Uploaded M4A passed through local Whisper in prior local evidence.
-- Uploaded MP4 passed through local Whisper in prior local evidence.
-- Direct public-media-style URL passed through local Whisper in prior local evidence.
-- Public upload smoke passed again for generated WAV, MP3, and MP4 through `local-whisper` with credible nonempty transcripts after clearing stale orphan Whisper workers.
-- Added reusable public upload gate script: `scripts/phase2_upload_smoke.py`.
-- Hardening added so `yt-dlp`, `ffmpeg`, and local Whisper can be found from launchd's minimal environment using configured env vars or absolute known paths.
+- Public generated WAV, MP3, M4A, MP4, MOV, and WebM uploads pass through local Whisper with repeat-cache and TXT/Markdown/SRT download proof.
+- Public French non-English WAV upload passes through local Whisper.
+- Public generated 31-minute MP3 upload passes with duration metadata.
+- Public supported non-YouTube MP3 URL passes.
+- Cleanup/retention regression and public delete cleanup proof pass.
+- Unsupported upload guidance now lists every supported format publicly.
 
 Remaining:
-- MP4, MOV, WebM, MP3, M4A, WAV full release matrix.
-- 30+ minute recording.
-- Non-English recording.
-- Supported non-YouTube URL.
-- Unsupported URL guidance.
-- Mobile/WebGPU/fallback evidence.
+- Fuller browser UX proof for file upload and unsupported upload handling.
+- Hosted staging verification with seeded cache before DNS cutover.
 
 ## Version 3 / Phase 3: Video Intelligence
-Status: Started in queued backend tests, not public-release complete.
-
-Done means every post-transcript intelligence button produces useful timestamp-cited outputs without hiding or damaging the original transcript.
+Status: Advanced publicly, not final AI-release complete.
 
 Current evidence:
-- Backend analysis route tests are queued for `/api/analyze/{id}`.
-- Expected safeguards are defined: preserve the original transcript, include timestamp evidence, return useful output for all declared analysis types, and allow downloads.
+- Starter intelligence routes and UI are live: summary, action items, all outputs, question answering, copy, and Markdown download.
+- Public UI contract passed again on 2026-08-31 11:39 EDT with 16 combined sections, 13,076 chars, Markdown download HTTP 200, and ask-question output.
+- Long-transcript analysis proof cites beginning, middle, and ending timestamp evidence for the two-hour fixture.
 
 Remaining:
-- Implement the analysis route and make the queued tests active.
-- Wire all intelligence buttons into the UI.
-- Verify long transcript handling.
-- Verify copy/download and repeated analysis cache.
-- Add provider hook for Gemini/LLM only when keys are configured. No billing introduced.
+- Select and approve a free/no-surprise provider path before enabling fuller AI-backed intelligence.
+- Add fuller browser/mobile click proof for intelligence controls.
 
 ## 30-minute loop
 A recurring Hermes cron job is installed:

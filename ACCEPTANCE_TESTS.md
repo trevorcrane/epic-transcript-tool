@@ -62,6 +62,25 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 11:39 EDT.
+
+- Public app root: PASS, HTTP 200, 46,373 bytes, no visitor login.
+- Visible phase cards: PASS on public root, stable Netlify review, and immutable Netlify deploy `6a95a0c3cf34d705f2de4c9d`. Required markers present: `Version 1 / Phase 1`, `Version 2 / Phase 2`, `Version 3 / Phase 3`, `Bulletproof YouTube transcripts`, `Any video or audio`, and `Video intelligence`.
+- Netlify review root: PASS, HTTP 200 at `https://epic-transcript-machine-review.netlify.app` and `https://6a95a0c3cf34d705f2de4c9d--epic-transcript-machine-review.netlify.app`, both with production API base marker.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 49 passed.
+- Public Phase 1 health: PASS. Regression returned 1,460 segments / 15,744 words, cache hit; manual-caption control returned 61 segments / 366 words, cache hit.
+- Public Phase 3 UI contract: PASS. Combined analysis returned 16 sections / 13,076 chars; Markdown download returned HTTP 200 / 13,960 bytes; ask-question returned 784 chars.
+- Unsupported upload guidance: PASS after API reload. `.exe` upload returned HTTP 400 with the exact supported-format list instead of a dead-end error.
+
+Run time: 2026-08-31 11:42 EDT.
+
+- Phase 1 no-Chrome DOM/click/mobile/a11y smoke: PASS. `scripts/phase1_dom_click_mobile_a11y_smoke.py https://epic-transcript.robyncrane.com` fetched the public no-login root with HTTP 200 and 46,321 bytes, verified required DOM IDs and button labels, confirmed URL input uses `type=url` and `inputmode=url`, confirmed upload accept list includes MP4/MOV/WebM/MP3/M4A/WAV/TXT/MD/SRT/VTT, verified JS wiring for submit `preventDefault`, async `/api/transcribe-url-job` plus `/api/jobs/`, old sync URL submit absence, copy button/auto-copy clipboard handlers, TXT/Markdown/SRT click handlers, signed download-link API, and drop-zone touch/click file picker.
+- Mobile/touch/static accessibility contracts: PASS. The same harness verified viewport meta, 760px and 420px mobile breakpoints, single-column URL row, full-width 56px mobile submit button, 58px desktop touch targets for URL/submit, `overflow-x:hidden`, `prefers-reduced-motion`, and `:focus-visible` focus ring.
+- Contrast smoke: PASS. Critical static contrast ratios exceeded 4.5:1: white on dark 19.9, transcript text on light 10.01, primary white on purple 5.85, plain button 17.9, FAQ text 16.57, toast text 16.42.
+- Public copy/download API path: PASS. Genuine Shorts job `5fcdb7daf293` completed with record `9336f51b2f45`, title `HOW TO: Edit with AI in YouTube Shorts`, method `local-whisper`, language `en`, cache hit, 13 segments, 151 words, 887 transcript chars. Copy source was the full transcript payload and signed downloads returned TXT HTTP 200 / 887 bytes, Markdown HTTP 200 / 1,096 bytes, and SRT HTTP 200 / 1,216 bytes. Report saved at `evidence/phase1-dom-click-mobile-a11y-report.json`.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 49 passed.
+- Public Phase 1 matrix: PASS. `python3 scripts/phase1_matrix.py https://epic-transcript.robyncrane.com` returned `all_ok=true` across all 9 cases: regression, control/manual captions, automatic captions, French non-English, Shorts, moderate long cached video, private/unavailable helpful 422, and invalid URL helpful 422.
+
 Run time: 2026-08-31 11:06 EDT.
 
 - Hosted backend seeded-container validation: PASS. A Docker container at `http://127.0.0.1:8091` using a repo-local bind-mounted `/data` volume seeded from `data/transcripts.db` returned `/health` HTTP 200 with `ready: true` and required `missing: []`.
@@ -123,7 +142,7 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 | Markdown download | Regression record | PASS | HTTP 200, 100,829 bytes. |
 | SRT download | Regression record | PASS | HTTP 200, 134,557 bytes. |
 | Mobile layout and touch-flow | Public Chrome mobile emulation 390x844 | PASS | No horizontal overflow. URL, Transcribe, upload, Copy, TXT, Markdown, and SRT controls visible. Mobile submitted genuine Shorts fixture and copied transcript successfully. |
-| Button contrast and accessibility | Automated design tests | PASS smoke | Design tests passed for dark presentation surface, light results workspace, and functional IDs. Full accessibility audit still pending. |
+| Button contrast and accessibility | No-Chrome DOM/mobile/a11y harness plus design tests | PASS smoke | Static contrast checks passed for critical text/control pairs at 5.85:1 or higher; viewport/meta, mobile breakpoints, full-width touch submit, reduced-motion, and visible focus-ring contracts passed. Full screen-reader/manual keyboard audit still pending. |
 
 ## Phase 2 release gate: Any video or audio
 
@@ -217,6 +236,9 @@ Pass criteria:
 - Verbatim quotes are not fabricated.
 
 Current evidence:
+- 2026-08-31 11:43 EDT: added and ran `scripts/phase3_all_outputs_smoke.py` against the public no-login URL. PASS: `/api/analysis-outputs` returned exactly 17 definitions; Rick Astley transcript completed from cache with record `795537aa5f0d`, 366 words, 61 segments; all 17 individual `/api/analyze/{id}` outputs returned useful copy-ready text with `AI-generated` disclaimer and timestamp/evidence markers, including `ask_question` with Trevor context; individual Markdown analysis download returned HTTP 200, `text/markdown`, 907 bytes.
+- 2026-08-31 11:43 EDT: reran public Phase 3 UI/copy/download and long-transcript smokes. PASS: UI contract root HTTP 200 with 46,321 bytes, required controls/IDs present, async transcript, all-output, single-output, ask-question, copy, and download wiring present, old sync path absent. Combined analysis returned 16 outputs / 13,076 copy-ready chars and Markdown download HTTP 200 / 13,960 bytes. Two-hour cached long fixture returned record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, `queued-chunked-local-whisper`, cache hit; combined long analysis returned 16 outputs / 19,106 chars, latest cited timestamp 7,242s, and Markdown download HTTP 200 / 19,106 bytes.
+- 2026-08-31 11:43 EDT: automated suite and Phase 3 smoke script syntax passed: `./.venv/bin/python -m pytest -q` returned 49 passed, and `python3 -m py_compile` passed for `phase3_all_outputs_smoke.py`, `phase3_ui_contract_smoke.py`, `phase3_combined_analysis_smoke.py`, and `phase3_long_analysis_smoke.py`.
 - 2026-08-31 09:32 EDT: added and ran a public no-Chrome UI contract harness for the Phase 3 user flow.
 - Public UI contract: PASS. Required analysis controls and labels are present, async transcript job wiring is present, old synchronous submit wiring is absent, all-outputs and ask-question analysis endpoints are wired, and copy/download wiring is present.
 - Public API proof from the contract harness: PASS. Rick Astley cached transcript returned record `18cc682b7b51`, 366 words, 61 segments. `/api/analyze-all/{id}` returned analysis `b8614a2d6247`, 16 sections, 13,076 chars, `AI-generated` disclaimer, and timestamp evidence. Markdown download returned HTTP 200, 13,960 bytes. Ask-question returned analysis `b72d30a12ad0`, 784 chars.
@@ -229,7 +251,7 @@ Current evidence:
 - Public API proof: PASS starter. Cached control transcript `dQw4w9WgXcQ` returned HTTP 200 with record `2f2b61d2ccf6`, method `native-caption-subtitles`, 366 words, cache hit. `/api/analysis-outputs` returned 17 definitions. All 17 `/api/analyze/{record_id}` calls returned HTTP 200 with useful nonempty text, `AI-generated` disclaimer, and transcript evidence, including `ask_question` with `What should Trevor do with this video?`.
 - Public combined-output proof: PASS starter. `scripts/phase3_combined_analysis_smoke.py https://epic-transcript.robyncrane.com` passed at 2026-08-31 07:07 EDT. Cached control transcript returned record `1f5a2b16abd8`, 366 words, method `native-caption-subtitles`, cache hit. `/api/analyze-all/{id}` returned 16 combined starter outputs, 10,036 copy-ready characters, and analysis ID `bfb7ef1f1bab`. `/api/analysis/bfb7ef1f1bab/download` returned HTTP 200, `text/markdown`, 10,600 bytes.
 - Public long-transcript combined-output proof: PASS starter. `scripts/phase3_long_analysis_smoke.py https://epic-transcript.robyncrane.com` passed at 2026-08-31 07:43 EDT. Async job `c345b34bc0ba` returned record `837a9891f74d` for the two-hour cached fixture with 19,298 words, 1,446 segments, duration 7,244s, method `queued-chunked-local-whisper`, cache hit. `/api/analyze-all/{id}` returned 16 outputs, 19,106 copy-ready characters, latest cited analysis timestamp 7,242s, and analysis ID `8215f62db5fa`. `/api/analysis/8215f62db5fa/download` returned HTTP 200, `text/markdown`, 19,106 bytes.
-- Limit: this is deterministic provider-safe starter intelligence, not the full AI release gate. Fuller AI/provider-backed intelligence quality, mobile interaction proof, and browser click/touch verification remain open. Browser proof is currently blocked by macOS Chrome's `Allow remote debugging?` permission prompt.
+- Limit: this is deterministic provider-safe starter intelligence, not the full AI release gate. Fuller AI/provider-backed intelligence quality remains open until a free/no-surprise LLM/provider option is selected. Current fallback scope is extractive/deterministic: timestamp-cited summaries, ideas, actions, chapters, quotes selected from transcript evidence, content drafts, sales/Trevor-use angles, starter 100-asset map, and question answers grounded in sampled transcript lines. Browser/mobile interaction proof for core transcript copy/download has passed separately; no-Chrome Phase 3 UI contract covers the analysis wiring.
 
 ## Automated quality loop
 

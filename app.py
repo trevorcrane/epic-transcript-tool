@@ -57,6 +57,7 @@ VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi"}
 TEXT_EXTS = {".txt", ".md"}
 SUBTITLE_EXTS = {".srt", ".vtt"}
 ALLOWED_EXTS = AUDIO_EXTS | VIDEO_EXTS | TEXT_EXTS | SUBTITLE_EXTS
+SUPPORTED_UPLOAD_FORMATS = ", ".join(sorted(ALLOWED_EXTS))
 YT_DLP_BINARY_CANDIDATES = [
     Path("/usr/local/bin/yt-dlp"),
     Path("/opt/homebrew/bin/yt-dlp"),
@@ -1120,7 +1121,7 @@ def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = F
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     ext = Path(name).suffix.lower()
     if ext not in ALLOWED_EXTS:
-        raise HTTPException(400, f"Unsupported file type: {ext or '(none)'}")
+        raise HTTPException(400, f"Unsupported file type: {ext or '(none)'}. Upload one of: {SUPPORTED_UPLOAD_FORMATS}.")
     started = time.monotonic()
     work_dir = Path(tempfile.mkdtemp(prefix="epic-upload-"))
     saved = work_dir / f"upload{ext}"
