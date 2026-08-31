@@ -103,6 +103,7 @@ Prior full regression evidence:
 
 ## Test results
 - `./.venv/bin/python -m pytest -q`: passed, 45 tests on 2026-08-31 10:06 EDT.
+- `scripts/phase1_health.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 10:06 EDT. Regression returned HTTP 200, cache hit, 1,460 segments, 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments, 366 words.
 - Hosted-backend spike verification passed on 2026-08-31 10:06 EDT: `docker build -t epic-transcript-machine:hosted-spike .` succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted `/data` created `transcripts.db`.
 - `./.venv/bin/python -m pytest -q`: passed, 44 tests on 2026-08-31 09:32 EDT.
 - `python3 -m py_compile scripts/phase3_ui_contract_smoke.py`: passed on 2026-08-31 09:32 EDT.

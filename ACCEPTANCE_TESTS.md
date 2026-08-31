@@ -66,6 +66,7 @@ Run time: 2026-08-31 10:06 EDT.
 
 - Hosted backend migration spike: PASS. App supports `TRANSCRIPT_DATA_DIR` and `TRANSCRIPT_STATIC_DIR`; `Dockerfile` build succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, required `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted data volume created `transcripts.db`.
 - Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 45 passed.
+- Public Phase 1 health: PASS. Regression returned HTTP 200, cache hit, 1,460 segments, 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments, 366 words.
 
 Run time: 2026-08-31 09:32 EDT.
 
