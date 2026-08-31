@@ -69,10 +69,11 @@ Run time: 2026-08-31 01:34 EDT.
 - Public release checker scripts now send a normal browser-style user agent so Cloudflare does not reject Python urllib checks with 1010.
 - Backend durability step: `com.epic.transcript-api` and `com.epic.transcript-tunnel` are loaded under launchd with KeepAlive.
 - Public Phase 1 health script now accepts a CLI base URL, and the public run passed regression plus manual-caption control.
-- Public Phase 1 bounded scripted matrix now passes all 9 cases. Regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke pass. The stricter two-hour/long-video release gate remains open until a true long source returns a transcript.
+- Public Phase 1 bounded scripted matrix now passes all 9 cases. Regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke pass.
+- The stricter two-hour/long-video release gate now has public pass evidence from 2026-08-31 02:52 EDT: `https://www.youtube.com/watch?v=rwfk91ya81s` started asynchronously with HTTP 202, job `115c983594bd` completed `done`, and record `5919d7b3c99a` returned title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`, method `queued-chunked-local-whisper`, language `en`, duration 7,244 seconds, 13 chunks, 1,446 segments, 19,298 words, cache hit `false`, and credible beginning/ending transcript text. Signed public downloads for that record passed: TXT HTTP 200, 121,979 bytes; Markdown HTTP 200, 127,963 bytes; SRT HTTP 200, 158,972 bytes.
 
 ### Additional Phase 1 cases
-Status: bounded scripted matrix passing in production. Full release gate still open for two-hour/long-video transcription plus browser copy/touch-flow evidence.
+Status: bounded scripted matrix and two-hour/long-video transcription passing in production. Full release gate still open for browser copy/touch-flow evidence.
 
 | Case | URL | Result | Evidence |
 | --- | --- | --- | --- |
@@ -83,7 +84,8 @@ Status: bounded scripted matrix passing in production. Full release gate still o
 | Genuine Shorts URL | `https://www.youtube.com/shorts/SXHMnicI6Pg` plus `https://www.youtube.com/shorts/1WW76Rz4nqM` | PASS | Scripted Shorts fixture returned HTTP 200, `native-caption-automatic_captions`, cache hit, 2 segments, 3 words. Stronger exact Shorts fixture `1WW76Rz4nqM` returns HTTP 200 from cache via `local-whisper`, 13 segments, 151 words. Needs periodic fresh-cache-miss recheck. |
 | Private/unavailable video | `https://www.youtube.com/watch?v=aaaaaaaaaaa` | PASS helpful failure | HTTP 422 with upload guidance. |
 | Invalid URL | `https://not-a-real.example/video` | PASS helpful failure | Public matrix returned HTTP 422 with upload guidance after API reload. |
-| Moderate long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. Does not clear the stricter two-hour/long-video release gate. |
+| Moderate long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. |
+| Two-hour / long video | `https://www.youtube.com/watch?v=rwfk91ya81s` | PASS | Public async job `115c983594bd` completed `done`, record `5919d7b3c99a`, `queued-chunked-local-whisper`, cache miss, 13 chunks, 1,446 segments, 19,298 words, 7,244 seconds, credible start/end transcript. TXT/Markdown/SRT signed downloads returned HTTP 200. |
 | Repeated request confirms a cache hit | Regression and control videos | PASS | Public health script returned cache hit for both. |
 | Copy transcript | UI marker present | Pending browser interaction evidence | Needs direct browser copy-flow verification. |
 | TXT download | Regression record | PASS | HTTP 200, 94,784 bytes. |
@@ -190,22 +192,22 @@ Failure behavior:
 - If a provider fails, continue to the next provider.
 - If the complete pipeline fails, produce a clear alert and retain enough diagnostic information to reproduce it without exposing secrets.
 
-| Two-hour / long video | Fresh 2-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s` | PASS | Public async job returned HTTP 202 in 0.08s, then completed `done` after 2,049.43s using `queued-chunked-local-whisper`; duration 7,244s, 13 chunks, 1,446 timestamped segments, 19,298 words, language `en`, cache miss. |
+| Two-hour / long video | Fresh 2-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s` | PASS | Public async job `115c983594bd` returned HTTP 202, then completed `done` after 2,050.73s using `queued-chunked-local-whisper`; duration 7,244s, 13 chunks, 1,446 timestamped segments, 19,298 words, language `en`, cache miss. |
 
 | Exact French YouTube async fallback | `https://www.youtube.com/watch?v=vgIle-XrvQI` | PASS | Fresh uncached public async job. HTTP 202 start in 0.08s, final done after polling, `language=fr`, `local-whisper`, `cache_hit=false`, 31 segments, 228 words. Provider attempts recorded through metadata, subtitle failures/skips, Gemini unavailable, and local Whisper success. |
 | Genuine Shorts URL | `https://www.youtube.com/shorts/1WW76Rz4nqM` | PASS, cached evidence | HTTP 200 in 3.57s, `local-whisper`, `language=en`, `cache_hit=true`, 13 segments, 151 words. Needs periodic fresh-cache-miss recheck, but the exact genuine Shorts fixture now returns a transcript. |
-| Long-video transcription | Fresh 2-hour fixture `rwfk91ya81s` | PASS | Caption providers failed/blocked, but queued chunked Whisper recovered and saved record `002b65bba5bb`; transcript has credible start and ending around `[02:00:42]`. |
+| Long-video transcription | Fresh 2-hour fixture `rwfk91ya81s` | PASS | Caption providers failed/blocked, but queued chunked Whisper recovered and saved record `5919d7b3c99a`; transcript has credible start and ending around `[02:00:42]`. |
 
 
 ### True two-hour public proof
-Run time: 2026-08-31.
+Run time: 2026-08-31 02:52 EDT.
 
 - URL: `https://www.youtube.com/watch?v=rwfk91ya81s`.
 - Title: `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`.
-- Public async start: HTTP 202 in 0.08s.
-- Job ID: `4985137fae62`.
-- Final job status: `done` after 2,049.43s.
-- Record ID: `002b65bba5bb`.
+- Public async start: HTTP 202.
+- Job ID: `115c983594bd`.
+- Final job status: `done` after 2,050.73s.
+- Record ID: `5919d7b3c99a`.
 - Duration: 7,244s.
 - Method: `queued-chunked-local-whisper`.
 - Language: `en`.
@@ -217,3 +219,4 @@ Run time: 2026-08-31.
 - Progress proof: polling showed download stage, chunked transcription progress from chunk 1 through chunk 12, then saving with 13 / 13 chunks.
 - Credible transcript start: `[00:00] Imagine you're sitting on your couch, munching on popcorn...`.
 - Credible transcript end: `[02:00:42] together.`
+- Download proof: TXT HTTP 200, 121,979 bytes; Markdown HTTP 200, 127,963 bytes; SRT HTTP 200, 158,972 bytes.

@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 02:16 EDT
+Updated: 2026-08-31 02:53 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -8,13 +8,14 @@ Phase 1: Bulletproof YouTube Transcripts. Active gate is production release veri
 ## Version / phase status
 
 ### Version 1 / Phase 1: Bulletproof YouTube transcripts
-Status: Near release-clear. Non-English and genuine Shorts evidence are now passing, but two-hour/long-video transcription and browser copy/touch-flow evidence remain open.
+Status: Near release-clear. Non-English, genuine Shorts, and two-hour/long-video evidence are now passing publicly; browser copy/touch-flow evidence remains open.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
-- Public Phase 1 scripted matrix is now passing against the durable no-login URL for the bounded fixture set: regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke. The stricter two-hour/long-video release gate remains open.
+- Public Phase 1 scripted matrix is now passing against the durable no-login URL for the bounded fixture set: regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents.
 - New non-English production evidence: `https://youtu.be/kv92eqcZVxs`, title `✅ 10 phrases simples en français à apprendre en 1 minute !`, HTTP 200, method `local-whisper`, language `fr`, 2 segments, 37 words, credible French text. First uncached run passed at 2026-08-31 01:34 EDT and repeated matrix run confirmed cache hit.
+- New two-hour public long-video proof: `https://www.youtube.com/watch?v=rwfk91ya81s`, job `115c983594bd`, record `5919d7b3c99a`, title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`, duration 7,244 seconds, HTTP 202 async start then job `done`, method `queued-chunked-local-whisper`, cache miss, 13 audio chunks, 1,446 segments, 19,298 words, language `en`. Native captions, YouTube Transcript API, and yt-dlp subtitles failed/skipped, then chunked local Whisper produced a credible beginning and ending. Public TXT, Markdown, and SRT signed downloads verified HTTP 200.
 
 ### Version 2 / Phase 2: Any video or audio
 Status: Advanced, not release-complete.
@@ -52,11 +53,12 @@ Status: Started in queued backend tests, not public-release complete.
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
 Regression video: `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`
 
-Fresh health run from 2026-08-30 23:24 EDT:
+Fresh health run from 2026-08-31 02:53 EDT:
 - Public root: HTTP 200.
-- Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Public health: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Regression video: HTTP 200, method `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words, language `en`, title `Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)`.
 - Manual-caption control `dQw4w9WgXcQ`: HTTP 200, method `native-caption-subtitles`, cache hit, 61 segments, 366 words, language `en`, title `Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)`.
+- Two-hour fixture `rwfk91ya81s`: public async job `115c983594bd` completed with record `5919d7b3c99a`, method `queued-chunked-local-whisper`, duration 7,244 seconds, 13 chunks, 1,446 segments, 19,298 words, cache hit `false`. Download verification for the new long record: TXT HTTP 200, 121,979 bytes; Markdown HTTP 200, 127,963 bytes; SRT HTTP 200, 158,972 bytes.
 
 Prior full regression evidence:
 - Run 1 and Run 2 both returned HTTP 200.
@@ -71,13 +73,14 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
-- `./.venv/bin/python -m pytest -q`: passed, 32 tests on 2026-08-31 02:16 EDT.
+- `./.venv/bin/python -m pytest -q`: passed, 32 tests on 2026-08-31 02:53 EDT.
 - Public root: HTTP 200, expected app markers present.
-- Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Public health: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public Phase 1 health script now correctly accepts a CLI base URL and passed against `https://epic-transcript.robyncrane.com` for regression and manual-caption control.
-- Public Phase 1 matrix from 2026-08-31 02:16 EDT: all 9 bounded scripted cases passed against `https://epic-transcript.robyncrane.com`, including the new French non-English fixture, genuine Shorts URL, moderate long-video cached transcript, and helpful 422 failures for private/unavailable plus invalid URL. The separate two-hour/long-video release gate remains open.
+- Public Phase 1 matrix from 2026-08-31 02:16 EDT: all 9 bounded scripted cases passed against `https://epic-transcript.robyncrane.com`, including the new French non-English fixture, genuine Shorts URL, moderate long-video cached transcript, and helpful 422 failures for private/unavailable plus invalid URL.
+- Public two-hour/long-video async proof from 2026-08-31 02:52 EDT: job `115c983594bd` returned record `5919d7b3c99a` with HTTP 200 job readback, method `queued-chunked-local-whisper`, 13 chunks, 1,446 segments, 19,298 words, and credible start/end transcript text. Signed TXT, Markdown, and SRT downloads for that long record returned HTTP 200.
 - Public Phase 2 upload smoke from 2026-08-31 02:16 EDT: generated WAV, MP3, M4A, MP4, MOV, and WebM fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
-- Long-video async proof run started at 2026-08-31 02:17 EDT using `scripts/public_long_video_proof.py` against two-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s`. Public API returned HTTP 202 and job `115c983594bd`; background process `proc_1967339b6d9d` is polling for completion.
+- Long-video async proof completed at 2026-08-31 02:52 EDT using `scripts/public_long_video_proof.py` against two-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s`. Public API returned HTTP 202, job `115c983594bd` completed `done`, and record `5919d7b3c99a` returned 1,446 segments and 19,298 words through 13 chunked local-Whisper audio chunks.
 - Backend restore verification from 2026-08-31 01:34 EDT: local `/health` HTTP 200, public `/health` HTTP 200, `com.epic.transcript-api` state `running`, PID 99082.
 - Reusable public Phase 2 upload smoke script expanded at `scripts/phase2_upload_smoke.py`.
 - New targeted regression tests for launchd/minimal-PATH binary resolution passed.
@@ -90,14 +93,14 @@ Prior full regression evidence:
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
 - Browser WebGPU Whisper is not implemented yet. Local server Whisper fallback exists.
-- Phase 1 bounded scripted public matrix is passing, but two-hour/long-video transcription, copy-flow browser interaction, and fuller mobile touch-flow evidence are still needed before calling Version 1 fully release-clear.
+- Phase 1 bounded scripted public matrix and two-hour/long-video transcription are passing, but copy-flow browser interaction and fuller mobile touch-flow evidence are still needed before calling Version 1 fully release-clear.
 - Public API has reloaded the helpful invalid-link behavior. Invalid non-YouTube URL now returns HTTP 422 instead of HTTP 500.
 
 ## Blockers
 - Browser-based copy/touch-flow evidence is blocked by macOS Chrome's `Allow remote debugging?` permission prompt for the browser harness. API and scripted public checks are not blocked.
 
 ## Exact next action
-Poll background process `proc_1967339b6d9d` for the two-hour public async job `115c983594bd`, record pass/fail evidence, then run browser copy-flow and mobile touch-flow verification once Chrome remote-debug permission is available. After that, expand Phase 2 release matrix to longer recordings, non-English recordings, and public non-YouTube media URLs.
+Run browser copy-flow and mobile touch-flow verification once Chrome remote-debug permission is available. In parallel, expand Phase 2 release matrix to longer recordings, non-English recordings, and public non-YouTube media URLs.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
