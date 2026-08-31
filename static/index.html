@@ -399,7 +399,7 @@
     return '';
   }
   const API = detectBase();
-  const RELEASE_VERSION = '3.2.0';
+  const RELEASE_VERSION = '3.2.1';
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -412,7 +412,7 @@
     summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisCopyBtn: $('analysisCopyBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
-    banner: $('banner'),
+    banner: $('banner'), browserLocal: $('browserLocal'),
   };
   let currentRecord = null;
   let currentAnalysis = null;
@@ -622,7 +622,14 @@
         setStatus('Done', 'done');
         renderResult(data.record);
       } catch (serverError) {
-        throw serverError;
+        if (isBrowserWhisperCandidate(file)) {
+          setStatus('Server upload failed, trying private browser transcription...');
+          data = await transcribeInBrowser(file);
+          setStatus('Done', 'done');
+          renderResult(data.record);
+        } else {
+          throw serverError;
+        }
       }
       loadRecent();
       setTimeout(clearStatus, 1200);
@@ -631,6 +638,64 @@
     } finally {
       lockUI(false);
       els.file.value = '';
+    }
+  }
+
+  function isBrowserWhisperCandidate(file) {
+    if (!file || typeof file.name !== 'string') return false;
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    return ['mp3','wav','m4a','aac','flac','ogg','opus','mp4','mov','mkv','webm','avi'].includes(ext)
+      && typeof URL !== 'undefined'
+      && typeof URL.createObjectURL === 'function'
+      && typeof Blob !== 'undefined';
+  }
+
+  async function transcribeInBrowser(file) {
+    setStatus('Loading private browser Whisper model...');
+    const method = (navigator.gpu ? 'browser-whisper-webgpu' : 'browser-whisper-wasm');
+    const mod = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    if (mod.env) {
+      mod.env.allowLocalModels = false;
+      mod.env.backends = mod.env.backends || {};
+      mod.env.backends.onnx = mod.env.backends.onnx || {};
+      mod.env.backends.onnx.wasm = mod.env.backends.onnx.wasm || {};
+      mod.env.backends.onnx.wasm.numThreads = Math.min(4, navigator.hardwareConcurrency || 2);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const makePipeline = async () => {
+        try {
+          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
+            device: navigator.gpu ? 'webgpu' : 'wasm',
+            progress_callback: (progress) => {
+              if (progress && progress.status) setStatus('Browser model: ' + progress.status);
+            }
+          });
+        } catch (_) {
+          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+        }
+      };
+      const transcriber = await makePipeline();
+      setStatus('Transcribing privately in this browser...');
+      const out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5 });
+      const transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
+      if (!transcript) throw new Error('Browser Whisper returned no transcript.');
+      const now = new Date().toISOString();
+      const segment = { start: 0, end: 2, text: transcript };
+      return { record: {
+        id: 'browser-' + Date.now(),
+        source: file.name,
+        title: file.name,
+        method,
+        transcript,
+        segments: [segment],
+        language: 'unknown',
+        browser_only: true,
+        created_at: now,
+        processing_seconds: 0
+      } };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
     }
   }
 

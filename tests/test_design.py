@@ -146,3 +146,14 @@ def test_100_assets_quality_gate_blocks_template_duplication():
     html = HTML.read_text()
     # Design smoke documents that this UI still exposes the currently open Phase 3 gate.
     assert "Create 100 content assets" in html
+
+def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
+    html = HTML.read_text()
+    assert "browserLocal: $('browserLocal')" in html
+    assert 'function isBrowserWhisperCandidate(file)' in html
+    assert 'async function transcribeInBrowser(file)' in html
+    assert 'Xenova/whisper-tiny.en' in html
+    assert 'browser-whisper-webgpu' in html
+    assert 'browser-whisper-wasm' in html
+    assert 'await transcribeInBrowser(file)' in html
+    assert 'Server upload failed, trying private browser transcription' in html
