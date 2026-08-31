@@ -181,6 +181,13 @@ Pass criteria:
 - Generative summaries are clearly distinguished from transcript text.
 - Verbatim quotes are not fabricated.
 
+Current evidence:
+- 2026-08-31 05:56 EDT: Phase 3 starter backend and UI are live on `https://epic-transcript.robyncrane.com/`.
+- Public UI markers: PASS. Root HTML returned HTTP 200 and contains `AI Summary`, `Action Items`, `Download Analysis`, and `/api/analyze/` markers.
+- Backend starter outputs: PASS. `tests/test_phase3.py` covers owner-protected `/api/analyze/{id}`, every declared `ANALYSIS_OUTPUTS` type, original transcript preservation, Markdown analysis download, and migration of an older partial `analyses` table.
+- Public API proof: PASS starter. Cached control transcript `dQw4w9WgXcQ` returned HTTP 200 with 366 words, then `/api/analyze/{record_id}` for `executive_summary` returned HTTP 200 with `analysis_id=4726c426c6b3`, 661 characters, `AI-generated` disclaimer, and timestamp evidence. `/api/analysis/4726c426c6b3/download` returned HTTP 200, `text/markdown`, 661 bytes.
+- Limit: this is deterministic provider-safe starter intelligence, not the full AI release gate. The full UI menu, ask-a-question input, long-transcript intelligence quality, mobile interaction proof, and copy/download proof remain open.
+
 ## Automated quality loop
 
 Tests run:
