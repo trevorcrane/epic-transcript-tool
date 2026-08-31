@@ -560,7 +560,7 @@ def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
             old.unlink(missing_ok=True)
         cmd = base_cmd + extra + [url]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(os.getenv("YT_DLP_AUDIO_TIMEOUT_SECONDS", "45")))
         except subprocess.TimeoutExpired:
             errors.append("audio download timed out")
             continue
@@ -697,7 +697,15 @@ def transcribe_long_youtube_queued(url: str, video_id: str, started: float, work
             attempts.append({"provider": name, "ok": False, "error": str(e)[:240]})
     update_url_job(job_id, stage="download", message="Downloading long-video audio for chunked Whisper", percent=10)
     try:
-        audio = yt_dlp_download_audio(url, work_dir)
+        old_timeout = os.environ.get("YT_DLP_AUDIO_TIMEOUT_SECONDS")
+        os.environ["YT_DLP_AUDIO_TIMEOUT_SECONDS"] = os.getenv("LONG_VIDEO_DOWNLOAD_TIMEOUT_SECONDS", "300")
+        try:
+            audio = yt_dlp_download_audio(url, work_dir)
+        finally:
+            if old_timeout is None:
+                os.environ.pop("YT_DLP_AUDIO_TIMEOUT_SECONDS", None)
+            else:
+                os.environ["YT_DLP_AUDIO_TIMEOUT_SECONDS"] = old_timeout
         chunk_seconds = int(os.getenv("LONG_VIDEO_CHUNK_SECONDS", "600"))
         chunks = split_audio_for_long_transcription(audio, work_dir, chunk_seconds)
         all_segs: list[dict] = []
