@@ -1,6 +1,6 @@
 # EPIC Transcript Machine Version / Phase Status
 
-Updated: 2026-08-31 11:39 EDT
+Updated: 2026-08-31 17:53 EDT
 
 ## Version 1 / Phase 1: Bulletproof YouTube Transcripts
 Status: Release-clear for the current public no-login fixture gate.
@@ -18,7 +18,7 @@ Remaining:
 - Move from iMac plus Cloudflare Tunnel to a hosted durable backend after seeded staging passes.
 
 ## Version 2 / Phase 2: Any Video or Audio
-Status: Advanced, not final-release complete.
+Status: Release-clear on the current public no-login media gate. Hosted durability remains separate.
 
 Current evidence:
 - Public generated WAV, MP3, M4A, MP4, MOV, and WebM uploads pass through local Whisper with repeat-cache and TXT/Markdown/SRT download proof.
@@ -29,7 +29,7 @@ Current evidence:
 - Unsupported upload guidance now lists every supported format publicly.
 
 Remaining:
-- Fuller browser UX proof for file upload and unsupported upload handling.
+- Keep public media/upload watchdog active.
 - Hosted staging verification with seeded cache before DNS cutover.
 
 ## Version 3 / Phase 3: Video Intelligence
@@ -39,15 +39,16 @@ Current evidence:
 - Starter intelligence routes and UI are live: summary, action items, all outputs, question answering, copy, and Markdown download.
 - Public UI contract passed again on 2026-08-31 11:39 EDT with 16 combined sections, 13,076 chars, Markdown download HTTP 200, and ask-question output.
 - Long-transcript analysis proof cites beginning, middle, and ending timestamp evidence for the two-hour fixture.
+- Citation-coverage proof now archives reusable JSON evidence: all 17 outputs include transcript-matching timestamp evidence; `content_assets_100` returns 100 assets with early/middle/late coverage; full suite returns 78 passed.
 
 Remaining:
 - Select and approve a free/no-surprise provider path before enabling fuller AI-backed intelligence.
-- Add fuller browser/mobile click proof for intelligence controls.
+- Add archived JSON report support to the remaining quote-integrity smoke.
 
-## 30-minute loop
+## 10-minute loop
 A recurring Hermes cron job is installed:
 - Job ID: 26ac787743cc
 - Name: EPIC Transcript Machine 30-minute progress loop
-- Schedule: every 30m
+- Schedule: every 10m active sprint cadence
 - Delivery: back to origin chat
 - Purpose: continue implementation, test, update docs, and post a concise progress report every run.

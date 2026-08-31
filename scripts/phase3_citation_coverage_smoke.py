@@ -8,6 +8,7 @@ end of the source instead of recycling one small evidence window.
 from __future__ import annotations
 
 import json
+import argparse
 import re
 import secrets
 import sys
@@ -17,11 +18,13 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://epic-transcript.robyncrane.com"
-VIDEO = sys.argv[2] if len(sys.argv) > 2 else "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD"
+DEFAULT_BASE = "https://epic-transcript.robyncrane.com"
+DEFAULT_VIDEO = "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD"
+BASE = DEFAULT_BASE
+VIDEO = DEFAULT_VIDEO
 OWNER = "phase3-citation-coverage-" + secrets.token_hex(12)
 UA = "Mozilla/5.0 Epic Transcript Phase3 Citation Coverage Smoke"
-OUT = Path("evidence/phase3-citation-coverage-report.json")
+DEFAULT_OUT = Path("evidence/phase3-citation-coverage-report.json")
 STAMP_RE = re.compile(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]")
 NUMBERED_ASSET_RE = re.compile(r"^\d+\. \*\*.+?\*\*", re.MULTILINE)
 
@@ -49,6 +52,21 @@ def as_json(path: str, **kwargs: Any) -> dict[str, Any]:
 def require(cond: bool, message: str) -> None:
     if not cond:
         raise AssertionError(message)
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("base", nargs="?", default=DEFAULT_BASE, help="Public app base URL")
+    parser.add_argument("video", nargs="?", default=DEFAULT_VIDEO, help="YouTube video URL to verify")
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Path to save the JSON proof report")
+    return parser.parse_args(argv)
+
+
+def write_report(report: dict[str, Any], out: Path) -> None:
+    text = json.dumps(report, indent=2) + "\n"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(text, end="")
 
 
 def stamp_to_seconds(match: re.Match[str]) -> int:
@@ -80,7 +98,11 @@ def complete_transcript() -> dict[str, Any]:
     return rec
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    global BASE, VIDEO
+    args = parse_args(argv)
+    BASE = args.base.rstrip("/")
+    VIDEO = args.video
     started = time.monotonic()
     rec = complete_transcript()
     owner = rec.get("owner_token") or OWNER
@@ -173,9 +195,7 @@ def main() -> int:
             "download_content_type": headers.get("Content-Type") or headers.get("content-type"),
         },
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps(report, indent=2))
+    write_report(report, args.out)
     return 0
 
 

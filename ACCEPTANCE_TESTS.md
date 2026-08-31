@@ -62,6 +62,12 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 17:53 EDT, Phase 3 citation-coverage proof archiving.
+
+- Public root and health: PASS. `https://epic-transcript.robyncrane.com/` returned HTTP 200; `/health` returned HTTP 200.
+- Citation-coverage JSON proof archive: PASS. Added `--out` to `scripts/phase3_citation_coverage_smoke.py` and regression coverage in `tests/test_phase3_citation_coverage_smoke_script.py`. Public proof saved to `evidence/phase3-citation-coverage-report.json`: regression record `e2c270141ba5`, 15,744 words, 1,460 segments, method `native-caption-automatic_captions`, cache hit; all 17 outputs checked with transcript-matching timestamp evidence; `content_assets_100` returned 100 assets and 100 unique timestamps from 1s through 1,602s; combined analysis `1ed9f0deaab4` had 337 timestamp citations and Markdown download HTTP 200 / 47,364 bytes.
+- Regression suite: PASS. `py_compile` passed, targeted citation smoke tests returned 2 passed, and full suite returned 78 passed.
+
 Run time: 2026-08-31 17:40 EDT, long-transcript Phase 3 proof archiving.
 
 - Long combined-analysis JSON proof archive: PASS. Added `--out` to `scripts/phase3_long_analysis_smoke.py` with failing-first regression coverage and saved public proof to `evidence/phase3-long-analysis-report.json`. Report proof: cached long record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, combined analysis `9a0a8861c6ee`, 48,828 chars, latest timestamp 7,242s, unauthenticated Markdown download HTTP 403, owner-authenticated Markdown download HTTP 200 / 48,848 bytes.

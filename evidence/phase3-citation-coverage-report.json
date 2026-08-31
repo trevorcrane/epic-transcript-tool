@@ -2,9 +2,9 @@
   "ok": true,
   "base": "https://epic-transcript.robyncrane.com",
   "video_url": "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD",
-  "elapsed_seconds": 4.77,
+  "elapsed_seconds": 6.01,
   "record": {
-    "id": "508da366d525",
+    "id": "e2c270141ba5",
     "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)",
     "method": "native-caption-automatic_captions",
     "language": "en",
@@ -15,97 +15,97 @@
   },
   "outputs_checked": {
     "executive_summary": {
-      "analysis_id": "b7689b431c54",
+      "analysis_id": "274df2ea4a4b",
       "timestamp_count": 15,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "main_ideas": {
-      "analysis_id": "5ceb994cc6fa",
+      "analysis_id": "142aaf1fea85",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "action_items": {
-      "analysis_id": "1560792eeb1f",
+      "analysis_id": "1e123b1f18f7",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "chapters": {
-      "analysis_id": "b972a0d80e1d",
+      "analysis_id": "e9535085d479",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "best_quotes": {
-      "analysis_id": "412801c134c6",
+      "analysis_id": "c0430c37790d",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "stories_examples": {
-      "analysis_id": "ec01b85e6334",
+      "analysis_id": "d76000e4879e",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "content_framework": {
-      "analysis_id": "b91a58144592",
+      "analysis_id": "1b00d4872d9c",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "blog_post": {
-      "analysis_id": "967425a7dd4c",
+      "analysis_id": "b982b4e02b3b",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "newsletter": {
-      "analysis_id": "4e9e3bf357ec",
+      "analysis_id": "280443d083b6",
       "timestamp_count": 13,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "social_posts": {
-      "analysis_id": "60ab9475fbf1",
+      "analysis_id": "3e89c8722844",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "short_form_hooks": {
-      "analysis_id": "49c13df721ed",
+      "analysis_id": "574449a675b8",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "faq": {
-      "analysis_id": "5dcab8d583ec",
+      "analysis_id": "2582568291b2",
       "timestamp_count": 15,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "sales_insights": {
-      "analysis_id": "7cc474e89349",
+      "analysis_id": "482f7af43149",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "objections_answers": {
-      "analysis_id": "a0bf60ccb727",
+      "analysis_id": "57bde20734ad",
       "timestamp_count": 18,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "trevor_use": {
-      "analysis_id": "fab385c48660",
+      "analysis_id": "9b25a767c4c9",
       "timestamp_count": 16,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     },
     "content_assets_100": {
-      "analysis_id": "d4390cb2dd14",
+      "analysis_id": "4631952dec08",
       "timestamp_count": 100,
       "unique_timestamps": 100,
       "matching_transcript_timestamps": 100,
@@ -116,14 +116,14 @@
       "early_middle_late_coverage": true
     },
     "ask_question": {
-      "analysis_id": "78a454e91427",
+      "analysis_id": "874b79f643d8",
       "timestamp_count": 15,
       "unique_timestamps": 6,
       "matching_transcript_timestamps": 6
     }
   },
   "combined": {
-    "analysis_id": "c46c7e033f60",
+    "analysis_id": "1ed9f0deaab4",
     "timestamp_count": 337,
     "download_status": 200,
     "download_bytes": 47364,
