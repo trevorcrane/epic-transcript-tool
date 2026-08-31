@@ -16,7 +16,7 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
     html = HTML.read_text()
     assert "hero-control" in html
     assert html.index('id="url"') < html.index('id="result"')
-    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
+    for required_id in ["form", "url", "grab", "file", "drop", "browserLocal", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
         assert f'id="{required_id}"' in html
 
 
@@ -85,6 +85,20 @@ def test_reference_faqs_and_theme_toggle_are_present():
     assert "localStorage.setItem('epicTranscriptTheme', theme)" in html
     assert ".nav { display:flex; }" in html
     assert ".theme-toggle { min-width:44px; min-height:44px" in html
+
+
+def test_browser_local_whisper_fallback_is_disclosed_and_wired():
+    html = HTML.read_text()
+    assert "Browser-only fallback" in html
+    assert "File stays on this device" in html
+    assert "WebGPU when available" in html
+    assert "WASM when WebGPU is not available" in html
+    assert "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2" in html
+    assert "Xenova/whisper-tiny.en" in html
+    assert "browser-whisper-webgpu" in html
+    assert "browser-whisper-wasm" in html
+    assert "canUseBrowserWhisper" in html
+    assert "transcribeInBrowser" in html
 
 
 def test_visible_version_phase_status_is_present():

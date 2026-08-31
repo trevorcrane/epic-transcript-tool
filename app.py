@@ -1173,13 +1173,70 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
+SOCIAL_URL_HOSTS = {
+    "tiktok.com": "TikTok",
+    "instagram.com": "Instagram",
+    "facebook.com": "Facebook",
+    "fb.watch": "Facebook",
+    "x.com": "X/Twitter",
+    "twitter.com": "X/Twitter",
+}
+
+
+def social_url_guidance(url: str) -> Optional[str]:
+    host = (urlparse(url).hostname or "").lower().removeprefix("www.")
+    for domain, label in SOCIAL_URL_HOSTS.items():
+        if host == domain or host.endswith("." + domain):
+            return f"{label} links often block automatic public downloads. If you have the audio or video file, upload it here and we’ll transcribe it directly. Direct MP3, WAV, M4A, MP4, MOV, WebM, and other public media file URLs are supported when the source allows downloads."
+    return None
+
+
+def transcribe_public_media_url_to_record(url: str, owner_token: str, started: Optional[float] = None) -> dict:
+    started = started or time.monotonic()
+    guidance = social_url_guidance(url)
+    if guidance:
+        raise HTTPException(422, guidance)
+
+    # Phase 2-compatible non-YouTube route. Free only: captions first, then local Whisper if installed.
+    work_dir = Path(tempfile.mkdtemp(prefix="epic-url-"))
+    attempts = []
+    try:
+        meta = yt_dlp_metadata(url)
+        title = meta.get("title") or url
+        try:
+            segs, lang, method = fetch_caption_url_segments(meta)
+            transcript = segments_to_transcript(segs)
+        except Exception as e:
+            attempts.append({"provider": "captions", "ok": False, "error": str(e)[:240]})
+            audio = yt_dlp_download_audio(url, work_dir)
+            segs, lang = transcribe_with_local_whisper(audio)
+            transcript = segments_to_transcript(segs)
+            method = "local-whisper"
+        return save_transcript(source=title, source_kind="url", method=method, transcript=transcript,
+                               duration_seconds=meta.get("duration"), processing_seconds=time.monotonic() - started,
+                               media_id=meta.get("id"), source_url=meta.get("webpage_url") or url,
+                               title=title, creator=meta.get("uploader") or meta.get("channel"), language=lang,
+                               segments=segs, provider_attempts=attempts, owner_token=owner_token)
+    except RuntimeError:
+        # Non-YouTube sources are Phase 2 territory. Keep the error helpful for visitors.
+        raise HTTPException(422, "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route.")
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
 def run_url_job(job_id: str, url: str, owner_token: str) -> None:
     with URL_JOBS_LOCK:
         URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
     try:
-        rec = transcribe_youtube_url_to_record(url, owner_token, started=time.monotonic(), allow_long=True, job_id=job_id)
+        started = time.monotonic()
+        if normalize_youtube_video_id(url):
+            rec = transcribe_youtube_url_to_record(url, owner_token, started=started, allow_long=True, job_id=job_id)
+        else:
+            with URL_JOBS_LOCK:
+                URL_JOBS[job_id].update({"stage": "media_url", "message": "Checking public media URL for captions or audio fallback", "percent": 10})
+            rec = transcribe_public_media_url_to_record(url, owner_token, started=started)
         with URL_JOBS_LOCK:
-            URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time()})
+            URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time(), "percent": 100})
     except HTTPException as e:
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "error", "error": e.detail, "status_code": e.status_code, "finished_at": time.time()})
@@ -1194,8 +1251,6 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     if not re.match(r"^https?://", url, re.IGNORECASE):
         raise HTTPException(400, "URL must start with http:// or https://")
-    if not normalize_youtube_video_id(url):
-        raise HTTPException(400, "Async URL jobs currently support YouTube links only")
     job_id = uuid.uuid4().hex[:12]
     with URL_JOBS_LOCK:
         URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
@@ -1226,32 +1281,8 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
     if video_id:
         return JSONResponse({"ok": True, "record": transcribe_youtube_url_to_record(url, owner_token, started=started)})
 
-    # Phase 2-compatible non-YouTube route. Free only: captions first, then local Whisper if installed.
-    work_dir = Path(tempfile.mkdtemp(prefix="epic-url-"))
-    attempts = []
-    try:
-        meta = yt_dlp_metadata(url)
-        title = meta.get("title") or url
-        try:
-            segs, lang, method = fetch_caption_url_segments(meta)
-            transcript = segments_to_transcript(segs)
-        except Exception as e:
-            attempts.append({"provider": "captions", "ok": False, "error": str(e)[:240]})
-            audio = yt_dlp_download_audio(url, work_dir)
-            segs, lang = transcribe_with_local_whisper(audio)
-            transcript = segments_to_transcript(segs)
-            method = "local-whisper"
-        rec = save_transcript(source=title, source_kind="url", method=method, transcript=transcript,
-                              duration_seconds=meta.get("duration"), processing_seconds=time.monotonic() - started,
-                              media_id=meta.get("id"), source_url=meta.get("webpage_url") or url,
-                              title=title, creator=meta.get("uploader") or meta.get("channel"), language=lang,
-                              segments=segs, provider_attempts=attempts, owner_token=owner_token)
-        return JSONResponse({"ok": True, "record": rec})
-    except RuntimeError:
-        # Non-YouTube sources are Phase 2 territory. Keep the error helpful for visitors.
-        raise HTTPException(422, "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route.")
-    finally:
-        shutil.rmtree(work_dir, ignore_errors=True)
+    return JSONResponse({"ok": True, "record": transcribe_public_media_url_to_record(url, owner_token, started=started)})
+
 
 @app.post("/api/transcribe-upload")
 def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = Form(None)) -> JSONResponse:

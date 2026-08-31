@@ -69,6 +69,8 @@
   body[data-theme='light'] .hero-control { background:rgba(255,255,255,.78); border-color:rgba(0,0,0,.08); }
   body[data-theme='light'] .url-input { color:#171719; background-color:#fff; }
   body[data-theme='light'] .url-input::placeholder { color:#8a8a91; }
+  body[data-theme='light'] .browser-local { color:rgba(23,23,25,.68); }
+  body[data-theme='light'] .browser-local strong { color:#171719; }
   body[data-theme='light'] .step-number { background:#171719; color:#fff; }
   .hero { text-align:center; max-width:960px; margin:0 auto; }
   .eyebrow { display:none; }
@@ -91,6 +93,9 @@
   .drop-zone input[type=file] { display:none; }
   .file-name { color:#ff77bf; font-weight:800; margin-top:6px; }
   .types { display:block; margin-top:6px; font-size:12px; color:rgba(255,255,255,.32); }
+  .browser-local { margin-top:12px; display:flex; align-items:flex-start; gap:10px; color:rgba(255,255,255,.54); font-size:13px; line-height:1.45; }
+  .browser-local input { width:18px; height:18px; margin-top:1px; accent-color:var(--color-pink); }
+  .browser-local strong { color:#fff; }
   .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:block; text-align:center; color:rgba(255,255,255,.35); font-size:14px; }
   .proof-strip span { display:none; }
   .proof-strip::before { content:'Quick and simple. No catch.'; }
@@ -243,6 +248,10 @@
               <div class="file-name" id="fileName"></div>
               <div class="types">MP4 · MOV · WebM · MKV · AVI · MP3 · M4A · AAC · FLAC · OGG · OPUS · WAV · TXT · MD · SRT · VTT</div>
             </label>
+            <label class="browser-local" for="browserLocal">
+              <input id="browserLocal" type="checkbox" />
+              <span><strong>Browser-only fallback:</strong> keep the file on this device and transcribe with Whisper in Chrome. Uses WebGPU when available and WASM when WebGPU is not available. The model may download once and progress is shown here.</span>
+            </label>
           </form>
         </section>
 
@@ -360,7 +369,7 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     form: $('form'), url: $('url'), grab: $('grab'),
-    file: $('file'), drop: $('drop'), fileName: $('fileName'),
+    file: $('file'), drop: $('drop'), fileName: $('fileName'), browserLocal: $('browserLocal'),
     status: $('status'), statusText: $('statusText'),
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
@@ -553,6 +562,65 @@
     if (els.file.files && els.file.files[0]) handleFile(els.file.files[0]);
   });
 
+  function canUseBrowserWhisper(file) {
+    return file && (file.type.startsWith('audio/') || file.type.startsWith('video/') || /\.(mp3|wav|m4a|aac|flac|ogg|opus|mp4|mov|mkv|webm|avi)$/i.test(file.name || ''));
+  }
+
+  function normalizeBrowserWhisperChunks(chunks) {
+    if (!Array.isArray(chunks)) return [];
+    return chunks.map((chunk, i) => {
+      const ts = chunk.timestamp || chunk.timestamps || [i * 5, i * 5 + 4];
+      const start = Array.isArray(ts) && typeof ts[0] === 'number' ? ts[0] : i * 5;
+      const end = Array.isArray(ts) && typeof ts[1] === 'number' ? ts[1] : start + 4;
+      return { start, end, text: (chunk.text || '').trim() };
+    }).filter(seg => seg.text);
+  }
+
+  async function transcribeInBrowser(file) {
+    const hasWebGpu = !!navigator.gpu;
+    const backend = hasWebGpu ? 'WebGPU' : 'WASM';
+    setStatus(`Loading browser Whisper (${backend}). File stays on this device; no server upload for this fallback.`);
+    const mod = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    const { pipeline, env } = mod;
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+    if (env.backends && env.backends.onnx && env.backends.onnx.wasm) {
+      env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/';
+      env.backends.onnx.wasm.proxy = false;
+    }
+    const progress_callback = (progress) => {
+      const pct = typeof progress.progress === 'number' ? ` ${Math.round(progress.progress)}%` : '';
+      const status = progress.status || progress.file || 'Preparing model';
+      setStatus(`Browser Whisper ${backend}: ${status}${pct}`);
+    };
+    const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', { progress_callback });
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      setStatus(`Transcribing locally in Chrome with ${backend}. Keep this tab open.`);
+      const out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+      const segments = normalizeBrowserWhisperChunks(out.chunks);
+      const transcript = segments.length ? segments.map(seg => `[${formatDuration(seg.start)}] ${seg.text}`).join('\n') : (out.text || '').trim();
+      if (!transcript) throw new Error('Browser Whisper finished but produced no text.');
+      return {
+        id: 'browser-' + Date.now().toString(36),
+        source: file.name || 'Browser-only file',
+        title: file.name || 'Browser-only file',
+        source_kind: 'browser-file',
+        method: hasWebGpu ? 'browser-whisper-webgpu' : 'browser-whisper-wasm',
+        language: 'en',
+        transcript,
+        segments,
+        duration_seconds: segments.length ? Math.max(...segments.map(s => s.end || s.start || 0)) : 0,
+        word_count: transcript.split(/\s+/).filter(Boolean).length,
+        cache_hit: false,
+        processing_seconds: 0,
+        browser_only: true
+      };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
   async function handleFile(file) {
     els.fileName.textContent = file.name;
     lockUI(true);
@@ -564,9 +632,18 @@
       const fd = new FormData();
       fd.append('file', file);
       fd.append('owner', ownerToken());
-      const data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
-      setStatus('Done', 'done');
-      renderResult(data.record);
+      let data;
+      try {
+        data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
+        setStatus('Done', 'done');
+        renderResult(data.record);
+      } catch (serverError) {
+        if (!els.browserLocal || !els.browserLocal.checked || !canUseBrowserWhisper(file)) throw serverError;
+        setStatus('Server route failed. Starting browser-only Whisper fallback...');
+        data = { record: await transcribeInBrowser(file) };
+        setStatus('Done in browser-only mode', 'done');
+        renderResult(data.record);
+      }
       loadRecent();
       setTimeout(clearStatus, 1200);
     } catch (e) {
@@ -587,6 +664,22 @@
   });
   function downloadCurrent(format) {
     if (!currentRecord) return;
+    if (currentRecord.browser_only) {
+      const title = currentRecord.title || currentRecord.source || 'browser-transcript';
+      const body = format === 'md'
+        ? `# ${title}\n\nMethod: ${currentRecord.method}\n\n## Transcript\n\n${currentRecord.transcript || ''}\n`
+        : format === 'srt'
+          ? (currentRecord.segments || []).map((seg, i) => `${i + 1}\n${formatDuration(seg.start).padStart(5,'0')},000 --> ${formatDuration(seg.end || seg.start + 2).padStart(5,'0')},000\n${seg.text || ''}\n`).join('\n')
+          : (currentRecord.transcript || '');
+      const blob = new Blob([body], { type: format === 'md' ? 'text/markdown' : 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `epic-transcript-browser.${format}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      showToast('Download ready ✓');
+      return;
+    }
     jfetch('/api/transcripts/' + currentRecord.id + '/download-link?format=' + encodeURIComponent(format), { method: 'POST', headers: ownerHeaders() })
       .then(data => { window.location.href = data.url; })
       .catch(e => showToast('Download failed: ' + e.message, true));
