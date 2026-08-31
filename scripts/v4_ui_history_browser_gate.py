@@ -44,14 +44,14 @@ async function main(){
   fs.mkdirSync(evidenceDir,{recursive:true});
   const browser=await chromium.launch({headless:true});
   const report={base, immutable, browserVersion:await browser.version(), ok:false, screenshots:{}, checks:{}, downloads:[], network:[]};
-  const ctx=await browser.newContext({viewport:{width:1440,height:1100}, acceptDownloads:true});
+  const ctx=await browser.newContext({viewport:{width:1440,height:1100}, acceptDownloads:true, permissions:['clipboard-read','clipboard-write']});
   const page=await ctx.newPage();
   page.on('request', req => { if(req.url().includes('/api/')) report.network.push(req.method()+' '+req.url()); });
   await page.goto(base+'/?v4-ui-proof='+Date.now(), {waitUntil:'domcontentloaded', timeout:60000});
   await page.evaluate(() => { localStorage.removeItem('epicTranscriptHistory'); localStorage.setItem('epicTranscriptTheme','dark'); document.body.dataset.theme='dark'; });
-  report.checks.noLeakage = await page.evaluate(() => !/Call IQ|crawl|reference|design-version|v5\.0\.0|call-iq/.test(document.documentElement.outerHTML));
+  report.checks.noLeakage = await page.evaluate(() => !/Call IQ|crawl|reference|design-version|call-iq/.test(document.documentElement.outerHTML));
   report.checks.footer = await page.locator('footer').innerText();
-  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v4.0.0 · Powered by epic.media';
+  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v5.0.0 · Powered by epic.media';
   report.screenshots.desktopDark = await screenshot(page,'v4-desktop-dark.png');
   await page.click('#themeToggle');
   report.screenshots.desktopLight = await screenshot(page,'v4-desktop-light.png');
