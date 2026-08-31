@@ -727,15 +727,29 @@
           return { transcriber, actualDevice };
         }
       };
-      const browserPipeline = await makePipeline();
-      const transcriber = browserPipeline.transcriber;
+      let browserPipeline = await makePipeline();
+      let transcriber = browserPipeline.transcriber;
       actualDevice = browserPipeline.actualDevice;
       setStatus('Transcribing privately in this browser with ' + actualDevice.toUpperCase() + '...');
-      const out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
-      const transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
+      let out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+      let transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
+      let chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
+      if ((!transcript || !chunks.length) && actualDevice === 'webgpu') {
+        setStatus('WebGPU browser transcript missing timestamps, using private browser WASM...');
+        actualDevice = 'wasm';
+        transcriber = await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+          device: actualDevice,
+          progress_callback: (progress) => {
+            if (progress && progress.status) setStatus('Browser model: ' + progress.status);
+          }
+        });
+        setStatus('Transcribing privately in this browser with WASM...');
+        out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+        transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
+        chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
+      }
       if (!transcript) throw new Error('Browser Whisper returned no transcript.');
       const now = new Date().toISOString();
-      const chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
       const segments = chunks.map((chunk, idx) => {
         const ts = Array.isArray(chunk.timestamp) ? chunk.timestamp : [];
         const start = Number.isFinite(ts[0]) ? ts[0] : idx * 30;

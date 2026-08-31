@@ -52,16 +52,28 @@ async function runOne(browser, mode){
     if(state.status && !statuses.includes(state.status)) statuses.push(state.status);
     if(state.visible || state.status.startsWith('Error:')) break;
   }
+  const screenshot = outPath.replace('.json', `-${mode}.png`);
+  const baseResult = {mode,url,ok:false, elapsedSeconds:(Date.now()-started)/1000, statuses, requests, errors, state, vtt:{path:null, bytes:0, hasWebVtt:false, hasTimestamp:false}, screenshot};
+  await page.screenshot({ path:screenshot, fullPage:true });
+  if (!(state.visible && state.transcript.length>20 && state.method.includes('browser-whisper-'+mode))) {
+    await context.close();
+    return baseResult;
+  }
   const downloadPromise = page.waitForEvent('download', {timeout:15000});
   await page.click('#downloadVttBtn');
-  const download = await downloadPromise;
+  let download;
+  try {
+    download = await downloadPromise;
+  } catch (downloadError) {
+    baseResult.errors.push(String(downloadError));
+    await context.close();
+    return baseResult;
+  }
   const vttPath = outPath.replace('.json', `-${mode}.vtt`);
   await download.saveAs(vttPath);
   const vtt = fs.readFileSync(vttPath, 'utf8');
-  const screenshot = outPath.replace('.json', `-${mode}.png`);
-  await page.screenshot({ path:screenshot, fullPage:true });
   await context.close();
-  return {mode,url,ok:Boolean(state.visible && state.transcript.length>20 && state.method.includes('browser-whisper-'+mode)), elapsedSeconds:(Date.now()-started)/1000, statuses, requests, errors, state, vtt:{path:vttPath, bytes:Buffer.byteLength(vtt), hasWebVtt:vtt.includes('WEBVTT'), hasTimestamp:/00:00:00\.000 --> 00:00:/.test(vtt)}, screenshot};
+  return {...baseResult, ok:true, vtt:{path:vttPath, bytes:Buffer.byteLength(vtt), hasWebVtt:vtt.includes('WEBVTT'), hasTimestamp:/00:00:00\.000 --> 00:00:/.test(vtt)}};
 }
 (async()=>{
   const browser=await chromium.launch({headless:true});
