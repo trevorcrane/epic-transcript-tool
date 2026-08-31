@@ -109,7 +109,7 @@ async function main(){
     const r = await (await browser.newPage()).goto(immutable, {waitUntil:'domcontentloaded', timeout:60000}).catch(e => null);
   }
   await browser.close();
-  report.ok = report.checks.noLeakage && report.checks.footerOk && !report.checks.mobileOverflowDark && !report.checks.mobileOverflowLight && report.regressionTranscript.wordCount > 100 && report.checks.copyOk && report.downloads.length===4 && report.downloads.every(d=>d.bytes>20 && d.hasText && d.hasTimestamp && d.hasWebVtt) && report.history.before.count>=1 && report.history.afterReload>=1 && report.history.afterClear===0 && report.failurePreserve.visible && report.failurePreserve.transcript.includes('transcript');
+  report.ok = report.checks.noLeakage && report.checks.footerOk && !report.checks.mobileOverflowDark && !report.checks.mobileOverflowLight && report.regressionTranscript.wordCount > 100 && report.checks.copyOk && report.downloads.length===4 && report.downloads.every(d=>d.bytes>20 && d.hasText && d.hasTimestamp && d.hasWebVtt) && report.history.before.count>=1 && report.history.afterReload>=1 && report.history.afterClear===0 && report.failurePreserve.visible && report.failurePreserve.transcript.length > 100 && report.failurePreserve.status.includes('forced upload failure');
   fs.writeFileSync(outPath, JSON.stringify(report,null,2));
   console.log(JSON.stringify(report,null,2));
   process.exit(report.ok ? 0 : 2);
