@@ -370,7 +370,7 @@
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   async function transcribeUrlWithJob(url) {
-    const fd = new FormData();
+    const fd = new URLSearchParams();
     fd.append('url', url);
     fd.append('owner', ownerToken());
     setStatus('Preparing transcript job...');
