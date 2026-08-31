@@ -1,7 +1,7 @@
 {
   "public_root": {
     "status": 200,
-    "bytes": 57141,
+    "bytes": 57551,
     "has_stub_guard": true,
     "has_browser_fallback_wiring": true,
     "has_history_storage": true
@@ -17,8 +17,30 @@
     "historyFirstBrowserOnly": true,
     "hasLocalDownloads": true,
     "browser_fallback": true,
+    "downloadProof": {
+      "txt": {
+        "suggestedFilename": "epic-transcript-browser.txt",
+        "bytes": 123,
+        "hasMarker": true
+      },
+      "md": {
+        "suggestedFilename": "epic-transcript-browser.md",
+        "bytes": 201,
+        "hasMarker": true
+      },
+      "srt": {
+        "suggestedFilename": "epic-transcript-browser.srt",
+        "bytes": 156,
+        "hasMarker": true
+      },
+      "vtt": {
+        "suggestedFilename": "epic-transcript-browser.vtt",
+        "bytes": 162,
+        "hasMarker": true
+      }
+    },
     "network": [
-      "http://127.0.0.1:50411/api/transcribe-upload"
+      "http://127.0.0.1:53654/api/transcribe-upload"
     ],
     "viewport": {
       "width": 390,

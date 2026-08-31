@@ -59,7 +59,8 @@ const fs = require('fs');
 const [url, outPath] = process.argv.slice(2);
 (async () => {
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, acceptDownloads: true });
+  const page = await context.newPage();
   const network = [];
   await page.route('**/api/transcribe-upload', async route => {
     network.push(route.request().url());
@@ -102,8 +103,28 @@ const [url, outPath] = process.argv.slice(2);
       browser_fallback: true,
     };
   });
+  const downloadProof = {};
+  for (const [format, selector, marker] of [
+    ['txt', '#downloadBtn', 'Browser fallback proof transcript'],
+    ['md', '#downloadMdBtn', '# browser-fallback-proof.wav'],
+    ['srt', '#downloadSrtBtn', '1\n00:00:00,000 --> 00:00:02,000'],
+    ['vtt', '#downloadVttBtn', 'WEBVTT\n\n00:00:00.000 --> 00:00:02.000'],
+  ]) {
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    await page.click(selector);
+    const download = await downloadPromise;
+    const savePath = `/tmp/epic-browser-fallback-${format}.${format}`;
+    await download.saveAs(savePath);
+    const body = fs.readFileSync(savePath, 'utf8');
+    downloadProof[format] = {
+      suggestedFilename: download.suggestedFilename(),
+      bytes: Buffer.byteLength(body),
+      hasMarker: body.includes(marker),
+    };
+  }
+  proof.downloadProof = downloadProof;
   proof.network = network;
-  proof.viewport = await page.viewportSize();
+  proof.viewport = page.viewportSize();
   await page.screenshot({ path: outPath.replace(/\.json$/, '.png'), fullPage: true });
   await browser.close();
   fs.writeFileSync(outPath, JSON.stringify(proof, null, 2));
@@ -165,6 +186,15 @@ def main() -> None:
     require(history_count >= 1, "browser fallback was not saved to local history")
     require(history_browser_only, "history item was not marked browser-only")
     require(any("/api/transcribe-upload" in url for url in network), "upload route was not attempted before fallback")
+    raw_download_proof = browser_fallback.get("downloadProof")
+    download_proof = raw_download_proof if isinstance(raw_download_proof, dict) else {}
+    for fmt in ("txt", "md", "srt", "vtt"):
+        proof = download_proof.get(fmt) if isinstance(download_proof.get(fmt), dict) else {}
+        require(bool(proof.get("hasMarker")), f"browser-only {fmt} download missing expected marker")
+        require(int(proof.get("bytes") or 0) > 20, f"browser-only {fmt} download was too small")
+    raw_vtt_proof = download_proof.get("vtt")
+    vtt_proof = raw_vtt_proof if isinstance(raw_vtt_proof, dict) else {}
+    require(vtt_proof.get("suggestedFilename") == "epic-transcript-browser.vtt", "browser-only VTT filename mismatch")
 
     report = {"public_root": public_root_report, "browser_fallback": browser_fallback, "evidence": str(OUT)}
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")

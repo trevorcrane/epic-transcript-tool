@@ -12,3 +12,6 @@ def test_phase2_browser_fallback_ui_smoke_exists_and_drives_clickable_stubbed_pa
     assert "browser_fallback" in script
     assert "epicTranscriptHistory" in script
     assert "phase2-browser-fallback-ui-report.json" in script
+    assert "downloadProof" in script
+    assert "WEBVTT" in script
+    assert "epic-transcript-browser.vtt" in script

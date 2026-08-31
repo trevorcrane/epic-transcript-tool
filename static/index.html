@@ -540,6 +540,16 @@
     return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
   }
 
+  function formatSubtitleDuration(secs, decimal) {
+    secs = Math.max(0, Number(secs || 0));
+    const whole = Math.floor(secs);
+    const ms = Math.round((secs - whole) * 1000);
+    const h = Math.floor(whole / 3600);
+    const m = Math.floor((whole % 3600) / 60);
+    const s = whole % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}${decimal}${String(ms).padStart(3,'0')}`;
+  }
+
   async function autoCopy(text) {
     if (!text) return;
     try {
@@ -720,9 +730,9 @@
       const body = format === 'md'
         ? `# ${title}\n\nMethod: ${currentRecord.method}\n\n## Transcript\n\n${currentRecord.transcript || ''}\n`
         : format === 'srt'
-          ? (currentRecord.segments || []).map((seg, i) => `${i + 1}\n${formatDuration(seg.start).padStart(5,'0')},000 --> ${formatDuration(seg.end || seg.start + 2).padStart(5,'0')},000\n${seg.text || ''}\n`).join('\n')
+          ? (currentRecord.segments || []).map((seg, i) => `${i + 1}\n${formatSubtitleDuration(seg.start, ',')} --> ${formatSubtitleDuration(seg.end || seg.start + 2, ',')}\n${seg.text || ''}\n`).join('\n')
           : format === 'vtt'
-            ? 'WEBVTT\n\n' + (currentRecord.segments || []).map((seg) => `${formatDuration(seg.start).padStart(5,'0')}.000 --> ${formatDuration(seg.end || seg.start + 2).padStart(5,'0')}.000\n${seg.text || ''}\n`).join('\n')
+            ? 'WEBVTT\n\n' + (currentRecord.segments || []).map((seg) => `${formatSubtitleDuration(seg.start, '.')} --> ${formatSubtitleDuration(seg.end || seg.start + 2, '.')}\n${seg.text || ''}\n`).join('\n')
             : (currentRecord.transcript || '');
       const blob = new Blob([body], { type: format === 'md' ? 'text/markdown' : (format === 'vtt' ? 'text/vtt' : 'text/plain') });
       const a = document.createElement('a');
