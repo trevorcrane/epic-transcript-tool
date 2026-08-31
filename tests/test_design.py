@@ -122,7 +122,9 @@ def test_owner_ui_history_correction_contract():
     assert 'placeholder="Enter URL..."' in html
     assert "Enter YouTube URL" not in html
     assert 'id="uploadBtn"' in html
+    assert 'role="button" tabindex="0" aria-label="Upload audio, video, or transcript file"' in html
     assert 'aria-label="Upload audio, video, or transcript file"' in html
+    assert "els.drop.addEventListener('keydown'" in html
     assert "drop-zone" not in html
     assert "clearHistoryBtn" in html
     assert "Local to this browser" in html

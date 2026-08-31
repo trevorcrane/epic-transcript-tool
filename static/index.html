@@ -269,7 +269,7 @@
                 <input id="url" class="url-input" type="url" placeholder="Enter URL..." inputmode="url" autocomplete="off" spellcheck="false" />
                 <button id="grab" class="grab-btn" type="submit">Get Transcript</button>
               </div>
-              <label class="upload-mini" id="drop" for="file" aria-label="Upload audio, video, or transcript file" title="Upload">
+              <label class="upload-mini" id="drop" for="file" role="button" tabindex="0" aria-label="Upload audio, video, or transcript file" title="Upload">
                 <span id="uploadBtn" aria-hidden="true">↥</span><span class="sr-only">Choose file</span>
                 <input id="file" type="file" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt" />
               </label>
@@ -581,6 +581,12 @@
   els.drop.addEventListener('click', (e) => {
     if (e.target === els.file) return;
     els.file.click();
+  });
+  els.drop.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      els.file.click();
+    }
   });
   ['dragenter','dragover'].forEach(ev => els.drop.addEventListener(ev, (e) => {
     e.preventDefault();
