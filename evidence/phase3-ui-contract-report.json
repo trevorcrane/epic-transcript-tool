@@ -2,10 +2,10 @@
   "base": "https://epic-transcript.robyncrane.com",
   "video_url": "https://youtu.be/dQw4w9WgXcQ",
   "root_status": 200,
-  "root_bytes": 46321,
+  "root_bytes": 47905,
   "missing_ids": [],
   "button_text": {
-    "grab": "Get Video Transcript",
+    "grab": "Get Transcript",
     "allAnalysisBtn": "All Outputs",
     "analysisCopyBtn": "Copy Analysis",
     "analysisDownloadBtn": "Download Analysis",
@@ -20,10 +20,10 @@
     "analysis_download_wired": true
   },
   "start_status": 202,
-  "job_id": "8708bea09f4c",
+  "job_id": "f673373f3d13",
   "owner_token_returned": true,
   "record": {
-    "id": "f54e34c88b2c",
+    "id": "36a9528c5e69",
     "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
     "method": "native-caption-subtitles",
     "language": "en",
@@ -34,21 +34,21 @@
   },
   "all_outputs_status": 200,
   "all_outputs": {
-    "analysis_id": "f139dcd9ed85",
+    "analysis_id": "c533cda9479c",
     "section_count": 16,
-    "analysis_chars": 13076,
+    "analysis_chars": 31087,
     "has_disclaimer": true,
     "has_timestamp": true
   },
   "download": {
     "status": 200,
     "content_type": "text/markdown; charset=utf-8",
-    "bytes": 13960
+    "bytes": 33103
   },
   "ask_status": 200,
   "ask": {
-    "analysis_id": "282f5b2b5cca",
-    "chars": 784,
+    "analysis_id": "b5ec38ab8a9c",
+    "chars": 958,
     "has_question_context": true
   }
 }

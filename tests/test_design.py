@@ -85,8 +85,10 @@ def test_reference_faqs_and_theme_toggle_are_present():
     assert "toggleTheme" in html
     assert "data-theme" in html
     assert "localStorage.setItem('epicTranscriptTheme', theme)" in html
-    assert ">☀</button>" in html
-    assert "? '☾' : '☀'" in html
+    assert "☀" in html
+    assert "☾" in html
+    assert "theme-toggle .sun" in html
+    assert "theme-toggle .moon" in html
     assert ">☀ Light</button>" not in html
     assert "? '☾ Dark' : '☀ Light'" not in html
     assert ".theme-toggle { min-width:44px; min-height:44px" in html

@@ -8,12 +8,12 @@
   },
   "direct_async_start": {
     "status": 202,
-    "body": "{\"ok\":true,\"job\":{\"id\":\"566c9b18c9a7\",\"status\":\"running\",\"url\":\"https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3\",\"created_at\":1788192042.1465878,\"started_at\":1788192042.146704,\"stage\":\"media_url\",\"message\":\"Checking public media URL for captions or audio fallback\",\"percent\":10}}"
+    "body": "{\"ok\":true,\"job\":{\"id\":\"164760de41a4\",\"status\":\"running\",\"url\":\"https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3\",\"created_at\":1788193293.5274901,\"started_at\":1788193293.527613,\"stage\":\"media_url\",\"message\":\"Checking public media URL for captions or audio fallback\",\"percent\":10}}"
   },
   "direct_async_result": {
-    "job_id": "566c9b18c9a7",
+    "job_id": "164760de41a4",
     "status": "done",
-    "record_id": "125f03b51940",
+    "record_id": "87ea8d8911d4",
     "method": "local-whisper",
     "source_kind": "url",
     "language": "en",
