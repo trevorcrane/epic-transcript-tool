@@ -97,6 +97,8 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 04:42 EDT: added upload duration detection and ran `scripts/phase2_long_upload_smoke.py` against the public no-login API.
+- Public generated 31-minute MP3 upload: PASS, HTTP 200 in 54.50s, method `local-whisper`, duration `1862.0` seconds, language `en`, cache miss, 3 segments, 34 words, credible transcript begins `Epic transcript machine long upload proof...` and includes `[31:00]` continuation text.
 - 2026-08-31 04:06 EDT: added and ran `scripts/phase2_non_english_upload_smoke.py` against the public no-login API.
 - Public generated French WAV upload: PASS, HTTP 200 in 7.78s, method `local-whisper`, language `fr`, cache miss, 2 segments, 22 words, credible French text begins `Bonjour, ceci est un test français...`.
 - French upload TXT download: PASS, signed TXT link for upload record `17acab42e88f` returned HTTP 200, 174 bytes, with French transcript marker.
@@ -128,7 +130,7 @@ Successfully process:
 - Uploaded M4A.
 - Uploaded WAV.
 - Non-English recording. Public French WAV upload passed via local Whisper on 2026-08-31 04:06 EDT.
-- 30+ minute recording.
+- 30+ minute recording. Public generated 31-minute MP3 upload passed via local Whisper on 2026-08-31 04:42 EDT with duration metadata `1862.0` seconds.
 - Supported non-YouTube URL.
 - Unsupported URL with helpful upload guidance.
 - Desktop Chrome.

@@ -578,6 +578,26 @@ def resolve_whisper_binary() -> str:
     return resolve_binary("whisper", "WHISPER_BIN", WHISPER_BINARY_CANDIDATES)
 
 
+def media_duration_seconds(path: Path) -> Optional[float]:
+    """Return media duration via ffprobe when available, without blocking upload transcription."""
+    try:
+        ffmpeg_path = Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES))
+        ffprobe = ffmpeg_path.with_name("ffprobe")
+        ffprobe_bin = str(ffprobe if ffprobe.exists() else "ffprobe")
+        proc = subprocess.run(
+            [ffprobe_bin, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        if proc.returncode != 0:
+            return None
+        duration = float((proc.stdout or "").strip().splitlines()[0])
+        return round(duration, 3) if duration > 0 else None
+    except Exception:
+        return None
+
+
 def parse_whisper_stdout_segments(text: str) -> list[dict]:
     segments = []
     for line in (text or "").splitlines():
@@ -971,7 +991,7 @@ def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = F
         if not transcript.strip():
             raise RuntimeError("Transcript came back empty.")
         rec = save_transcript(source=name, source_kind="upload", method=method, transcript=transcript,
-                              duration_seconds=None, processing_seconds=time.monotonic() - started,
+                              duration_seconds=media_duration_seconds(saved), processing_seconds=time.monotonic() - started,
                               media_id=file_hash, source_url=None, title=name, creator=None,
                               language=lang, segments=segments, owner_token=owner_token)
         return JSONResponse({"ok": True, "record": rec})

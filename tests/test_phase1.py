@@ -492,6 +492,26 @@ def test_local_whisper_adds_ffmpeg_dir_to_subprocess_path(monkeypatch, tmp_path)
     assert segs[0]["text"] == "Hello path"
 
 
+def test_upload_records_media_duration_for_long_recordings(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", lambda path: ([{"start": 0, "end": 3, "text": "long upload spoken words"}], "en"))
+    monkeypatch.setattr(app, "media_duration_seconds", lambda path: 1862.4)
+    client = TestClient(app.app)
+
+    res = client.post(
+        "/api/transcribe-upload",
+        data={"owner": "owner-token-long-upload-aaaaaaaa"},
+        files={"file": ("long-recording.mp3", b"fake audio", "audio/mpeg")},
+    )
+
+    assert res.status_code == 200
+    rec = res.json()["record"]
+    assert rec["source_kind"] == "upload"
+    assert rec["duration_seconds"] == 1862.4
+    assert rec["word_count"] == 4
+
+
 def test_sync_route_still_rejects_long_video_but_async_job_allows_queued_chunks(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
