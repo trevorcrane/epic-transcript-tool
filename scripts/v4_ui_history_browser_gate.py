@@ -51,7 +51,7 @@ async function main(){
   await page.evaluate(() => { localStorage.removeItem('epicTranscriptHistory'); localStorage.setItem('epicTranscriptTheme','dark'); document.body.dataset.theme='dark'; });
   report.checks.noLeakage = await page.evaluate(() => !/Call IQ|crawl|reference|design-version|call-iq/.test(document.documentElement.outerHTML));
   report.checks.footer = await page.locator('footer').innerText();
-  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v5.0.0 · Powered by epic.media';
+  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v4.0.0 · Powered by epic.media';
   report.screenshots.desktopDark = await screenshot(page,'v4-desktop-dark.png');
   await page.click('#themeToggle');
   report.screenshots.desktopLight = await screenshot(page,'v4-desktop-light.png');
