@@ -1,0 +1,46 @@
+{
+  "command": "./.venv/bin/python scripts/hosted_staging_runbook.py http://127.0.0.1:8092 --data-dir evidence/hosted-staging-runbook-data --out evidence/hosted-staging-runbook-smoke-report.json --port 8092 --execute",
+  "container_check": "",
+  "container_left_running": false,
+  "created_at": "2026-08-31T15:46:00-04:00",
+  "db_sha256": "6e0db1c41d476ee036defd4f5882167dcb93344fbbbf6a032a7d0874ca347bd4",
+  "docker_image": "epic-transcript-machine:hosted-staging",
+  "extracted_db": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-runbook-data/transcripts.db",
+  "health": {
+    "http_status": 200,
+    "ready": true,
+    "required_missing": []
+  },
+  "ok": true,
+  "persistent_data_dir": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-runbook-data",
+  "required_media_ids": {
+    "SXHMnicI6Pg": 17,
+    "aircAruvnKk": 17,
+    "dQw4w9WgXcQ": 94,
+    "v34Eg12mhDM": 102
+  },
+  "smoke_ok": true,
+  "smoke_report": "evidence/hosted-staging-runbook-smoke-report.json",
+  "smoke_steps": [
+    {
+      "elapsed_seconds": 32.63,
+      "label": "Version 1 / Phase 1: Bulletproof YouTube transcripts",
+      "ok": true,
+      "phase": "phase1"
+    },
+    {
+      "elapsed_seconds": 12.33,
+      "label": "Version 2 / Phase 2: Any video or audio",
+      "ok": true,
+      "phase": "phase2"
+    },
+    {
+      "elapsed_seconds": 2.64,
+      "label": "Version 3 / Phase 3: Video intelligence",
+      "ok": true,
+      "phase": "phase3"
+    }
+  ],
+  "staging_url": "http://127.0.0.1:8092",
+  "transcript_count": 394
+}

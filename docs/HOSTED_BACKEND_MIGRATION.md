@@ -148,5 +148,6 @@ Current transfer-bundle evidence from 2026-08-31 15:32 EDT:
 
 ## Latest smoke report persistence proof
 
+- 2026-08-31 15:46 EDT: `scripts/hosted_staging_runbook.py` was executed end-to-end locally against Docker staging at `http://127.0.0.1:8092`. It verified/extracted the seed package into `evidence/hosted-staging-runbook-data`, built image `epic-transcript-machine:hosted-staging`, started a detached container with that directory mounted as `/data`, waited for `/health` HTTP 200 with required `missing=[]`, ran Phase 1/2/3 smokes, saved `evidence/hosted-staging-runbook-smoke-report.json`, saved summary `evidence/hosted-staging-runbook-execute-report.json`, and removed the container. Smoke summary: `ok=true`; Phase 1 PASS 32.63s; Phase 2 PASS 12.33s; Phase 3 PASS 2.64s.
 - 2026-08-31 13:53 EDT: `scripts/hosted_staging_smoke.py` was run against the current public product with `--out evidence/hosted-staging-smoke-report.json`. The saved report returned `ok=true`; Phase 1 matrix passed in 24.61s, Phase 2 upload smoke passed in 11.99s, and Phase 3 UI contract passed in 3.44s.
 - 2026-08-31 14:08 EDT: public Phase 1 health still passed after bundle work. Regression returned HTTP 200, cache hit, 1,460 segments / 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments / 366 words. Full suite returned 60 passed.
