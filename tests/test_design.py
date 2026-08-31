@@ -1,16 +1,63 @@
 from pathlib import Path
 
 HTML = Path(__file__).resolve().parents[1] / "static" / "index.html"
+BASELINE = Path(__file__).resolve().parents[1] / "static" / "versions" / "v4-before-call-iq-crawl-20260831-190857.html"
 
 
-def test_v4_design_tokens_are_present():
+def test_v5_restores_pre_redesign_visible_copy_and_order():
     html = HTML.read_text()
+    baseline = BASELINE.read_text()
+    # Baseline DOM/copy/section order stays intact.
+    for required in [
+        "Free Video Transcript",
+        "MACHINE",
+        "Paste a YouTube or public media URL, or upload an audio/video/transcript file.",
+        "Quick and simple. No catch.",
+        "Copy the YouTube URL",
+        "Paste the URL above",
+        "View the YouTube transcript",
+        "Unlock All EPIC Machines",
+        "Frequently Asked Questions (FAQ)",
+    ]:
+        assert required in html
+        assert required in baseline
+    assert html.index('class="hero"') < html.index('id="banner"') < html.index('id="result"') < html.index("Unlock All EPIC Machines") < html.index("Frequently Asked Questions")
+    for forbidden in [
+        "Record. Transcribe. Download.",
+        "Record. Transcribe. Repurpose.",
+        "signal-shell",
+        "transcript-console",
+        "console-proof",
+        "Transcript first. Optional AI helpers stay secondary",
+        "Call IQ",
+        "crawl",
+        "reference",
+        "design-version",
+        "call-iq",
+    ]:
+        assert forbidden not in html
+
+
+def test_v5_allows_only_color_font_version_and_functional_deltas_from_baseline():
+    html = HTML.read_text()
+    baseline = BASELINE.read_text()
+    assert "const RELEASE_VERSION = '5.0.0'" in html
+    assert "const RELEASE_VERSION = '3.2.1'" not in html
+    assert 'EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by' in html
+    assert "@import url('https://fonts.googleapis.com/css2?family=Oswald" in html
+    assert '--font-heading: "Oswald"' in html
+    assert '--font-sans: "Inter", system-ui' in html
+    assert "Avenir Next" not in html
+    assert "--color-bg: #000000" in html
+    assert "--color-bg-raised: #0D0D0F" in html
+    assert "linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%)" in html
     assert "--color-purple: #7b2ff7" in html
     assert "--color-pink: #f107a3" in html
-    assert "linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%)" in html
-    assert "--font-heading: \"Oswald\"" in html
-    assert "--font-sans: \"Inter\", system-ui" in html
-    assert "surface-light" in html
+    assert 'calc(100vw - 36px)' in html
+    assert 'padding:16px 12px 56px' in html
+    assert 'calc(100vw - 48px)' in html
+    assert 'class="hero"' in html and 'class="hero-control"' in html
+    assert html.index('class="hero"') < html.index('class="hero-control"')
 
 
 def test_primary_control_stays_first_viewport_and_functional_ids_remain():
@@ -21,54 +68,80 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
         assert f'id="{required_id}"' in html
 
 
-def test_phase3_video_intelligence_ui_is_wired_to_analysis_api():
+def test_phase3_video_intelligence_ui_is_wired_but_not_claimed_in_hero():
     html = HTML.read_text()
-    assert "AI Summary" in html
-    assert "Action Items" in html
-    assert "All Outputs" in html
-    assert "Ask a question about this transcript" in html
-    for label in ["Main ideas", "Chapters", "Best quotes", "Blog post", "Create 100 content assets"]:
+    for label in ["AI Summary", "Action Items", "All Outputs", "Ask a question about this transcript", "Main ideas", "Chapters", "Best quotes", "Blog post", "Create 100 content assets"]:
         assert label in html
     assert "/api/analyze/" in html
     assert "/api/analyze-all/" in html
     assert "/api/analysis/" in html
-    assert "Copy Analysis" in html
-    assert "Video intelligence" in html
+    hero = html[html.index('<main class="hero"'):html.index('</main>')]
+    assert "Turn it into assets" not in hero
+    assert "Posts and hooks" not in hero
 
 
-def test_design_has_dark_presentation_and_light_results_surfaces():
-    html = HTML.read_text()
-    assert "dark-stage" in html
-    assert "light-stage" in html
-    assert "radial-gradient(circle, rgba(123, 47, 247, 0.18)" in html
-    assert "#f7f6f3" in html
-
-
-def test_v4_layout_version_markers():
-    html = HTML.read_text()
-    assert "Transcript Machine" in html
-    assert "Transcribe. Timestamp." in html
-    assert "Generator" not in html
-    assert "FAST · FREE · V3" not in html
-    assert "Get Transcript" in html
-    assert "Get Video Transcript" not in html
-    assert "Fast transcript in. Clean text out." in html
-    assert "Frequently Asked Questions (FAQ)" in html
-    assert "faq-stage" in html
-    assert "step-grid" in html
-    assert html.index("hero-control") < html.index("How it works") < html.index("Frequently Asked Questions")
-
-
-def test_upload_area_is_minimal_but_keeps_supported_extensions_in_accept_attribute():
+def test_upload_history_footer_contracts_remain():
     html = HTML.read_text()
     for ext in [".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".mp4", ".mov", ".mkv", ".webm", ".avi", ".txt", ".md", ".srt", ".vtt"]:
         assert ext in html
-    assert "Click or drag audio, video, or transcript files here" not in html
-    assert "MP4 · MOV · WebM" not in html
-    assert "Choose file" in html
+    assert 'placeholder="Enter URL..."' in html
+    assert "Enter YouTube URL" not in html
+    assert 'role="button" tabindex="0" aria-label="Upload audio, video, or transcript file"' in html
+    assert "els.drop.addEventListener('keydown'" in html
+    assert "Your Transcript History" in html
+    assert "Local to this browser" in html
+    assert "No cloud sync" in html
+    assert "Clear history" in html
+    assert "https://epic.media" in html
+    for machine in ["Content Machine", "Clip Machine", "Sales Machine", "Story Machine", "Offer Machine", "Follow-Up Machine"]:
+        assert machine in html
+    assert html.count("Coming Soon") >= 6
 
 
-def test_reference_faqs_and_theme_toggle_are_present():
+def test_v5_progress_faq_and_upload_preservation_accessibility():
+    html = HTML.read_text()
+    assert 'id="status" class="status" role="status" aria-live="polite" aria-atomic="true"' in html
+    for faq_id in ['faq-youtube-text', 'faq-download', 'faq-free', 'faq-transcript', 'faq-subtitles', 'faq-captions', 'faq-direct-download']:
+        assert f'id="{faq_id}-button"' in html
+        assert f'aria-controls="{faq_id}-answer"' in html
+        assert f'id="{faq_id}-answer"' in html
+    assert "q.setAttribute('aria-expanded', String(isOpen));" in html
+    assert "a.hidden = !isOpen;" in html
+    assert 'const previousRecord = currentRecord;' in html
+    assert "const previousResultVisible = els.result.classList.contains('show');" in html
+    assert 'restorePreviousResult(previousRecord, previousResultVisible)' in html
+    handle_file = html[html.index('async function handleFile(file) {'):html.index('function isBrowserWhisperCandidate')]
+    assert "els.result.classList.remove('show')" not in handle_file
+
+
+def test_browser_local_whisper_runtime_metadata_and_labels_are_truthful():
+    html = HTML.read_text()
+    assert "browserLocal: $('browserLocal')" in html
+    assert 'function isBrowserWhisperCandidate(file)' in html
+    assert 'async function transcribeInBrowser(file)' in html
+    assert '@xenova/transformers' not in html
+    assert 'Xenova/whisper-tiny.en' not in html
+    assert 'Xenova/whisper-small' not in html
+    assert '@huggingface/transformers@' in html
+    assert 'onnx-community/whisper-tiny' in html
+    assert 'browserWhisperDtype' in html
+    assert "encoder_model: 'fp32'" in html
+    assert "decoder_model_merged: 'q4'" in html
+    assert 'actualDevice' in html
+    assert 'withBrowserWhisperTimeout' in html
+    assert 'browser-whisper-webgpu' in html
+    assert 'browser-whisper-wasm' in html
+    assert 'const browserStartedAt = performance.now();' in html
+    assert 'duration_seconds: duration' in html
+    assert 'processing_seconds: Math.max(0.1' in html
+    assert "wordCount(rec.transcript || '')" in html
+    assert 'words${dur}${proc}' in html
+    assert 'chars${dur}${proc}' not in html
+    assert 'segments: Array.isArray(rec.segments) ? rec.segments : []' in html
+    assert "language: rec.language || ''" in html
+
+
+def test_faqs_and_theme_toggle_are_present():
     html = HTML.read_text()
     for faq in [
         "How do I transcribe a YouTube video to text?",
@@ -88,134 +161,13 @@ def test_reference_faqs_and_theme_toggle_are_present():
     assert "localStorage.setItem('epicTranscriptTheme', theme)" in html
     assert "☀" in html
     assert "☾" in html
-    assert "theme-toggle .sun" in html
-    assert "theme-toggle .moon" in html
-    assert ">☀ Light</button>" not in html
-    assert "? '☾ Dark' : '☀ Light'" not in html
-    assert ".theme-toggle { min-width:44px; min-height:44px" in html
-    assert "body[data-theme='light'] .hero-control" in html
-    assert "body[data-theme='light'] .upload-mini" in html
-    assert "body[data-theme='light'] .status" in html
 
 
-def test_vtt_download_is_available_without_upload_clutter():
+def test_vtt_download_and_owner_headers_are_available():
     html = HTML.read_text()
     assert 'id="downloadVttBtn"' in html
     assert "els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'))" in html
     assert "WEBVTT" in html
-    assert "Browser-only fallback" not in html
-    assert "WebGPU when available" not in html
-    assert "WASM when WebGPU is not available" not in html
-
-
-def test_visible_version_phase_status_is_removed_from_hero():
-    html = HTML.read_text()
-    assert 'aria-label="Version and phase status"' not in html
-    assert "Bulletproof YouTube transcripts: public gate passed." not in html
-    assert "Any video or audio: uploads and public media verified" not in html
-    assert "Video intelligence: starter outputs live" not in html
-
-
-def test_owner_ui_history_correction_contract():
-    html = HTML.read_text()
-    assert "Your Transcript History" in html
-    assert "Recent <span" not in html
-    assert 'placeholder="Enter URL..."' in html
-    assert "Enter YouTube URL" not in html
-    assert 'id="uploadBtn"' in html
-    assert 'role="button" tabindex="0" aria-label="Upload audio, video, or transcript file"' in html
-    assert 'aria-label="Upload audio, video, or transcript file"' in html
-    assert "els.drop.addEventListener('keydown'" in html
-    assert "drop-zone" not in html
-    assert "clearHistoryBtn" in html
-    assert "Local to this browser" in html
-    assert "No cloud sync" in html
-    assert "epicTranscriptHistory" in html
-    assert "saveLocalHistory" in html
-    assert "clearLocalHistory" in html
-    assert "Unlock All EPIC Machines" in html
-    assert html.index('id="result"') < html.index("Unlock All EPIC Machines") < html.index("Frequently Asked Questions")
-    for machine in ["Content Machine", "Clip Machine", "Sales Machine", "Story Machine", "Offer Machine", "Follow-Up Machine"]:
-        assert machine in html
-    assert html.count("Coming Soon") >= 6 or "Tell me when they unlock" in html
-    assert "EPIC Transcript Machine · v<span id=\"releaseVersion\"></span> · Powered by" in html
-    assert "https://epic.media" in html
-    assert "const RELEASE_VERSION" in html
-
-
-def test_owner_ui_source_qc_regressions_are_blocked():
-    html = HTML.read_text()
-    assert ".accent-machine" in html
-    style = html[html.index("<style>"):html.index("</style>")]
-    accent_start = style.index(".accent-machine")
-    assert "-webkit-background-clip:text" in style[accent_start:accent_start + 500]
-    mobile_css = html[html.index("@media (max-width: 760px)"):html.index("@media (max-width: 420px)")]
-    assert ".machine-card-grid" in mobile_css
-    assert "grid-template-columns:repeat(2" in mobile_css
-    assert 'id="drawerHead" role="button" tabindex="0"' in html
-    assert "els.drawerHead.addEventListener('keydown'" in html
-
-
-def test_100_assets_quality_gate_blocks_template_duplication():
-    html = HTML.read_text()
-    # Design smoke documents that this UI still exposes the currently open Phase 3 gate.
-    assert "Create 100 content assets" in html
-
-def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
-    html = HTML.read_text()
-    assert "browserLocal: $('browserLocal')" in html
-    assert 'function isBrowserWhisperCandidate(file)' in html
-    assert 'async function transcribeInBrowser(file)' in html
-    assert 'Xenova/whisper-tiny.en' not in html
-    assert '@xenova/transformers' not in html
-    assert '@huggingface/transformers@' in html
-    assert 'actualDevice' in html
-    assert 'method = requestedDevice ===' not in html
-    assert 'onnx-community/whisper-tiny' in html
-    assert 'Xenova/whisper-small' not in html
-    assert 'browserWhisperDtype' in html
-    assert "encoder_model: 'fp32'" in html
-    assert "decoder_model_merged: 'q4'" in html
-    assert 'withBrowserWhisperTimeout' in html
-    assert 'browser-whisper-webgpu' in html
-    assert 'browser-whisper-wasm' in html
-
-
-def test_v4_design_shell_contract_is_present_without_internal_leakage():
-    html = HTML.read_text()
-    for leaked in ['Call IQ', 'crawl', 'reference', 'design-version', 'v5.0.0', 'call-iq']:
-        assert leaked not in html
-    assert "const RELEASE_VERSION = '4.0.0'" in html
-    assert 'EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by' in html
-    assert 'class="signal-shell"' in html
-    assert 'class="hero-copy"' in html
-    assert 'class="transcript-console"' in html
-    assert 'class="signal-rail"' in html
-    assert 'Public transcript tool' in html
-    assert 'Transcribe. Timestamp. Download.' in html
-    assert html.index('class="hero-copy"') < html.index('class="transcript-console"') < html.index('id="result"')
-    assert '--page-max: 1120px' in html
-    assert 'calc(100vw - 48px)' in html
-    mobile_css = html[html.index('@media (max-width: 420px)'):]
-    assert 'padding:24px 24px 56px' in mobile_css or 'calc(100vw - 48px)' in mobile_css
-    for forbidden in ['FAST · FREE · V3', 'Get Video Transcript', 'Version 1 / Phase 1', 'Version 2 / Phase 2', 'Version 3 / Phase 3', 'Turn it into assets']:
-        assert forbidden not in html
-    assert 'Get Transcript' in html
-    assert 'Optional AI helpers stay secondary while Phase 3 is in review.' in html
-    assert '<strong>03 Downloads</strong>' in html
-
-def test_v4_preserves_transcript_on_file_failures_and_reports_browser_metadata():
-    html = HTML.read_text()
-    assert 'const previousRecord = currentRecord;' in html
-    assert "const previousResultVisible = els.result.classList.contains('show');" in html
-    assert 'restorePreviousResult(previousRecord, previousResultVisible)' in html
-    assert 'function restorePreviousResult' in html
-    assert "els.result.classList.remove('show')" not in html[html.index('async function handleFile(file) {'):html.index('function isBrowserWhisperCandidate')]
-    assert 'setStatus(\'Private browser transcription failed, trying server upload...\')' in html
-    assert 'setStatus(\'Server upload failed, trying private browser transcription...\')' in html
-    assert 'const browserStartedAt = performance.now();' in html
-    assert 'duration_seconds: duration' in html
-    assert 'processing_seconds: Math.max(0.1' in html
-    assert "wordCount(rec.transcript || '')" in html
-    assert 'words${dur}${proc}' in html
-    assert 'chars${dur}${proc}' not in html
+    assert "X-Transcript-Owner" in html
+    assert "/api/transcripts/" in html
+    assert "/download-link?format=" in html
