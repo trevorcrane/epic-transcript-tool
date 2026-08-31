@@ -1,0 +1,71 @@
+{
+  "async_before": {
+    "failure": null,
+    "job_id": "9c625df2a520",
+    "job_status": "done",
+    "ok": true,
+    "payload": {
+      "job": {
+        "created_at": 1788208778.436171,
+        "id": "9c625df2a520",
+        "started_at": 1788208778.436275,
+        "status": "running",
+        "url": "https://youtu.be/dQw4w9WgXcQ"
+      },
+      "ok": true
+    },
+    "poll_payload": {
+      "job": {
+        "created_at": 1788208778.436171,
+        "finished_at": 1788208781.737172,
+        "id": "9c625df2a520",
+        "percent": 100,
+        "record": {
+          "cache_hit": true,
+          "id": "cc44a0eb75e6",
+          "language": "en",
+          "method": "native-caption-subtitles",
+          "segment_count": 61,
+          "word_count": 366
+        },
+        "started_at": 1788208778.436275,
+        "status": "done",
+        "url": "https://youtu.be/dQw4w9WgXcQ"
+      },
+      "ok": true
+    },
+    "poll_status": 200,
+    "record": {
+      "cache_hit": true,
+      "id": "cc44a0eb75e6",
+      "method": "native-caption-subtitles",
+      "segment_count": 61,
+      "word_count": 366
+    },
+    "start_status": 202
+  },
+  "base_url": "https://epic-transcript.robyncrane.com",
+  "health_before": {
+    "failure": null,
+    "ok": true,
+    "payload": {
+      "ok": true,
+      "setup": {
+        "gemini_configured": false,
+        "local_whisper": true,
+        "missing": [],
+        "optional_missing": [
+          "SMTP config (Email to Me)",
+          "GEMINI_API_KEY"
+        ],
+        "owner_email": "",
+        "ready": true
+      }
+    },
+    "status": 200
+  },
+  "ok": true,
+  "restarted": false,
+  "started": "2026-08-31 16:39:38 EDT",
+  "video_url": "https://youtu.be/dQw4w9WgXcQ"
+}
