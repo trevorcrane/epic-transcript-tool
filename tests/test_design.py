@@ -166,6 +166,10 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert 'function isBrowserWhisperCandidate(file)' in html
     assert 'async function transcribeInBrowser(file)' in html
     assert 'Xenova/whisper-tiny.en' not in html
+    assert '@xenova/transformers' not in html
+    assert '@huggingface/transformers@' in html
+    assert 'actualDevice' in html
+    assert 'method = requestedDevice ===' not in html
     assert 'Xenova/whisper-small' in html
     assert 'browser-whisper-webgpu' in html
     assert 'browser-whisper-wasm' in html
@@ -173,6 +177,7 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert 'await transcribeInBrowser(file)' in html.split("jfetch('/api/transcribe-upload'", 1)[0]
     assert 'return_timestamps: true' in html
     assert 'chunks.map' in html
+    assert 'device: actualDevice' in html
     assert 'const segment = { start: 0, end: 2, text: transcript }' not in html
     assert 'Server upload failed, trying private browser transcription' in html
     assert 'window.__EPIC_BROWSER_WHISPER_TEST_STUB' in html

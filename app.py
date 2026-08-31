@@ -1044,34 +1044,35 @@ def build_100_content_assets(rec: dict) -> list[str]:
     points = _asset_evidence_points(rec, 100)
     assets = [
         "## Create 100 content assets",
-        "Each item is a finished draft built from the cited transcript excerpt. The citation supports the claim because the source excerpt is included in the asset itself.",
+        "Each item is an audience-ready draft built from the cited transcript excerpt. The exact source excerpt is included after each asset so citation support can be checked directly.",
     ]
     for i, point in enumerate(points, 1):
         kind = categories[(i - 1) // 10]
         slot = ((i - 1) % 10) + 1
         timestamp = point["timestamp"]
         excerpt = _asset_sentence(point["text"], max_words=34)
-        short_excerpt = _asset_phrase(point["text"], max_words=12)
+        short_excerpt = _asset_phrase(point["text"], max_words=12).rstrip(" ,;:")
+        takeaway = _asset_takeaway(point["text"], i)
         if kind == "Hook":
-            body = f"Hook angle {slot}: Lead with this transcript moment: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Hook {slot}: Stop losing the lesson hiding in plain sight. {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Short post":
-            body = f"Short post {slot}: {excerpt} Use this as the main point and ask what the viewer should do with it next. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Short post {slot}: The practical takeaway is this: {excerpt} Fix that moment before adding another layer to the system. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: {slot}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Subject: The part worth fixing now: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"Newsletter angle {slot}: Open with the problem or insight stated here, then unpack only what this moment supports. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Newsletter angle {slot}: {takeaway} The story starts with this proof point: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Reel script {slot}: Open by repeating the source idea, show the on-screen timestamp, then explain this exact moment in one practical step. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reel script {slot}: Start with the visible proof point. {excerpt} Then connect it to the business result in one clear sentence. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"Carousel slide {slot}: Headline from source: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Carousel slide {slot}: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
-            body = f"Quote-card takeaway {slot}: Feature this as a paraphrased lesson, not a verbatim quote. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Quote-card takeaway {slot}: {takeaway} Ground it with this moment: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
-            body = f"CTA {slot}: Get the next step from this exact transcript moment and decide the action it implies. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"CTA {slot}: Get one concrete next step from this evidence and apply it before adding another tool. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: {slot}: If someone challenges the point, answer only with the evidence in this moment. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reply: {slot}: This is not optional if the transcript shows the moment clearly: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle {slot}: LinkedIn angle: teach this moment. Email angle: summarize this moment. Clip angle: play this timestamp. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: {excerpt} Clip caption: The proof point starts at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 

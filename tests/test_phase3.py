@@ -142,7 +142,7 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
     assert len(numbered) == 100
     lower = text.lower()
-    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator"]:
+    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator", "lead with this transcript moment", "use this as the main point", "open by repeating", "teach this moment", "summarize this moment", "play this timestamp", "headline from source", "source idea"]:
         assert forbidden not in lower
     unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
     assert len(unique_bodies) >= 90
@@ -182,6 +182,9 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     subjects = [line for line in numbered if "**Email subject" in line]
     subject_stems = {line.split("Subject:", 1)[1].split(" - ", 1)[0].strip() for line in subjects}
     assert len(subject_stems) == 10
+    assert all(len(line.split("Subject:", 1)[1].split("Source excerpt:", 1)[0].strip().split()) >= 6 for line in subjects)
+    hooks = [line for line in numbered if "**Hook" in line]
+    assert all("Source excerpt:" in line and line.split(" - ", 1)[1].split("Source excerpt:", 1)[0].strip().endswith((".", "?", "!")) for line in hooks)
 
 
 def test_phase3_100_assets_do_not_attach_unrelated_claims_to_citations(monkeypatch, tmp_path):
