@@ -2,9 +2,9 @@
   "ok": true,
   "base": "https://epic-transcript.robyncrane.com",
   "video_url": "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD",
-  "elapsed_seconds": 2.69,
+  "elapsed_seconds": 3.84,
   "record": {
-    "id": "f4b5910bf10d",
+    "id": "40012499b7f1",
     "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)",
     "method": "native-caption-automatic_captions",
     "language": "en",
@@ -13,7 +13,7 @@
     "duration_seconds": 1605.0,
     "cache_hit": true
   },
-  "analysis_id": "a76c611aca03",
+  "analysis_id": "07cfc69ac61d",
   "output_type": "content_assets_100",
   "analysis_chars": 23934,
   "asset_count": 100,
