@@ -516,11 +516,13 @@ def youtube_transcript_api_segments(video_id: str) -> tuple[list[dict], str]:
     return segments, getattr(fetched, "language_code", None) or "unknown"
 
 
-def yt_dlp_grab_caption_segments(url: str, work_dir: Path) -> tuple[list[dict], str]:
+def yt_dlp_grab_caption_segments(url: str, work_dir: Path, language: Optional[str] = None) -> tuple[list[dict], str]:
     out_template = str(work_dir / "captions.%(ext)s")
-    cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--no-warnings", "--skip-download", "--write-sub", "--write-auto-sub", "--sub-format", "vtt/srt/best", "--sub-langs", "all", "-o", out_template, url]
+    base = language_base(language)
+    sub_langs = f"{base}-orig,{base}" if base else "all"
+    cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--no-warnings", "--skip-download", "--write-sub", "--write-auto-sub", "--sub-format", "vtt/srt/best", "--sub-langs", sub_langs, "-o", out_template, url]
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+        subprocess.run(cmd, capture_output=True, text=True, timeout=12)
     except subprocess.TimeoutExpired:
         raise RuntimeError("yt-dlp subtitle extraction timed out")
     candidates = list(work_dir.glob("captions*.vtt")) + list(work_dir.glob("captions*.srt"))
@@ -586,13 +588,13 @@ def parse_whisper_stdout_segments(text: str) -> list[dict]:
     return segments
 
 
-def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = None) -> tuple[list[dict], str]:
+def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = None, model: Optional[str] = None, timeout: Optional[int] = None) -> tuple[list[dict], str]:
     whisper_bin = resolve_whisper_binary()
     out_dir = Path(tempfile.mkdtemp(prefix="epic-whisper-out-"))
-    cmd = [whisper_bin, str(input_path), "--model", os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
+    cmd = [whisper_bin, str(input_path), "--model", model or os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
     if language:
         cmd += ["--language", language]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")))
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")))
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "Local Whisper transcription failed")
     files = list(out_dir.glob("*.vtt"))
@@ -626,7 +628,7 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
     providers = [
         ("native-caption-extractor", lambda: fetch_caption_url_segments(meta)),
         ("youtube-transcript-api", lambda: youtube_transcript_api_segments(video_id)),
-        ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir)),
+        ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir, meta.get("language") or meta.get("original_language") or meta.get("default_language"))),
         ("gemini-youtube", lambda: transcribe_with_gemini_youtube(url)),
     ]
     for name, fn in providers:
@@ -651,7 +653,9 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
 
     try:
         audio_path = yt_dlp_download_audio(url, work_dir)
-        segs, lang = transcribe_with_local_whisper(audio_path)
+        expected_lang = infer_expected_language(meta)
+        whisper_model = os.getenv("YOUTUBE_WHISPER_MODEL", "tiny") if expected_lang else None
+        segs, lang = transcribe_with_local_whisper(audio_path, language=expected_lang, model=whisper_model, timeout=int(os.getenv("YOUTUBE_WHISPER_TIMEOUT_SECONDS", "35")))
         transcript = segments_to_transcript(segs)
         attempts.append({"provider": "local-whisper", "ok": True, "segments": len(segs), "words": transcript_word_count(transcript)})
         return save_transcript(source=title, source_kind="youtube", method="local-whisper", transcript=transcript,

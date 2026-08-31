@@ -384,3 +384,28 @@ def test_local_whisper_falls_back_to_stdout_when_vtt_missing(monkeypatch, tmp_pa
     segs, lang = app.transcribe_with_local_whisper(audio)
     assert lang == "fr"
     assert segs == [{"start": 0.0, "end": 2.0, "text": "Bonjour depuis stdout"}]
+
+
+def test_youtube_audio_fallback_passes_language_hint_and_tiny_model(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    calls = {}
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"id":"french12345", "title":"French short", "duration": 95, "language":"fr", "webpage_url": url})
+    monkeypatch.setattr(app, "fetch_caption_url_segments", lambda meta: (_ for _ in ()).throw(RuntimeError("captions blocked")))
+    monkeypatch.setattr(app, "youtube_transcript_api_segments", lambda video_id: (_ for _ in ()).throw(RuntimeError("transcript api blocked")))
+    monkeypatch.setattr(app, "yt_dlp_grab_caption_segments", lambda url, work_dir, language=None: (_ for _ in ()).throw(RuntimeError(f"yt-dlp captions blocked {language}")))
+    monkeypatch.setattr(app, "yt_dlp_download_audio", lambda url, work_dir: tmp_path / "audio.mp3")
+    def fake_whisper(path, language=None, model=None, timeout=None):
+        calls.update({"language": language, "model": model, "timeout": timeout})
+        return [{"start": 0, "end": 2, "text": "Bonjour le monde"}], "fr"
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", fake_whisper)
+    client = TestClient(app.app)
+    res = client.post("/api/transcribe-url", data={"url":"https://youtu.be/french12345", "owner":"owner-token-french12345-abcdefghijkl"})
+    assert res.status_code == 200
+    rec = res.json()["record"]
+    assert rec["language"] == "fr"
+    assert rec["method"] == "local-whisper"
+    assert calls["language"] == "fr"
+    assert calls["model"] == "tiny"
+    assert calls["timeout"] == 35
+    assert any(a["provider"] == "yt-dlp-subtitles" and "fr" in a["error"] for a in rec["provider_attempts"])
