@@ -1,0 +1,132 @@
+{
+  "ok": true,
+  "base": "https://epic-transcript.robyncrane.com",
+  "video_url": "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD",
+  "elapsed_seconds": 4.77,
+  "record": {
+    "id": "508da366d525",
+    "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)",
+    "method": "native-caption-automatic_captions",
+    "language": "en",
+    "word_count": 15744,
+    "segment_count": 1460,
+    "cache_hit": true,
+    "duration_seconds": 1605.0
+  },
+  "outputs_checked": {
+    "executive_summary": {
+      "analysis_id": "b7689b431c54",
+      "timestamp_count": 15,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "main_ideas": {
+      "analysis_id": "5ceb994cc6fa",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "action_items": {
+      "analysis_id": "1560792eeb1f",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "chapters": {
+      "analysis_id": "b972a0d80e1d",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "best_quotes": {
+      "analysis_id": "412801c134c6",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "stories_examples": {
+      "analysis_id": "ec01b85e6334",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "content_framework": {
+      "analysis_id": "b91a58144592",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "blog_post": {
+      "analysis_id": "967425a7dd4c",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "newsletter": {
+      "analysis_id": "4e9e3bf357ec",
+      "timestamp_count": 13,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "social_posts": {
+      "analysis_id": "60ab9475fbf1",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "short_form_hooks": {
+      "analysis_id": "49c13df721ed",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "faq": {
+      "analysis_id": "5dcab8d583ec",
+      "timestamp_count": 15,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "sales_insights": {
+      "analysis_id": "7cc474e89349",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "objections_answers": {
+      "analysis_id": "a0bf60ccb727",
+      "timestamp_count": 18,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "trevor_use": {
+      "analysis_id": "fab385c48660",
+      "timestamp_count": 16,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    },
+    "content_assets_100": {
+      "analysis_id": "d4390cb2dd14",
+      "timestamp_count": 100,
+      "unique_timestamps": 100,
+      "matching_transcript_timestamps": 100,
+      "asset_count": 100,
+      "duration_seconds": 1605,
+      "earliest_timestamp": 1,
+      "latest_timestamp": 1602,
+      "early_middle_late_coverage": true
+    },
+    "ask_question": {
+      "analysis_id": "78a454e91427",
+      "timestamp_count": 15,
+      "unique_timestamps": 6,
+      "matching_transcript_timestamps": 6
+    }
+  },
+  "combined": {
+    "analysis_id": "c46c7e033f60",
+    "timestamp_count": 337,
+    "download_status": 200,
+    "download_bytes": 47364,
+    "download_content_type": "text/markdown; charset=utf-8"
+  }
+}

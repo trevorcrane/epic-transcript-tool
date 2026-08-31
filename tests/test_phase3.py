@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 import app
@@ -58,6 +60,30 @@ def test_phase3_all_declared_outputs_return_useful_text(monkeypatch, tmp_path):
         body = text.split("## Transcript evidence", 1)[-1]
         assert body not in seen_bodies, output_type
         seen_bodies.add(body)
+
+
+def test_phase3_each_output_uses_timestamped_transcript_citations(monkeypatch, tmp_path):
+    rec = seed_record(tmp_path, monkeypatch)
+    client = TestClient(app.app)
+    transcript_stamps = {int(seg["start"]) for seg in rec["segments"]}
+    stamp_re = re.compile(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]")
+
+    def to_seconds(match):
+        a, b, c = match.groups()
+        return int(a) * 60 + int(b) if c is None else int(a) * 3600 + int(b) * 60 + int(c)
+
+    for output_type in app.ANALYSIS_OUTPUTS:
+        res = client.post(
+            f"/api/analyze/{rec['id']}",
+            data={"output_type": output_type, "question": "What should Trevor do?"},
+            headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+        )
+        assert res.status_code == 200, output_type
+        text = res.json()["analysis"]
+        citations = [to_seconds(match) for match in stamp_re.finditer(text)]
+        assert citations, output_type
+        assert any(ts in transcript_stamps for ts in citations), output_type
+        assert "AI-generated from the transcript" in text, output_type
 
 
 def test_phase3_create_100_content_assets_returns_100_assets(monkeypatch, tmp_path):
