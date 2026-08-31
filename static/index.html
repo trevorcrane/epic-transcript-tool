@@ -931,7 +931,7 @@
   function saveLocalHistory(rec) {
     if (!rec || !(rec.id || rec.source)) return;
     const items = loadLocalHistory().filter(item => item.id !== rec.id);
-    items.unshift({ id: rec.id || 'local-' + Date.now(), source: rec.source || rec.title || '(untitled)', title: rec.title || rec.source || '(untitled)', method: rec.method || 'local', created_at: rec.created_at || new Date().toISOString(), transcript: rec.transcript || '', duration_seconds: rec.duration_seconds || 0, processing_seconds: rec.processing_seconds || 0, browser_only: !!rec.browser_only });
+    items.unshift({ id: rec.id || 'local-' + Date.now(), source: rec.source || rec.title || '(untitled)', title: rec.title || rec.source || '(untitled)', method: rec.method || 'local', created_at: rec.created_at || new Date().toISOString(), transcript: rec.transcript || '', segments: Array.isArray(rec.segments) ? rec.segments : [], language: rec.language || '', duration_seconds: rec.duration_seconds || 0, processing_seconds: rec.processing_seconds || 0, browser_only: !!rec.browser_only });
     localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 20)));
   }
   function clearLocalHistory() {

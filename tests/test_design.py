@@ -178,6 +178,8 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert 'return_timestamps: true' in html
     assert 'chunks.map' in html
     assert 'device: actualDevice' in html
+    assert 'segments: Array.isArray(rec.segments) ? rec.segments : []' in html
+    assert "language: rec.language || ''" in html
     assert 'const segment = { start: 0, end: 2, text: transcript }' not in html
     assert 'Server upload failed, trying private browser transcription' in html
     assert 'window.__EPIC_BROWSER_WHISPER_TEST_STUB' in html
