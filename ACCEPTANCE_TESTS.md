@@ -62,6 +62,14 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 11:58 EDT.
+
+- Phase 2 browser-only fallback: PASS deployed and disclosed. Public production root, stable Netlify review, and immutable Netlify deploy `6a95a49d4bcd595e06c116e6` returned HTTP 200 / 51,917 bytes with `browserLocal`, `Browser-only fallback`, `File stays on this device`, `WebGPU when available`, `WASM when WebGPU is not available`, `browser-whisper-webgpu`, `browser-whisper-wasm`, and `Xenova/whisper-tiny.en` markers.
+- Browser fallback regression: PASS. `test_browser_local_whisper_fallback_is_disclosed_and_wired` now checks disclosure, CDN import, WebGPU/WASM method markers, `canUseBrowserWhisper`, and `transcribeInBrowser` wiring.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 50 passed.
+- Public Phase 2 release smoke: PASS. `scripts/phase2_release_gate_smoke.py https://epic-transcript.robyncrane.com` returned `all_ok=true`; root format copy passed, `/health` had required `missing: []`, `.exe` upload returned helpful HTTP 400, unsupported URL returned helpful HTTP 422, and owner cleanup readback returned transcript and analysis HTTP 404 for record `1623e1918e47` / analysis `1106b732f435`.
+- Netlify review deploy: PASS. `netlify deploy --dir static --prod --json` deployed site `epic-transcript-machine-review`, deploy `6a95a49d4bcd595e06c116e6`; stable and immutable URLs both verified anonymously with production API base marker.
+
 Run time: 2026-08-31 11:39 EDT.
 
 - Public app root: PASS, HTTP 200, 46,373 bytes, no visitor login.
@@ -147,6 +155,7 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 11:58 EDT: browser-only fallback moved from OPEN to implemented/disclosed. The live UI now includes an opt-in `Browser-only fallback` checkbox for file uploads. If `/api/transcribe-upload` fails and the file is audio/video, the browser imports `@xenova/transformers@2.17.2`, uses Whisper tiny with WebGPU when available and WASM when WebGPU is not available, keeps the file on-device, renders a browser-only transcript record, and creates local TXT/Markdown/SRT downloads. Regression and public marker checks passed; real-browser model execution proof remains a Phase 2 polish item.
 - 2026-08-31 11:45 EDT: added `scripts/phase2_release_gate_smoke.py` and ran it against the public no-login product. PASS evidence saved to `evidence/phase2-release-gate-report.json`: public root HTTP 200 with exact supported upload extensions/labels; `/health` ready with required `missing: []` and `GEMINI_API_KEY` only optional; unsupported `.exe` upload returned HTTP 400 with full guidance `Upload one of: .aac, .avi, .flac, .m4a, .md, .mkv, .mov, .mp3, .mp4, .ogg, .opus, .srt, .txt, .vtt, .wav, .webm`; unsupported non-YouTube URL returned helpful HTTP 422 upload guidance; cleanup proof uploaded text, created analysis `4ce537cae294`, deleted transcript `d4c323e04d9f`, then verified transcript readback HTTP 404 and analysis download HTTP 404.
 - 2026-08-31 11:45 EDT: reran `scripts/phase2_upload_smoke.py` publicly and saved `evidence/phase2-upload-smoke-latest.json`. WAV, MP3, M4A, MP4, MOV, and WebM returned HTTP 200 through `local-whisper`; repeat WAV returned `cache_hit=true`; TXT, Markdown, and SRT downloads returned HTTP 200 with expected markers.
 - 2026-08-31 11:45 EDT: reran `scripts/phase2_public_url_smoke.py` publicly and saved `evidence/phase2-public-url-smoke-latest.json`. Public MP3 fixture returned HTTP 206 `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 9.29s through `local-whisper`, source_kind `url`, language `en`, 2 segments, 18 words, cache miss.

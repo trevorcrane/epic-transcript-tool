@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 11:45 EDT
+Updated: 2026-08-31 11:58 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -21,12 +21,13 @@ Status: Release-clear on the public no-login product for the current fixture gat
 - New two-hour public long-video proof: `https://www.youtube.com/watch?v=rwfk91ya81s`, job `115c983594bd`, record `5919d7b3c99a`, title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`, duration 7,244 seconds, HTTP 202 async start then job `done`, method `queued-chunked-local-whisper`, cache miss, 13 audio chunks, 1,446 segments, 19,298 words, language `en`. Native captions, YouTube Transcript API, and yt-dlp subtitles failed/skipped, then chunked local Whisper produced a credible beginning and ending. Public TXT, Markdown, and SRT signed downloads verified HTTP 200.
 
 ### Version 2 / Phase 2: Any video or audio
-Status: Advanced, not release-complete. Hosted-container upload path now passes against a seeded persistent `/data` volume.
+Status: Advanced, not release-complete. Hosted-container upload path now passes against a seeded persistent `/data` volume, and the public UI now exposes a disclosed browser-only Whisper fallback option for files when the server upload route fails.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
 - Full upload/media release matrix now has public proof for generated WAV, MP3, M4A, MP4, MOV, WebM, non-English French WAV, a 31-minute MP3 recording, and a supported public non-YouTube MP3 URL. Remaining Phase 2 evidence is fuller browser UX proof.
 - Cleanup/retention hardening advanced on 2026-08-31 08:18 EDT: upload temp directories are covered by an automated removal regression, transcript deletion now also removes saved analyses, SQLite connections now enable foreign-key enforcement, and the public API verified delete cleanup with record `c40edf087acd` / analysis `c3e5e11163a0` returning HTTP 404 after deletion.
 - Advanced public verification: expanded `scripts/phase2_upload_smoke.py`, which generates a spoken fixture with macOS `say`, converts it with `ffmpeg`, uploads WAV/MP3/M4A/MP4/MOV/WebM to the public no-login API, verifies credible nonempty local-Whisper transcripts, confirms repeat-upload cache reuse, and verifies signed TXT/Markdown/SRT downloads for an upload record.
 - Public UX copy now makes upload support clearer on the page: the how-it-works and FAQ sections explicitly mention public media URLs and exact upload support for `.aac`, `.avi`, `.flac`, `.m4a`, `.md`, `.mkv`, `.mov`, `.mp3`, `.mp4`, `.ogg`, `.opus`, `.srt`, `.txt`, `.vtt`, `.wav`, and `.webm`, plus TXT/Markdown/SRT/VTT downloads/captions language.
+- Fresh Phase 2 gate sprint from 2026-08-31 11:58 EDT: added and deployed a disclosed browser-only Whisper fallback checkbox for file uploads. If server upload fails, supported audio/video files can stay on-device and transcribe in Chrome using `@xenova/transformers` Whisper with WebGPU when available and WASM when WebGPU is unavailable; browser-only TXT/Markdown/SRT downloads are generated locally. Regression `test_browser_local_whisper_fallback_is_disclosed_and_wired` now covers the visible disclosure and wiring. Public production, stable Netlify review, and immutable Netlify deploy `6a95a49d4bcd595e06c116e6` returned HTTP 200 with `browserLocal`, `Browser-only fallback`, `browser-whisper-webgpu`, `Xenova/whisper-tiny.en`, visible phase cards, and the production API base marker.
 - Fresh Phase 2 gate sprint from 2026-08-31 11:45 EDT: added `scripts/phase2_release_gate_smoke.py` and saved `evidence/phase2-release-gate-report.json`. Public root returned HTTP 200 with exact supported format markers; `/health` returned ready with no required missing dependencies and `GEMINI_API_KEY` only optional; unsupported `.exe` upload returned HTTP 400 with the complete supported-format list; unsupported non-YouTube URL returned helpful HTTP 422 upload guidance; owner-scoped cleanup proof uploaded a text transcript, created analysis `4ce537cae294`, deleted transcript `d4c323e04d9f`, then verified transcript and analysis download both returned HTTP 404.
 - Added reusable `scripts/phase2_non_english_upload_smoke.py` for public non-English upload proof without paid providers. It generates French speech with macOS `say -v Thomas`, converts to WAV with `ffmpeg`, uploads to the public no-login API, verifies `local-whisper`, language `fr`, credible French text, and a signed TXT download.
 - Added reusable `scripts/phase2_long_upload_smoke.py` for 30+ minute public upload proof. It generates spoken audio with macOS `say`, pads to a 31-minute MP3 using `ffmpeg`, uploads to the public no-login API, and verifies saved media duration metadata plus credible transcript text.
@@ -81,6 +82,7 @@ Status: Advanced publicly, not release-complete. Hosted-container UI/API contrac
 - Deployed the UI fixes to Netlify review and verified the public production URL plus Netlify URL return HTTP 200 with the new markers.
 - Added `scripts/phase3_ui_contract_smoke.py`, a no-Chrome public UI contract harness that verifies visible Phase 3 controls, async job wiring, absence of the old synchronous submit path, all-outputs analysis, ask-question analysis, and Markdown download against the public no-login URL.
 - Deployed the synchronized static review build to Netlify site `epic-transcript-machine-review`, deploy `6a9579a7b662aa6824e325ab`, and verified both stable and immutable Netlify URLs anonymously.
+- Added and deployed the Phase 2 browser-only Whisper fallback UI to production/review: `browserLocal` checkbox, clear on-device disclosure, WebGPU/WASM transformer path, browser-only record rendering, and local TXT/Markdown/SRT downloads. Netlify deploy `6a95a49d4bcd595e06c116e6` was verified at stable and immutable URLs with expected markers.
 - Updated `scripts/phase1_matrix.py` to test YouTube links through the public UI's async job path (`/api/transcribe-url-job` plus `/api/jobs/{id}`) instead of relying on the older synchronous URL endpoint for long YouTube sources.
 
 - UX phase visibility advanced on 2026-08-31 11:39 EDT: the public root and Netlify review root now show visible `Version 1 / Phase 1`, `Version 2 / Phase 2`, and `Version 3 / Phase 3` cards directly under the hero proof strip. The public root, stable Netlify review URL, and immutable Netlify deploy `6a95a0c3cf34d705f2de4c9d` returned HTTP 200 and contained the phase cards, theme toggle, expanded FAQ markers, and production API base marker.
@@ -116,6 +118,11 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
+
+- `./.venv/bin/python -m pytest -q`: passed, 50 tests on 2026-08-31 11:58 EDT after adding the browser-only Whisper fallback disclosure/wiring regression.
+- `./.venv/bin/python scripts/phase1_dom_click_mobile_a11y_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 11:58 EDT. Public root returned HTTP 200 with `browserLocal` included in the required IDs, async job path intact, copy/download wiring intact, mobile/accessibility/static contrast contracts passing, Shorts transcript copy/download proof passing, and evidence saved to `evidence/phase1-dom-click-mobile-a11y-report.json`.
+- `./.venv/bin/python scripts/phase2_release_gate_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 11:58 EDT. Public root returned HTTP 200 with exact supported format copy and fallback markers, `/health` ready with no required missing dependencies, unsupported `.exe` upload returned helpful HTTP 400, unsupported URL returned helpful HTTP 422, and delete cleanup readback returned transcript/analysis HTTP 404 for record `1623e1918e47` / analysis `1106b732f435`.
+- Netlify review deployment passed on 2026-08-31 11:58 EDT: `netlify deploy --dir static --prod --json` deployed site `epic-transcript-machine-review`, deploy `6a95a49d4bcd595e06c116e6`. Stable `https://epic-transcript-machine-review.netlify.app/` and immutable `https://6a95a49d4bcd595e06c116e6--epic-transcript-machine-review.netlify.app/` both returned HTTP 200 / 51,917 bytes with `browserLocal`, `Browser-only fallback`, `browser-whisper-webgpu`, `Xenova/whisper-tiny.en`, visible phase cards, and production API base marker.
 
 - `./.venv/bin/python -m pytest -q`: passed, 49 tests on 2026-08-31 11:45 EDT.
 - `python3 -m py_compile scripts/phase2_release_gate_smoke.py`: passed on 2026-08-31 11:45 EDT.
@@ -180,15 +187,15 @@ Prior full regression evidence:
 - Browser Use automation can still hit a fresh macOS `Allow remote debugging?` prompt in new browser sessions. This no longer blocks Version 1 proof because prior direct Chrome desktop/mobile proof passed and the new no-Chrome public UI contract harness covers the release-critical wiring.
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
-- Browser WebGPU Whisper is not implemented yet. Local server Whisper fallback exists.
-- Phase 1 bounded scripted public matrix and two-hour/long-video transcription are passing, but copy-flow browser interaction and fuller mobile touch-flow evidence are still needed before calling Version 1 fully release-clear.
+- Browser WebGPU Whisper fallback is now implemented as a disclosed opt-in fallback only after the server upload route fails. It uses WebGPU when available and WASM when WebGPU is unavailable; fuller real-browser local model execution proof remains a Phase 2 polish item.
+- Phase 1 bounded scripted public matrix, two-hour/long-video transcription, desktop copy-flow, and mobile touch-flow have passed. Remaining Phase 1 polish is independent QC/a11y depth, not a core transcript blocker.
 - Public API has reloaded the helpful invalid-link behavior. Invalid non-YouTube URL now returns HTTP 422 instead of HTTP 500.
 
 ## Blockers
 - Phase 1 public product proof is no longer blocked. New browser sessions may still need the macOS Chrome remote-debug prompt approved, but release-critical proof has a prior direct Chrome pass plus the no-Chrome UI contract harness.
 
 ## Exact next action
-Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover.
+Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover. In parallel, run a real-browser execution proof for the new browser-only Whisper fallback so Phase 2 has both server-upload and on-device fallback evidence.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
