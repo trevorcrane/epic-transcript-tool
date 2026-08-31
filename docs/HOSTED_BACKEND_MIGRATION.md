@@ -131,16 +131,18 @@ Use this when the selected persistent host is ready but a full git checkout has 
 ./.venv/bin/python scripts/hosted_staging_bundle.py --seed-package evidence/hosted-staging-seed.tar.gz --out evidence/hosted-staging-transfer-bundle.tar.gz
 ```
 
-Current transfer-bundle evidence from 2026-08-31 15:16 EDT:
+Current transfer-bundle evidence from 2026-08-31 15:32 EDT:
 
 - Bundle: `evidence/hosted-staging-transfer-bundle.tar.gz`.
-- Bundle size: 4,620,968 bytes.
-- Bundle SHA-256: `887b72fe1e197ba54031f63c8687f2c244157ffcc63d8ff02ef1a7e98a6f5f37`.
-- Seed package SHA-256 inside manifest: `ffdd12b38fb789247803b8b7235e88682b6b418289a1072a9499582178c5e4c9`.
-- Member count: 12.
-- Required members verified: `Dockerfile`, `requirements.txt`, `app.py`, `scripts/hosted_staging_verify.py`, `scripts/hosted_staging_bundle_verify.py`, `scripts/hosted_staging_smoke.py`, `scripts/phase1_matrix.py`, `scripts/phase2_upload_smoke.py`, `scripts/phase3_ui_contract_smoke.py`, `docs/HOSTED_BACKEND_MIGRATION.md`, `evidence/hosted-staging-seed.tar.gz`, and `transfer-manifest.json`.
+- Bundle size: 5,062,917 bytes.
+- Seed DB SHA-256: `b88fd873fc2002d5aa0d3ee34a883888ef3f418397e90343e671c053da7c2571`.
+- Seed DB rows: 380.
+- Member count: 13.
+- Required members verified: `Dockerfile`, `requirements.txt`, `app.py`, `scripts/hosted_staging_verify.py`, `scripts/hosted_staging_bundle_verify.py`, `scripts/hosted_staging_runbook.py`, `scripts/hosted_staging_smoke.py`, `scripts/phase1_matrix.py`, `scripts/phase2_upload_smoke.py`, `scripts/phase3_ui_contract_smoke.py`, `docs/HOSTED_BACKEND_MIGRATION.md`, `evidence/hosted-staging-seed.tar.gz`, and `transfer-manifest.json`.
 - Transfer preflight command: `./.venv/bin/python scripts/hosted_staging_bundle_verify.py evidence/hosted-staging-transfer-bundle.tar.gz --extract-to evidence/hosted-staging-transfer-verify-data --out evidence/hosted-staging-transfer-verify-report.json`.
-- Transfer preflight result: PASS, `ok=true`; manifest members verified, embedded seed SHA-256 verified, `transcripts.db` extracted to `evidence/hosted-staging-transfer-verify-data/transcripts.db`, 347 transcript rows verified, required cached media verified: `v34Eg12mhDM` 91, `dQw4w9WgXcQ` 76, `SXHMnicI6Pg` 15, `aircAruvnKk` 15.
+- Transfer preflight result: PASS, `ok=true`; manifest members verified, embedded seed package SHA-256 verified, `transcripts.db` extracted to `evidence/hosted-staging-transfer-verify-data/transcripts.db`, 380 transcript rows verified, required cached media verified: `v34Eg12mhDM` 100, `dQw4w9WgXcQ` 91, `SXHMnicI6Pg` 16, `aircAruvnKk` 16.
+- Host runbook command: `python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --execute --keep-running`.
+- Host runbook plan command: `python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --print-plan`.
 - Host verify command in manifest: `python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>`.
 - Host smoke command in manifest: `python3 scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json`.
 

@@ -1,11 +1,12 @@
 {
   "bundle": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-bundle.tar.gz",
-  "bundle_size_bytes": 4620968,
+  "bundle_size_bytes": 5062917,
   "extract_to": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-verify-data",
   "manifest_members_verified": true,
-  "member_count": 12,
+  "member_count": 13,
   "next_steps": [
     "tar -xzf hosted-staging-transfer-bundle.tar.gz",
+    "python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --print-plan",
     "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>",
     "docker build -t epic-transcript-machine .",
     "docker run --rm -p 8090:8090 -v <persistent-data-dir>:/data epic-transcript-machine",
@@ -13,7 +14,8 @@
   ],
   "ok": true,
   "required_members_verified": true,
-  "seed_package_sha256": "ffdd12b38fb789247803b8b7235e88682b6b418289a1072a9499582178c5e4c9",
+  "runbook_command": "python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --execute --keep-running",
+  "seed_package_sha256": "4128ae6bc33bcfa7bcd74d5cc89f70a08902af49a4de12eebaaa91664538a04e",
   "seed_package_sha256_verified": true,
   "seed_verify": {
     "extracted_db": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-verify-data/transcripts.db",
@@ -23,19 +25,19 @@
       "./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json"
     ],
     "ok": true,
-    "package": "/private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/epic-transfer-verify-ie1jzuzu/evidence/hosted-staging-seed.tar.gz",
-    "package_size_bytes": 4583649,
+    "package": "/private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/epic-transfer-verify-w0rwwj41/evidence/hosted-staging-seed.tar.gz",
+    "package_size_bytes": 5025045,
     "required_media_ids": {
-      "SXHMnicI6Pg": 15,
-      "aircAruvnKk": 15,
-      "dQw4w9WgXcQ": 76,
-      "v34Eg12mhDM": 91
+      "SXHMnicI6Pg": 16,
+      "aircAruvnKk": 16,
+      "dQw4w9WgXcQ": 91,
+      "v34Eg12mhDM": 100
     },
     "required_media_ids_verified": true,
-    "sha256": "ce83c5b88b91e7f1a44f293e47de2c8c62a707bd87894a284893e86c81b6f4f3",
+    "sha256": "b88fd873fc2002d5aa0d3ee34a883888ef3f418397e90343e671c053da7c2571",
     "sha256_verified": true,
     "target_path": "/data/transcripts.db",
-    "transcript_count": 347,
+    "transcript_count": 380,
     "transcript_count_verified": true
   },
   "seed_verify_returncode": 0,

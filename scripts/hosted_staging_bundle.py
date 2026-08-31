@@ -26,6 +26,7 @@ REQUIRED_PROJECT_FILES = (
     "app.py",
     "scripts/hosted_staging_verify.py",
     "scripts/hosted_staging_bundle_verify.py",
+    "scripts/hosted_staging_runbook.py",
     "scripts/hosted_staging_smoke.py",
     "scripts/phase1_matrix.py",
     "scripts/phase2_upload_smoke.py",
@@ -64,8 +65,10 @@ def build_transfer_manifest(seed_package: Path, members: list[str]) -> dict:
         "extract_command": "tar -xzf hosted-staging-transfer-bundle.tar.gz",
         "verify_command": "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>",
         "smoke_command": "python3 scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json",
+        "runbook_command": "python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --execute --keep-running",
         "next_steps": [
             "tar -xzf hosted-staging-transfer-bundle.tar.gz",
+            "python3 scripts/hosted_staging_runbook.py http://<staging-host> --data-dir <persistent-data-dir> --print-plan",
             "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>",
             "docker build -t epic-transcript-machine .",
             "docker run --rm -p 8090:8090 -v <persistent-data-dir>:/data epic-transcript-machine",

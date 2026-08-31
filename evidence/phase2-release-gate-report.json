@@ -49,11 +49,11 @@
   },
   "delete_cleanup_readback": {
     "upload_status": 200,
-    "record_id": "9c9104854436",
+    "record_id": "5e29eafff22a",
     "method": "passthrough",
     "word_count": 8,
     "analysis_status": 200,
-    "analysis_id": "b51381b10a1d",
+    "analysis_id": "8191670e2cee",
     "delete_status": 200,
     "transcript_readback_status": 404,
     "analysis_download_after_delete_status": 404,

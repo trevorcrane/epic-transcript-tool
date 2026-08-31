@@ -24,6 +24,7 @@ REQUIRED_MEMBERS = {
     "app.py",
     "scripts/hosted_staging_verify.py",
     "scripts/hosted_staging_bundle_verify.py",
+    "scripts/hosted_staging_runbook.py",
     "scripts/hosted_staging_smoke.py",
     "scripts/phase1_matrix.py",
     "scripts/phase2_upload_smoke.py",
@@ -113,6 +114,7 @@ def verify_bundle(bundle: Path, extract_to: Path | None = None) -> dict:
             "seed_verify_returncode": result.returncode,
             "seed_verify": seed_report,
             "next_steps": manifest.get("next_steps", []),
+            "runbook_command": manifest.get("runbook_command"),
             "smoke_command": manifest.get("smoke_command"),
         }
 

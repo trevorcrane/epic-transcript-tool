@@ -218,6 +218,7 @@ def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
     assert payload["next_steps"][0].startswith("tar -xzf")
     assert "scripts/hosted_staging_verify.py" in payload["members"]
     assert "scripts/hosted_staging_bundle_verify.py" in payload["members"]
+    assert "scripts/hosted_staging_runbook.py" in payload["members"]
     assert "scripts/hosted_staging_smoke.py" in payload["members"]
     assert "Dockerfile" in payload["members"]
     assert "docs/HOSTED_BACKEND_MIGRATION.md" in payload["members"]
@@ -233,6 +234,7 @@ def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
 
     assert manifest["seed_package_sha256"] == payload["seed_package_sha256"]
     assert manifest["verify_command"] == "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>"
+    assert "scripts/hosted_staging_runbook.py" in manifest["runbook_command"]
 
 
 def test_hosted_staging_bundle_verify_extracts_embedded_seed(tmp_path):
@@ -266,4 +268,41 @@ def test_hosted_staging_bundle_verify_extracts_embedded_seed(tmp_path):
     assert payload["seed_verify"]["transcript_count"] == 4
     assert payload["seed_verify"]["required_media_ids"]["v34Eg12mhDM"] == 1
     assert Path(payload["seed_verify"]["extracted_db"]).exists()
+    assert "scripts/hosted_staging_runbook.py" in payload["runbook_command"]
     assert "scripts/hosted_staging_smoke.py" in payload["smoke_command"]
+
+
+def test_hosted_staging_runbook_prints_verifiable_host_plan(tmp_path):
+    data_dir = tmp_path / "persistent-data"
+    report = tmp_path / "hosted-staging-smoke-report.json"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_runbook.py"),
+            "http://staging.example.test",
+            "--data-dir",
+            str(data_dir),
+            "--out",
+            str(report),
+            "--print-plan",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["staging_url"] == "http://staging.example.test"
+    assert payload["data_dir"] == str(data_dir.resolve())
+    assert payload["smoke_report"] == str(report.resolve())
+    assert [step["name"] for step in payload["steps"]] == [
+        "verify_seed_into_persistent_data",
+        "docker_build",
+        "docker_run_detached",
+        "wait_for_health",
+        "phase_1_2_3_smoke",
+    ]
+    assert payload["steps"][0]["command"][-2:] == ["--extract-to", str(data_dir.resolve())]
+    assert payload["steps"][-1]["command"][-2:] == ["--out", str(report.resolve())]
