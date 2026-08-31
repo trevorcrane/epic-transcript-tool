@@ -358,3 +358,14 @@ def test_youtube_audio_download_retries_android_client_after_403(monkeypatch, tm
     assert out.name == "audio.mp3"
     assert len(attempts) == 2
     assert "youtube:player_client=android" in attempts[1]
+
+
+def test_cached_long_youtube_can_return_before_duration_guard(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    app.save_transcript(source="Cached long", source_kind="youtube", method="seed", transcript="[00:00] cached", duration_seconds=5000, processing_seconds=1, media_id="cachedlong1", source_url="https://youtu.be/cachedlong1", title="Cached long", creator="Tester", language="en", segments=[{"start":0,"end":1,"text":"cached"}], provider_attempts=[], owner_token="owner-token-cachedlong-abcdefghijkl")
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"id":"cachedlong1", "title":"Cached long", "duration": 5000, "language":"en", "webpage_url": url})
+    client = TestClient(app.app)
+    res = client.post("/api/transcribe-url", data={"url":"https://youtu.be/cachedlong1", "owner":"owner-token-cachedlong-abcdefghijkl"})
+    assert res.status_code == 200
+    assert res.json()["record"]["cache_hit"] is True

@@ -61,7 +61,7 @@ WHISPER_BINARY_CANDIDATES = [
 ]
 
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
-MAX_SYNC_YOUTUBE_DURATION_SECONDS = 60 * 60
+MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
 LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
 
 app = FastAPI(title="Epic Transcript Machine", docs_url=None, redoc_url=None)
@@ -555,7 +555,7 @@ def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
             old.unlink(missing_ok=True)
         cmd = base_cmd + extra + [url]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
         except subprocess.TimeoutExpired:
             errors.append("audio download timed out")
             continue
@@ -579,7 +579,7 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     cmd = [whisper_bin, str(input_path), "--model", os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
     if language:
         cmd += ["--language", language]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")))
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "Local Whisper transcription failed")
     files = list(out_dir.glob("*.vtt"))
@@ -699,16 +699,14 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
         expected_language = None
         try:
             meta_probe = yt_dlp_metadata(url)
-            if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
-                raise HTTPException(422, LONG_VIDEO_MESSAGE)
             expected_language = infer_expected_language(meta_probe)
-        except HTTPException:
-            raise
         except Exception:
             meta_probe = {}
         cached = get_cached_transcript(video_id, expected_language=expected_language)
         if cached:
             return JSONResponse({"ok": True, "record": record_for_owner(cached, owner_token)})
+        if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
+            raise HTTPException(422, LONG_VIDEO_MESSAGE)
         work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
         try:
             return JSONResponse({"ok": True, "record": transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)})
