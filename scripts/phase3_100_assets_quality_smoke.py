@@ -75,7 +75,7 @@ def main() -> int:
     numbered = [line for line in text.splitlines() if re.match(r"^\d+\. \*\*", line)]
     require(len(numbered) == 100, f"expected 100 numbered assets, got {len(numbered)}")
     lower = text.lower()
-    forbidden = ["use `", " use [", " to create:", "starter map", "brief a creator", "turn the moment into"]
+    forbidden = ["use `", " use [", " to create:", "starter map", "brief a creator", "turn the moment into", "lead with", "use this as", "shape this", "shape the source", "the story starts with", "fix that moment", "open by repeating", "teach this moment", "summarize this moment", "play this timestamp", "headline from source"]
     offenders = [term for term in forbidden if term in lower]
     require(not offenders, f"placeholder phrasing present: {offenders}")
     bodies = [line.split(" - ", 1)[-1] for line in numbered]
@@ -98,6 +98,37 @@ def main() -> int:
         first_sentence_counts[first_sentence] = first_sentence_counts.get(first_sentence, 0) + 1
     max_sentence_frame_repeat = max(first_sentence_counts.values())
     require(max_sentence_frame_repeat <= 3, f"sentence frame repeated too often: {max_sentence_frame_repeat}")
+    repeated_shells = [
+        "stop losing the lesson hiding in plain sight",
+        "the practical takeaway is this",
+        "fix that moment before adding another layer",
+        "the part worth fixing now",
+        "the story starts with this proof point",
+        "start with the visible proof point",
+    ]
+    shell_counts = {shell: lower.count(shell) for shell in repeated_shells if lower.count(shell) > 2}
+    require(not shell_counts, f"repeated live-output shells: {shell_counts}")
+    repeated_batch_patterns = {}
+    for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+        openings = {}
+        endings = {}
+        too_short = 0
+        incomplete = 0
+        for body in subset:
+            asset_prose = body.split("Source excerpt:", 1)[0].strip().lower()
+            words = re.sub(r"[^a-z0-9 ]+", " ", asset_prose).split()
+            if len(words) < 8:
+                too_short += 1
+            if not asset_prose.endswith((".", "?", "!")):
+                incomplete += 1
+            openings[" ".join(words[:5])] = openings.get(" ".join(words[:5]), 0) + 1
+            endings[" ".join(words[-7:])] = endings.get(" ".join(words[-7:]), 0) + 1
+        bad_openings = {k:v for k,v in openings.items() if v > 1}
+        bad_endings = {k:v for k,v in endings.items() if v > 2}
+        if bad_openings or bad_endings or too_short or incomplete:
+            repeated_batch_patterns[label] = {"openings": bad_openings, "endings": bad_endings, "too_short": too_short, "incomplete": incomplete}
+    require(not repeated_batch_patterns, f"batch template repetition/incomplete prose: {repeated_batch_patterns}")
     quote_cards = [line for line in numbered if "**Quote card" in line]
     require(bool(quote_cards) and all("“" not in line and "”" not in line for line in quote_cards), "quote cards contain invented quote formatting")
     repurpose = [line for line in numbered if "**Repurpose prompt" in line]
@@ -139,6 +170,8 @@ def main() -> int:
         "no_invented_quote_cards": True,
         "no_repeated_prefix_stems": True,
         "repurpose_are_finished_multi_channel_assets": True,
+        "no_repeated_live_output_shells": True,
+        "batch_prefix_suffix_diversity": True,
         "sample_first_10": numbered[:10],
         "sample_middle_10": numbered[45:55],
         "sample_last_10": numbered[-10:],

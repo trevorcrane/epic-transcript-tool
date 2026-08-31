@@ -942,7 +942,7 @@ def _asset_evidence_points(rec: dict, count: int = 100) -> list[dict]:
         if len(usable) <= count:
             selected_indexes = [usable.index(seg) for seg in selected]
         for idx, seg in zip(selected_indexes, selected):
-            window = usable[idx:idx + 4] or [seg]
+            window = usable[max(0, idx - 1):idx + 7] or [seg]
             text = _merge_caption_window(clean_whitespace(item.get("text", "")) for item in window)
             points.append({"timestamp": seconds_to_timestamp(seg.get("start", 0)), "text": text})
     if points:
@@ -1006,7 +1006,7 @@ def _asset_takeaway(text: str, index: int) -> str:
     """Convert rough transcript evidence into a finished, readable takeaway."""
     lower = text.lower()
     rules = [
-        (("valuation", "worth", "sde", "multiple"), "Lead with enterprise value. The strongest offer shows how the system grows what the business is worth, not just what the software can do."),
+        (("valuation", "worth", "sde", "multiple"), "Enterprise value is the stronger story. The system matters when it increases what the business is worth, not just what the software can do."),
         (("retain", "retention", "close", "higher rate"), "Position the system as retention and closing leverage. Buyers stay longer when the process keeps producing measurable outcomes."),
         (("local business", "local businesses", "gym", "fitness"), "Local businesses need a follow-up machine. The opportunity is speed, consistency, and proof after every lead comes in."),
         (("follow up", "lead", "leads", "customer"), "Speed-to-lead is the wedge. A simple response system can turn missed demand into booked conversations."),
@@ -1026,142 +1026,176 @@ def _asset_takeaway(text: str, index: int) -> str:
             return takeaway
     fallbacks = [
         "Package one clear insight into one repeatable action. The asset should make the viewer know what to do next.",
-        "Shape the source moment into a simple operating principle. The strongest content makes the process easier to remember and apply.",
+        "A simple operating principle makes the lesson easier to remember and apply.",
         "Connect the lesson to a measurable business result. Useful content should move from idea to action quickly.",
         "Make the invisible system visible. The content should show the mechanism behind the result, not just the outcome.",
-        "Use the moment to clarify the buyer's next decision. The asset should reduce confusion and point toward action.",
+        "A clear buyer decision reduces confusion and points toward action.",
         "Frame the lesson as a practical upgrade. The point is not more information, it is a better way to execute.",
     ]
     return fallbacks[index % len(fallbacks)]
 
 
+def _asset_complete_context(text: str, max_words: int = 60) -> str:
+    """Return a complete, readable context window without dangling clipped endings."""
+    clean = _strip_timestamp(clean_whitespace(text)).strip(" -–—:;,.\"")
+    if not clean:
+        return "The transcript gives a concrete business moment to act on."
+    # Prefer complete transcript sentences from the context window.
+    sentences = re.findall(r"[^.!?]+[.!?]", clean)
+    if sentences:
+        chosen = clean_whitespace(" ".join(sentences[:2]))
+    else:
+        chosen = clean
+    words = chosen.split()
+    if len(words) > max_words:
+        words = words[:max_words]
+        while words and words[-1].lower().strip(",;:") in {"and", "or", "but", "to", "for", "with", "that", "because", "the", "a", "an", "of", "in", "on", "by", "from"}:
+            words.pop()
+        chosen = " ".join(words)
+    chosen = chosen.strip(" ,;:")
+    if chosen and chosen[-1] not in ".!?":
+        chosen += "."
+    return chosen[:1].upper() + chosen[1:]
+
+
 def build_100_content_assets(rec: dict) -> list[str]:
-    """Return 100 finished, distinct asset drafts grounded in the cited source excerpt."""
+    """Return 100 finished, distinct asset drafts grounded in complete context windows."""
     categories = [
         "Hook", "Short post", "Email subject", "Newsletter angle", "Reel script",
         "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt",
     ]
     hooks = [
-        "Most teams miss the money because they miss this moment",
-        "The system gets valuable when this detail stops slipping",
-        "This is the quiet gap that turns attention into lost revenue",
-        "A better offer starts where the current process breaks",
-        "The fastest improvement is usually hiding in the handoff",
-        "Before buying another tool, fix the moment already in front of you",
-        "This is how a small process gap becomes a business problem",
-        "The result changes when the follow-through becomes automatic",
-        "The proof is not in the promise, it is in this operating detail",
-        "If the system cannot handle this moment, the offer is not finished",
+        "The money leak usually starts before anyone sees it",
+        "The system becomes valuable when the handoff is no longer random",
+        "A missed follow-up is not a small detail; it is the sale slipping away",
+        "The offer gets stronger when the proof is operational, not theoretical",
+        "The simplest process gap can become the biggest growth constraint",
+        "The next tool will not matter if this moment still breaks",
+        "A business looks more valuable when the process repeats without the owner",
+        "A lead is only useful when the response path is already built",
+        "The proof lives in the operating detail, not the promise",
+        "The system is not finished until this moment has a clear next move",
     ]
     short_posts = [
-        "The strongest systems are built around the moments customers actually experience",
-        "A useful process does not need more hype; it needs one clear handoff that works",
+        "Good systems are built around the moments customers actually experience",
+        "The useful improvement is the one that makes the next handoff obvious",
         "Growth gets easier when the business can repeat the important step without guessing",
-        "The gap in this transcript is not abstract. It is a place the team can fix",
-        "This is the difference between having a tool and having an operating system",
-        "Better follow-through turns the same lead, call, or lesson into a cleaner outcome",
-        "The asset here is not the software. The asset is the repeatable behavior it creates",
-        "The business improves when the next action is obvious before the moment is over",
+        "A transcript moment becomes valuable when it turns into a specific operating behavior",
+        "The difference between a tool and a system is whether the result repeats",
+        "Better follow-through turns the same attention into a cleaner business outcome",
+        "Software gets easier to sell when the business process around it is clear",
+        "The next action should be obvious before the customer has time to drift",
         "Proof makes the offer easier to trust because the mechanism is visible",
-        "The next version should remove friction, not add another disconnected step",
+        "A sharper system removes friction instead of adding another disconnected step",
     ]
     subjects = [
         "The process gap costing the next result",
         "Where the system needs to get sharper",
         "A better follow-through starts here",
         "The moment your offer has to prove itself",
-        "What the transcript says to fix next",
+        "What the transcript says to tighten next",
         "The handoff that deserves attention now",
         "A clearer system from one real moment",
         "The proof point behind the next improvement",
-        "What to tighten before adding tools",
-        "The operational detail worth acting on",
+        "What to clean up before adding tools",
+        "The operating detail worth acting on",
     ]
     newsletter_openers = [
-        "Here is the operational lesson worth pulling out",
+        "There is a practical operating lesson inside this section",
         "The useful story is not bigger tech; it is cleaner execution",
-        "This excerpt points to a place where the business can become easier to run",
+        "This example shows where the business can become easier to run",
         "The next improvement starts with a specific customer-facing moment",
         "A system becomes more valuable when the team can see the exact gap",
         "This proof point turns the lesson from theory into something actionable",
         "The transcript gives a concrete example of what should happen next",
-        "There is a practical upgrade hiding inside this small section",
+        "A practical upgrade is hiding inside this small section",
         "The strongest takeaway is the repeatable behavior behind the result",
-        "This is the kind of detail that makes a service easier to package",
+        "This detail makes the service easier to package and explain",
     ]
     reel_lines = [
-        "Show the moment, then make the business consequence impossible to miss",
-        "Put the timestamp on screen and explain why this exact handoff matters",
-        "Use the clip to make one fix feel obvious, immediate, and measurable",
-        "Open with the problem, then show the transcript line that proves it exists",
-        "Make the viewer see the gap before you name the solution",
-        "Turn the excerpt into a simple before-and-after explanation",
-        "Anchor the reel in the quote, then connect it to the operating system",
+        "Show the moment and make the business consequence impossible to miss",
+        "Put the timestamp on screen and explain why this handoff matters",
+        "Make one fix feel obvious, immediate, and measurable",
+        "Open on the problem and let the transcript prove it exists",
+        "Make the viewer see the gap before the solution appears",
+        "Turn the section into a before-and-after business lesson",
+        "Anchor the reel in the evidence and connect it to the operating system",
         "Let the source line carry the credibility, then add one practical takeaway",
-        "Make this a quick lesson about the step that should not be left to chance",
-        "End the reel with the next action this evidence makes clear",
+        "Make the clip a quick lesson about the step that cannot be left to chance",
+        "Close with the next action this evidence makes clear",
     ]
     carousel_heads = [
         "The gap", "The proof", "The fix", "The handoff", "The risk",
         "The system", "The next step", "The leverage", "The lesson", "The action",
     ]
+    closers = [
+        "Make that the first checkpoint",
+        "Turn that into the next operating standard",
+        "Keep the team accountable to that detail",
+        "Build the follow-up around that proof",
+        "Use that evidence to tighten the offer",
+        "Make the next handoff visible",
+        "Protect that step before scaling traffic",
+        "Connect that detail to the buyer outcome",
+        "Document the behavior before automating it",
+        "Review that point before changing the system",
+    ]
     ctas = [
         "Get the broken handoff written down before another tool is added",
         "Get one measurable follow-up step assigned from this evidence today",
-        "Get the next action out of the transcript and into the operating checklist",
+        "Get the next action into the operating checklist",
         "Get the proof point into the sales story so the buyer sees the mechanism",
-        "Get the team aligned on what should happen immediately after this moment",
-        "Get the repeatable step documented while the evidence is still clear",
-        "Get the offer tightened around the result this excerpt actually supports",
+        "Get the team aligned on what happens immediately after this moment",
+        "Get the repeatable step documented while the evidence is clear",
+        "Get the offer tightened around the result this excerpt supports",
         "Get the friction removed before it becomes another missed opportunity",
         "Get the source-backed lesson turned into one owner and one deadline",
-        "Get the clip, caption, and follow-up built around this exact evidence",
+        "Get the clip, caption, and follow-up built around this evidence",
     ]
     replies = [
-        "The evidence shows why this should be handled directly, not treated as optional",
+        "The evidence shows why this should be handled directly instead of treated as optional",
         "This is not a theory; the transcript gives a concrete place to improve",
         "The safest answer is to stay with the source and fix the step it exposes",
-        "The point is supported when the team can point to the exact moment and outcome",
+        "The point is stronger when the team can show the exact moment and outcome",
         "A tool alone will not solve this unless the handoff around it is clear",
-        "The reply should focus on the process gap the transcript already makes visible",
-        "This objection gets weaker when the operating detail is shown plainly",
+        "The response should focus on the process gap the transcript makes visible",
+        "The objection gets weaker when the operating detail is shown plainly",
         "The right response is to make the evidence easier to act on",
-        "If the buyer questions the value, connect it back to this specific proof",
+        "If the buyer questions the value, connect it back to this proof",
         "The transcript supports action because it names a concrete place to tighten execution",
     ]
     points = _asset_evidence_points(rec, 100)
     assets = [
         "## Create 100 content assets",
-        "Each item is an audience-ready draft built from the cited transcript excerpt. The exact source excerpt is included after each asset so citation support can be checked directly.",
+        "Each item is finished audience-ready prose built from a complete cited context window. The exact source excerpt appears after the asset for verification.",
     ]
     for i, point in enumerate(points, 1):
         kind = categories[(i - 1) // 10]
         slot = ((i - 1) % 10) + 1
         idx = slot - 1
         timestamp = point["timestamp"]
-        excerpt = _asset_sentence(point["text"], max_words=34)
-        short_excerpt = _asset_phrase(point["text"], max_words=12).rstrip(" ,;:")
+        excerpt = _asset_complete_context(point["text"], max_words=64)
         takeaway = _asset_takeaway(point["text"], i)
         if kind == "Hook":
-            body = f"{hooks[idx]}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{hooks[idx]}. {takeaway} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Short post":
-            body = f"{short_posts[idx]}. {takeaway} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{short_posts[idx]}. {takeaway} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: {subjects[idx]} for a stronger system. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Subject: {subjects[idx]} for a stronger system. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"Newsletter angle {slot}: {newsletter_openers[idx]}. {takeaway} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Newsletter angle {slot}: {newsletter_openers[idx]}. {takeaway} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {takeaway} Supporting copy: make the operating lesson clear in one visual step. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {takeaway} Supporting copy: make the operating lesson clear in one visual step. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
-            body = f"Quote-card takeaway {slot}: {takeaway} Evidence line: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Quote-card takeaway {slot}: {takeaway} Evidence line: {excerpt} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
-            body = f"CTA {slot}: {ctas[idx]}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"CTA {slot}: {ctas[idx]}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: {slot}: {replies[idx]}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reply: {slot}: {replies[idx]}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: apply this lesson before adding another disconnected step. Clip caption: {carousel_heads[idx]} at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: apply this lesson before adding another disconnected step. Clip caption: {carousel_heads[idx]} at {timestamp}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 

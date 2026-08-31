@@ -142,7 +142,7 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
     assert len(numbered) == 100
     lower = text.lower()
-    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator", "lead with this transcript moment", "use this as the main point", "open by repeating", "teach this moment", "summarize this moment", "play this timestamp", "headline from source", "source idea"]:
+    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator", "lead with", "use this as", "shape this", "shape the source", "the story starts with", "fix that moment", "lead with this transcript moment", "use this as the main point", "open by repeating", "teach this moment", "summarize this moment", "play this timestamp", "headline from source", "source idea"]:
         assert forbidden not in lower
     unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
     assert len(unique_bodies) >= 90
@@ -195,6 +195,21 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     ]
     for shell in repeated_shells:
         assert lower.count(shell) <= 2
+    for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+        openings = {}
+        endings = {}
+        for body in subset:
+            asset_prose = body.split("Source excerpt:", 1)[0].strip().lower()
+            normalized_words = __import__("re").sub(r"[^a-z0-9 ]+", " ", asset_prose).split()
+            opening = " ".join(normalized_words[:5])
+            ending = " ".join(normalized_words[-7:])
+            openings[opening] = openings.get(opening, 0) + 1
+            endings[ending] = endings.get(ending, 0) + 1
+            assert len(normalized_words) >= 8
+            assert asset_prose.endswith((".", "?", "!"))
+        assert max(openings.values()) == 1
+        assert max(endings.values()) <= 2
 
 
 def test_phase3_100_assets_do_not_attach_unrelated_claims_to_citations(monkeypatch, tmp_path):
