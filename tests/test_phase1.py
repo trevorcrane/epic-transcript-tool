@@ -369,3 +369,18 @@ def test_cached_long_youtube_can_return_before_duration_guard(monkeypatch, tmp_p
     res = client.post("/api/transcribe-url", data={"url":"https://youtu.be/cachedlong1", "owner":"owner-token-cachedlong-abcdefghijkl"})
     assert res.status_code == 200
     assert res.json()["record"]["cache_hit"] is True
+
+
+def test_local_whisper_falls_back_to_stdout_when_vtt_missing(monkeypatch, tmp_path):
+    audio = tmp_path / "french.wav"
+    audio.write_bytes(b"fake")
+    fake_bin = tmp_path / "whisper"
+    fake_bin.write_text("#!/bin/sh\nexit 0\n")
+    fake_bin.chmod(0o755)
+    def fake_run(cmd, capture_output, text, timeout):
+        return subprocess.CompletedProcess(cmd, 0, stdout="Detected language: French\n[00:00.000 --> 00:02.000] Bonjour depuis stdout\n", stderr="")
+    monkeypatch.setattr(app, "resolve_whisper_binary", lambda: str(fake_bin))
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    segs, lang = app.transcribe_with_local_whisper(audio)
+    assert lang == "fr"
+    assert segs == [{"start": 0.0, "end": 2.0, "text": "Bonjour depuis stdout"}]

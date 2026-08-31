@@ -573,6 +573,19 @@ def resolve_whisper_binary() -> str:
     return resolve_binary("whisper", "WHISPER_BIN", WHISPER_BINARY_CANDIDATES)
 
 
+def parse_whisper_stdout_segments(text: str) -> list[dict]:
+    segments = []
+    for line in (text or "").splitlines():
+        match = re.match(r"\[(\d{2}:\d{2}(?::\d{2})?\.\d{3})\s+-->\s+(\d{2}:\d{2}(?::\d{2})?\.\d{3})\]\s*(.+)", line.strip())
+        if not match:
+            continue
+        start, end, body = match.groups()
+        clean = _clean_caption_text(body)
+        if clean:
+            segments.append({"start": parse_timestamp(start), "end": parse_timestamp(end), "text": clean})
+    return segments
+
+
 def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = None) -> tuple[list[dict], str]:
     whisper_bin = resolve_whisper_binary()
     out_dir = Path(tempfile.mkdtemp(prefix="epic-whisper-out-"))
@@ -583,9 +596,10 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "Local Whisper transcription failed")
     files = list(out_dir.glob("*.vtt"))
-    if not files:
-        raise RuntimeError("Local Whisper finished but produced no VTT")
-    segs = parse_vtt_segments(files[0].read_text(errors="ignore"))
+    if files:
+        segs = parse_vtt_segments(files[0].read_text(errors="ignore"))
+    else:
+        segs = parse_whisper_stdout_segments(proc.stdout)
     shutil.rmtree(out_dir, ignore_errors=True)
     if not segs:
         raise RuntimeError("Local Whisper transcript came back empty")
