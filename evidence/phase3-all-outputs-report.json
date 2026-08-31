@@ -1,0 +1,144 @@
+{
+  "ok": true,
+  "base": "https://epic-transcript.robyncrane.com",
+  "video_url": "https://youtu.be/dQw4w9WgXcQ",
+  "elapsed_seconds": 4.01,
+  "record": {
+    "id": "76c20c08e90c",
+    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "method": "native-caption-subtitles",
+    "language": "en",
+    "word_count": 366,
+    "segment_count": 61,
+    "cache_hit": true
+  },
+  "declared_output_count": 17,
+  "verified_output_count": 17,
+  "verified_outputs": {
+    "executive_summary": {
+      "chars": 851,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "main_ideas": {
+      "chars": 750,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "action_items": {
+      "chars": 864,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "chapters": {
+      "chars": 795,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "best_quotes": {
+      "chars": 755,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "stories_examples": {
+      "chars": 775,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "content_framework": {
+      "chars": 781,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "blog_post": {
+      "chars": 845,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "newsletter": {
+      "chars": 829,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "social_posts": {
+      "chars": 754,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "short_form_hooks": {
+      "chars": 821,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "faq": {
+      "chars": 735,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "sales_insights": {
+      "chars": 819,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "objections_answers": {
+      "chars": 755,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "trevor_use": {
+      "chars": 878,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "content_assets_100": {
+      "chars": 964,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    },
+    "ask_question": {
+      "chars": 784,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "copy_ready": true
+    }
+  },
+  "individual_download": {
+    "analysis_id": "be990cec1f12",
+    "status": 200,
+    "bytes": 907,
+    "content_type": "text/markdown; charset=utf-8"
+  }
+}

@@ -57,10 +57,10 @@
   .logo-mark::before { content:''; width:4px; height:16px; border-radius:999px; background:#09090b; box-shadow:-8px 4px 0 #09090b, -4px -3px 0 #09090b, 4px -3px 0 #09090b, 8px 4px 0 #09090b; }
   .title { display:grid; gap:4px; font-size:14px; font-weight:700; letter-spacing:-.01em; }
   .title::before { content:'EPIC'; color:var(--white-45); font-size:11px; letter-spacing:.34em; font-weight:800; }
-  .nav { display:flex; align-items:center; gap:10px; }
+  .nav { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
   .nav a:not(.pill) { display:none; }
   .nav .pill { display:inline-flex; align-items:center; min-height:30px; padding:0 14px; border:1px solid var(--white-12); border-radius:999px; color:var(--white-60); background:var(--white-4); font-size:11px; font-weight:800; letter-spacing:.28em; text-decoration:none; text-transform:uppercase; }
-  .theme-toggle { display:inline-flex; align-items:center; gap:8px; min-height:30px; border:1px solid var(--white-12); border-radius:999px; padding:0 12px; color:#fff; background:rgba(255,255,255,.06); cursor:pointer; font-size:11px; font-weight:850; letter-spacing:.16em; text-transform:uppercase; }
+  .theme-toggle { display:inline-flex; align-items:center; gap:8px; min-height:36px; border:1px solid var(--white-12); border-radius:999px; padding:0 12px; color:#fff; background:rgba(255,255,255,.06); cursor:pointer; font-size:11px; font-weight:850; letter-spacing:.16em; text-transform:uppercase; touch-action:manipulation; }
   .theme-toggle::before { content:''; width:18px; height:18px; border-radius:999px; background:linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); box-shadow:0 0 18px rgba(241,7,163,.32); }
   body[data-theme='light'] .dark-stage { background:linear-gradient(180deg, rgba(247,246,243,.96), #f7f6f3 88%), radial-gradient(circle, rgba(123,47,247,.18), rgba(241,7,163,.07) 42%, transparent 73%); color:#171719; }
   body[data-theme='light'] .page, body[data-theme='light'] .how-stage, body[data-theme='light'] .footer { background:#f7f6f3; color:#171719; }
@@ -195,7 +195,9 @@
     .shell { width:100%; }
     .topbar { gap:10px; padding-bottom:34px; }
     .title { font-size:13px; }
-    .nav { display:none; }
+    .nav { display:flex; }
+    .nav .pill { display:none; }
+    .theme-toggle { min-width:44px; min-height:44px; justify-content:center; padding:0 10px; letter-spacing:.08em; }
     .hero h1 { font-size:43px; line-height:1.04; }
     .hero-control { margin-top:38px; border-radius:22px; }
     .url-input { padding-left:48px; font-size:14px; }
@@ -217,7 +219,7 @@
           <a href="#how">How it works</a>
           <a href="#results">Results</a>
           <a class="pill" href="#start">FAST · FREE · V3</a>
-          <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">Light</button>
+          <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch to light mode">Light</button>
         </nav>
       </header>
 
@@ -770,7 +772,11 @@
     localStorage.setItem('epicTranscriptTheme', theme);
     const isLight = theme === 'light';
     const toggle = document.getElementById('themeToggle');
-    if (toggle) { toggle.textContent = isLight ? 'Dark' : 'Light'; toggle.setAttribute('aria-pressed', String(isLight)); }
+    if (toggle) {
+      toggle.textContent = isLight ? 'Dark' : 'Light';
+      toggle.setAttribute('aria-pressed', String(isLight));
+      toggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+    }
   }
   function toggleTheme() { setTheme((document.body.dataset.theme || 'dark') === 'dark' ? 'light' : 'dark'); }
   const themeToggle = document.getElementById('themeToggle');

@@ -1,0 +1,35 @@
+{
+  "base_url": "https://epic-transcript.robyncrane.com",
+  "fixture_path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/static/phase2-public-url.mp3",
+  "fixture_size": 23661,
+  "fixture_url_check": {
+    "url": "https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3",
+    "http_status": 206,
+    "bytes": 256,
+    "content_type": "audio/mpeg",
+    "ok": true
+  },
+  "result": {
+    "http_status": 200,
+    "elapsed_seconds": 9.291945,
+    "ok": true,
+    "api_ok": true,
+    "id": "0f26cc3aa13c",
+    "method": "local-whisper",
+    "source_kind": "url",
+    "source_url": "https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3",
+    "segment_count": 2,
+    "word_count": 18,
+    "language": "en",
+    "cache_hit": false,
+    "first": "Epic transcript machine phase 2 public URL test, local Whisperer should transcribe this",
+    "provider_attempts": [
+      {
+        "provider": "captions",
+        "ok": false,
+        "error": "No usable native caption track found"
+      }
+    ]
+  },
+  "all_ok": true
+}

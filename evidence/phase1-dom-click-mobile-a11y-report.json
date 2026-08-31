@@ -1,0 +1,136 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "video_url": "https://www.youtube.com/shorts/1WW76Rz4nqM",
+  "owner": "phase1-dom-click-8dd4565ae94fa992ae457295",
+  "root": {
+    "status": 200,
+    "bytes": 46689,
+    "url": "https://epic-transcript.robyncrane.com/"
+  },
+  "dom": {
+    "missing_ids": [],
+    "button_text": {
+      "grab": "Get Video Transcript",
+      "copyBtn": "Copy",
+      "downloadBtn": "TXT",
+      "downloadMdBtn": "Markdown",
+      "downloadSrtBtn": "SRT"
+    },
+    "url_input": {
+      "id": "url",
+      "class": "url-input",
+      "type": "url",
+      "placeholder": "Enter YouTube URL...",
+      "inputmode": "url",
+      "autocomplete": "off",
+      "spellcheck": "false"
+    },
+    "file_input_accept": ".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt",
+    "drop_label_text": "Click or drag audio, video, or transcript files here MP4 · MOV · WebM · MKV · AVI · MP3 · M4A · AAC · FLAC · OGG · OPUS · WAV · TXT · MD · SRT · VTT"
+  },
+  "script_contracts": {
+    "form_submit_prevents_default": true,
+    "async_job_path": true,
+    "old_sync_url_submit_absent": true,
+    "copy_button_clipboard": true,
+    "auto_copy_after_result": true,
+    "txt_download_click": true,
+    "md_download_click": true,
+    "srt_download_click": true,
+    "download_link_api": true,
+    "touch_drop_click": true
+  },
+  "mobile_accessibility_contracts": {
+    "viewport_meta": true,
+    "mobile_breakpoint_760": true,
+    "narrow_breakpoint_420": true,
+    "mobile_single_column_url_row": true,
+    "mobile_grab_full_width": true,
+    "touch_target_grab_height": true,
+    "touch_target_url_height": true,
+    "body_overflow_x_hidden": true,
+    "reduced_motion_supported": true,
+    "visible_focus_ring": true
+  },
+  "contrast": {
+    "body_white_on_dark": {
+      "fg": "#ffffff",
+      "bg": "#09090b",
+      "ratio": 19.9,
+      "required": 4.5
+    },
+    "result_text_on_light": {
+      "fg": "#3f3f46",
+      "bg": "#fbfaf8",
+      "ratio": 10.01,
+      "required": 4.5
+    },
+    "dark_button_text_on_purple": {
+      "fg": "#ffffff",
+      "bg": "#7b2ff7",
+      "ratio": 5.85,
+      "required": 4.5
+    },
+    "plain_button_text_on_white": {
+      "fg": "#171719",
+      "bg": "#ffffff",
+      "ratio": 17.9,
+      "required": 4.5
+    },
+    "faq_text_on_light": {
+      "fg": "#171719",
+      "bg": "#f7f6f3",
+      "ratio": 16.57,
+      "required": 4.5
+    },
+    "toast_text_on_dark_success": {
+      "fg": "#bbf7d0",
+      "bg": "#09090b",
+      "ratio": 16.42,
+      "required": 4.5
+    }
+  },
+  "transcribe_start": {
+    "status": 202,
+    "body_head": "{\"ok\":true,\"job\":{\"id\":\"7442824b0d66\",\"status\":\"running\",\"url\":\"https://www.youtube.com/shorts/1WW76Rz4nqM\",\"created_at\":1788191525.046916,\"started_at\":1788191525.04704}}"
+  },
+  "record": {
+    "job_id": "7442824b0d66",
+    "id": "b30cde433e86",
+    "title": "HOW TO: Edit with AI in YouTube Shorts",
+    "method": "local-whisper",
+    "language": "en",
+    "word_count": 151,
+    "segment_count": 13,
+    "transcript_chars": 887,
+    "cache_hit": true,
+    "first": "You can now edit videos with AI when creating a short in the YouTube app.",
+    "last": "Try it out."
+  },
+  "copy_contract": {
+    "clipboard_handler_writes_transcript": true,
+    "toast_success_text_present": true,
+    "copy_source_chars": 887,
+    "copy_source_head": "[00:00] You can now edit videos with AI when creating a short in the YouTube app.\n[00:04] Edit with AI transforms your raw footage into a compelling first draft.\n[00:08] It finds t"
+  },
+  "downloads": {
+    "txt": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 887,
+      "content_type": "text/plain; charset=utf-8"
+    },
+    "md": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 1096,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "srt": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 1216,
+      "content_type": "application/x-subrip"
+    }
+  }
+}

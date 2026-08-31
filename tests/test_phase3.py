@@ -48,12 +48,33 @@ def test_phase3_analysis_outputs_do_not_hide_original_transcript(monkeypatch, tm
 def test_phase3_all_declared_outputs_return_useful_text(monkeypatch, tmp_path):
     rec = seed_record(tmp_path, monkeypatch)
     client = TestClient(app.app)
+    seen_bodies = set()
     for output_type in app.ANALYSIS_OUTPUTS:
         res = client.post(f"/api/analyze/{rec['id']}", data={"output_type": output_type, "question":"What should Trevor do?"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
         assert res.status_code == 200, output_type
         text = res.json()["analysis"]
         assert len(text) > 40, output_type
         assert "Transcript evidence" in text or "timestamp" in text.lower() or "[00:" in text, output_type
+        body = text.split("## Transcript evidence", 1)[-1]
+        assert body not in seen_bodies, output_type
+        seen_bodies.add(body)
+
+
+def test_phase3_create_100_content_assets_returns_100_assets(monkeypatch, tmp_path):
+    rec = seed_record(tmp_path, monkeypatch)
+    client = TestClient(app.app)
+    res = client.post(
+        f"/api/analyze/{rec['id']}",
+        data={"output_type": "content_assets_100"},
+        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+    )
+    assert res.status_code == 200
+    text = res.json()["analysis"]
+    assert "starter map" not in text.lower()
+    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+    assert len(numbered) == 100
+    for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+        assert label in text
 
 
 def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):

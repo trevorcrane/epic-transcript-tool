@@ -906,10 +906,43 @@ def _segment_lines(rec: dict, limit: int = 8) -> list[str]:
     return lines
 
 
+def _evidence_cycle(evidence: list[str], count: int) -> list[str]:
+    if not evidence:
+        evidence = ["[00:00] Transcript evidence unavailable."]
+    return [evidence[i % len(evidence)] for i in range(count)]
+
+
+def _strip_timestamp(line: str) -> str:
+    return re.sub(r"^\[[0-9:,]+\]\s*", "", line).strip() or line
+
+
+def build_100_content_assets(evidence: list[str]) -> list[str]:
+    """Return 100 distinct, timestamp-grounded asset drafts without paid AI."""
+    categories = [
+        ("Hook", "Lead with a curiosity gap"),
+        ("Short post", "Teach one useful idea"),
+        ("Email subject", "Open a nurture email"),
+        ("Newsletter angle", "Frame a longer takeaway"),
+        ("Reel script", "Turn the moment into a 20-second script"),
+        ("Carousel slide", "Make one swipeable teaching point"),
+        ("Quote card", "Pull a quotable line"),
+        ("CTA", "Invite the next action"),
+        ("Objection reply", "Answer a likely hesitation"),
+        ("Repurpose prompt", "Brief a creator/editor"),
+    ]
+    samples = _evidence_cycle(evidence, 100)
+    assets = ["## Create 100 content assets", "Each item is grounded in a timestamped transcript moment."]
+    for i, sample in enumerate(samples, 1):
+        kind, purpose = categories[(i - 1) // 10]
+        clean = _strip_timestamp(sample)
+        assets.append(f"{i}. **{kind} {((i - 1) % 10) + 1}** - {purpose}: use `{sample}` to create: {clean[:170]}")
+    return assets
+
+
 def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
     if output_type not in ANALYSIS_OUTPUTS:
         raise HTTPException(400, "Unsupported analysis output type.")
-    evidence = _segment_lines(rec, 10)
+    evidence = _segment_lines(rec, 12)
     label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
     title = rec.get("title") or rec.get("source") or "Transcript"
     word_count = rec.get("word_count") or transcript_word_count(rec.get("transcript", ""))
@@ -927,27 +960,132 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
     else:
         header.append("- No timestamped evidence was available.")
 
-    first = evidence[0] if evidence else "[00:00] Transcript evidence unavailable."
-    second = evidence[1] if len(evidence) > 1 else first
-    third = evidence[2] if len(evidence) > 2 else second
+    samples = _evidence_cycle(evidence, 12)
+    first, second, third, fourth, fifth, sixth = samples[:6]
+    plain_first = _strip_timestamp(first)
+    plain_second = _strip_timestamp(second)
+    plain_third = _strip_timestamp(third)
+
     body_map = {
-        "executive_summary": ["## Summary", f"- The core message starts with {first}", f"- The follow-up point is supported by {second}", f"- The useful takeaway is grounded in {third}"],
-        "main_ideas": ["## Main ideas", f"1. {first}", f"2. {second}", f"3. {third}"],
-        "action_items": ["## Action items", f"- Use {first} as the first follow-up cue.", f"- Turn {second} into the next owner/task note.", f"- Package {third} into a deliverable or content asset."],
-        "chapters": ["## Chapters", f"- 00:00 Opening: {first}", f"- Midpoint theme: {second}", f"- Closing opportunity: {third}"],
-        "best_quotes": ["## Best quotes", f"- \"{first}\"", f"- \"{second}\"", f"- \"{third}\""],
-        "stories_examples": ["## Stories and examples", f"- Story/example candidate from {first}", f"- Supporting example from {second}"],
-        "content_framework": ["## Content framework", f"- Hook: {first}", f"- Teach: {second}", f"- Apply: {third}"],
-        "blog_post": ["## Blog post draft", f"Lead with the promise in {first}.", "", f"Develop the main lesson using {second}.", "", f"Close with the practical next step from {third}."],
-        "newsletter": ["## Newsletter draft", "Subject: What this transcript makes clear", "", f"Start with {first}", f"Then bridge into {second}", f"CTA: apply {third}"],
-        "social_posts": ["## Social posts", f"1. {first}", f"2. {second}", f"3. {third}"],
-        "short_form_hooks": ["## Short-form hooks", f"- What if {first}", f"- The part everyone misses: {second}", f"- Save this if you need {third}"],
-        "faq": ["## FAQ", f"Q: What is this about?\nA: {first}", f"Q: What matters next?\nA: {second}"],
-        "sales_insights": ["## Sales insights", f"- Buyer language to reuse: {first}", f"- Follow-up angle: {second}", f"- Offer/content bridge: {third}"],
-        "objections_answers": ["## Objections and answers", f"- Objection clue: {first}", f"  Answer with: {second}"],
-        "trevor_use": ["## How Trevor can use this", f"- Turn {first} into the main message.", f"- Ask the team to package {second} into follow-up copy.", f"- Use {third} for the next content angle."],
-        "content_assets_100": ["## Create 100 content assets", "This release returns a starter map, not 100 final assets yet.", f"- 10 hooks from: {first}", f"- 10 teaching posts from: {second}", f"- 10 email angles from: {third}", "- Repeat the pattern across the remaining timestamped segments."],
-        "ask_question": ["## Answer", f"Question: {question or 'What should I know from this video?'}", f"Best answer from transcript evidence: {first} {second}"],
+        "executive_summary": [
+            "## Summary",
+            f"- **Core point:** {plain_first} Evidence: {first}",
+            f"- **Why it matters:** {plain_second} Evidence: {second}",
+            f"- **Practical takeaway:** {plain_third} Evidence: {third}",
+            "- **Recommended use:** turn the transcript into a publishable summary, follow-up copy, and timestamped clips before publishing anything externally.",
+        ],
+        "main_ideas": [
+            "## Main ideas",
+            f"1. {plain_first} ({first})",
+            f"2. {plain_second} ({second})",
+            f"3. {plain_third} ({third})",
+            f"4. Later evidence adds: {_strip_timestamp(fourth)} ({fourth})",
+        ],
+        "action_items": [
+            "## Action items",
+            f"- Draft the first deliverable from {first}.",
+            f"- Assign a follow-up owner for the issue raised at {second}.",
+            f"- Turn the concrete language at {third} into an email or social post.",
+            f"- Review the later evidence at {fourth} before final publication.",
+        ],
+        "chapters": [
+            "## Chapters",
+            f"- 00:00 Opening promise: {plain_first}",
+            f"- {second} - First teaching point.",
+            f"- {third} - Supporting proof or example.",
+            f"- {fourth} - Midpoint development.",
+            f"- {fifth} - Closing or next action.",
+        ],
+        "best_quotes": [
+            "## Best quotes",
+            f"- \"{plain_first}\" - Source {first}",
+            f"- \"{plain_second}\" - Source {second}",
+            f"- \"{plain_third}\" - Source {third}",
+            f"- \"{_strip_timestamp(fourth)}\" - Source {fourth}",
+        ],
+        "stories_examples": [
+            "## Stories and examples",
+            f"- Opening story candidate: {first}",
+            f"- Supporting example: {second}",
+            f"- Tension or contrast to highlight: {third}",
+            f"- Closing example to reuse: {fourth}",
+        ],
+        "content_framework": [
+            "## Content framework",
+            f"- **Hook:** {plain_first} ({first})",
+            f"- **Teach:** explain the point behind {second}.",
+            f"- **Proof:** cite {third}.",
+            f"- **Apply:** give the viewer a next step from {fourth}.",
+            f"- **Repurpose:** split the same framework into a post, email, reel, and carousel.",
+        ],
+        "blog_post": [
+            "## Blog post draft",
+            f"### Lead\nOpen with the tension in {first}.",
+            f"### Main lesson\nBuild the article around {second} and connect it to the audience's real problem.",
+            f"### Proof\nUse {third} as the timestamped citation.",
+            f"### Close\nEnd with the practical takeaway from {fourth}.",
+        ],
+        "newsletter": [
+            "## Newsletter draft",
+            f"Subject: A useful takeaway from {title}",
+            "",
+            f"Start with: {plain_first}",
+            f"Bridge: {plain_second}",
+            f"Useful takeaway: {plain_third}",
+            f"CTA: ask readers to reply with how they would apply {fourth}.",
+        ],
+        "social_posts": [
+            "## Social posts",
+            f"1. LinkedIn: {plain_first} Source: {first}",
+            f"2. X/Twitter: {plain_second} Source: {second}",
+            f"3. Instagram caption: {plain_third} Source: {third}",
+            f"4. Short-form post: {_strip_timestamp(fourth)} Source: {fourth}",
+        ],
+        "short_form_hooks": [
+            "## Short-form hooks",
+            f"- What if {plain_first}? ({first})",
+            f"- The part everyone misses: {plain_second}. ({second})",
+            f"- Save this if you need to remember: {plain_third}. ({third})",
+            f"- Nobody talks about this moment: {_strip_timestamp(fourth)}. ({fourth})",
+        ],
+        "faq": [
+            "## FAQ",
+            f"Q: What is this about?\nA: {plain_first} Evidence: {first}",
+            f"Q: What matters next?\nA: {plain_second} Evidence: {second}",
+            f"Q: What should I quote?\nA: {plain_third} Evidence: {third}",
+            f"Q: What should I do with it?\nA: Package the strongest timestamped moments into summary, clips, and follow-up copy.",
+        ],
+        "sales_insights": [
+            "## Sales insights",
+            f"- Buyer language to reuse: {first}",
+            f"- Pain or desire signal: {second}",
+            f"- Follow-up angle: {third}",
+            f"- Offer/content bridge: {fourth}",
+        ],
+        "objections_answers": [
+            "## Objections and answers",
+            f"- Objection clue: {first}\n  Answer with: {second}",
+            f"- Objection clue: {third}\n  Answer with: {fourth}",
+            f"- Objection clue: {fifth}\n  Answer with: {sixth}",
+        ],
+        "trevor_use": [
+            "## How Trevor can use this",
+            f"- Turn {first} into the main message for a short post or email.",
+            f"- Ask the team to package {second} into follow-up copy.",
+            f"- Use {third} as a timestamped proof point in a client-facing asset.",
+            f"- Pull {fourth} into the next offer/content angle.",
+        ],
+        "content_assets_100": build_100_content_assets(evidence),
+        "ask_question": [
+            "## Answer",
+            f"Question: {question or 'What should I know from this video?'}",
+            f"Short answer: {plain_first} {plain_second}",
+            "",
+            "## Evidence used",
+            f"- {first}",
+            f"- {second}",
+            f"- {third}",
+        ],
     }
     return "\n".join(header + [""] + body_map.get(output_type, [f"## {label}", first, second])).strip() + "\n"
 

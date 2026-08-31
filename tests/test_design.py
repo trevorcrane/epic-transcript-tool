@@ -78,8 +78,13 @@ def test_reference_faqs_and_theme_toggle_are_present():
     ]:
         assert faq in html
     assert 'id="themeToggle"' in html
+    assert 'aria-label="Switch to light mode"' in html
+    assert "Switch to dark mode" in html
     assert "toggleTheme" in html
     assert "data-theme" in html
+    assert "localStorage.setItem('epicTranscriptTheme', theme)" in html
+    assert ".nav { display:flex; }" in html
+    assert ".theme-toggle { min-width:44px; min-height:44px" in html
 
 
 def test_visible_version_phase_status_is_present():

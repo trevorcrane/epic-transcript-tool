@@ -147,6 +147,10 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 11:45 EDT: added `scripts/phase2_release_gate_smoke.py` and ran it against the public no-login product. PASS evidence saved to `evidence/phase2-release-gate-report.json`: public root HTTP 200 with exact supported upload extensions/labels; `/health` ready with required `missing: []` and `GEMINI_API_KEY` only optional; unsupported `.exe` upload returned HTTP 400 with full guidance `Upload one of: .aac, .avi, .flac, .m4a, .md, .mkv, .mov, .mp3, .mp4, .ogg, .opus, .srt, .txt, .vtt, .wav, .webm`; unsupported non-YouTube URL returned helpful HTTP 422 upload guidance; cleanup proof uploaded text, created analysis `4ce537cae294`, deleted transcript `d4c323e04d9f`, then verified transcript readback HTTP 404 and analysis download HTTP 404.
+- 2026-08-31 11:45 EDT: reran `scripts/phase2_upload_smoke.py` publicly and saved `evidence/phase2-upload-smoke-latest.json`. WAV, MP3, M4A, MP4, MOV, and WebM returned HTTP 200 through `local-whisper`; repeat WAV returned `cache_hit=true`; TXT, Markdown, and SRT downloads returned HTTP 200 with expected markers.
+- 2026-08-31 11:45 EDT: reran `scripts/phase2_public_url_smoke.py` publicly and saved `evidence/phase2-public-url-smoke-latest.json`. Public MP3 fixture returned HTTP 206 `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 9.29s through `local-whisper`, source_kind `url`, language `en`, 2 segments, 18 words, cache miss.
+- 2026-08-31 11:45 EDT: direct browser file-upload proof was attempted, but Browser Use stopped at macOS Chrome's `Allow remote debugging?` permission prompt before loading the page. API/no-Chrome evidence now covers exact formats, helpful failures, upload success, cache, downloads, and cleanup; direct browser upload UX remains retry-only after the prompt is approved.
 - 2026-08-31 08:53 EDT: public UX copy now explicitly names public media URL and upload format support in the how-it-works and FAQ sections. Root HTML verification passed for no-login public access and expected markers.
 - 2026-08-31 08:18 EDT: added cleanup/retention hardening and regression evidence.
 - Upload temporary media cleanup: PASS automated. `test_upload_temp_directory_is_removed_after_processing` proves the server removes the per-upload temp directory after processing.
@@ -189,6 +193,7 @@ Successfully process:
 - 30+ minute recording. Public generated 31-minute MP3 upload passed via local Whisper on 2026-08-31 04:42 EDT with duration metadata `1862.0` seconds.
 - Supported non-YouTube URL. Public hosted MP3 URL passed on 2026-08-31 05:17 EDT via `/api/transcribe-url`, `local-whisper`, 2 segments, 18 words, no paid provider.
 - Unsupported URL with helpful upload guidance.
+- Unsupported upload file with helpful exact format guidance. Public `.exe` upload returns HTTP 400 with the complete supported list: `.aac`, `.avi`, `.flac`, `.m4a`, `.md`, `.mkv`, `.mov`, `.mp3`, `.mp4`, `.ogg`, `.opus`, `.srt`, `.txt`, `.vtt`, `.wav`, `.webm`.
 - Desktop Chrome.
 - Mobile experience.
 - Browser without WebGPU using planned fallback.
@@ -200,8 +205,9 @@ Verify:
 - TXT download.
 - Markdown download.
 - SRT download.
-- No required paid provider or surprise usage bills.
-- Automatic deletion of temporary server media. PASS automated on 2026-08-31 08:18 EDT for upload work directories; public API uses per-request temp dirs and `finally` cleanup.
+- No required paid provider or surprise usage bills. PASS public `/health` on 2026-08-31 11:45 EDT reported required `missing: []`; `GEMINI_API_KEY` is optional and was not needed for the Phase 2 public smokes.
+- Exact supported formats. PASS public root and unsupported-upload guidance list `.aac`, `.avi`, `.flac`, `.m4a`, `.md`, `.mkv`, `.mov`, `.mp3`, `.mp4`, `.ogg`, `.opus`, `.srt`, `.txt`, `.vtt`, `.wav`, `.webm`.
+- Automatic deletion of temporary server media. PASS automated on 2026-08-31 08:18 EDT for upload work directories; public API uses per-request temp dirs and `finally` cleanup. Retention readback PASS on 2026-08-31 11:45 EDT for record `d4c323e04d9f` / analysis `4ce537cae294`: both returned HTTP 404 after owner-authorized delete.
 
 ## Phase 3 release gate: Video intelligence
 

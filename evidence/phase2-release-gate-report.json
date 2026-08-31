@@ -1,0 +1,64 @@
+{
+  "base_url": "https://epic-transcript.robyncrane.com",
+  "supported_formats": [
+    ".aac",
+    ".avi",
+    ".flac",
+    ".m4a",
+    ".md",
+    ".mkv",
+    ".mov",
+    ".mp3",
+    ".mp4",
+    ".ogg",
+    ".opus",
+    ".srt",
+    ".txt",
+    ".vtt",
+    ".wav",
+    ".webm"
+  ],
+  "root_format_copy": {
+    "http_status": 200,
+    "bytes": 46741,
+    "missing_exts": [],
+    "missing_labels": [],
+    "missing_markers": [],
+    "ok": true
+  },
+  "health_no_paid_provider_required": {
+    "http_status": 200,
+    "ok": true,
+    "ready": true,
+    "missing": [],
+    "optional_missing": [
+      "SMTP config (Email to Me)",
+      "GEMINI_API_KEY"
+    ],
+    "no_paid_provider_required": true
+  },
+  "unsupported_upload_failure": {
+    "http_status": 400,
+    "ok": true,
+    "detail": "Unsupported file type: .exe. Upload one of: .aac, .avi, .flac, .m4a, .md, .mkv, .mov, .mp3, .mp4, .ogg, .opus, .srt, .txt, .vtt, .wav, .webm.",
+    "missing_exts": []
+  },
+  "unsupported_url_failure": {
+    "http_status": 422,
+    "ok": true,
+    "detail": "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route."
+  },
+  "delete_cleanup_readback": {
+    "upload_status": 200,
+    "record_id": "3c2761a93ee0",
+    "method": "passthrough",
+    "word_count": 8,
+    "analysis_status": 200,
+    "analysis_id": "7908c2286ec7",
+    "delete_status": 200,
+    "transcript_readback_status": 404,
+    "analysis_download_after_delete_status": 404,
+    "ok": true
+  },
+  "all_ok": true
+}
