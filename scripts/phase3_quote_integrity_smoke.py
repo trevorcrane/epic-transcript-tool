@@ -9,6 +9,7 @@ record.
 from __future__ import annotations
 
 import json
+import argparse
 import re
 import secrets
 import sys
@@ -18,12 +19,19 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://epic-transcript.robyncrane.com"
-VIDEO = sys.argv[2] if len(sys.argv) > 2 else "https://youtu.be/dQw4w9WgXcQ"
+BASE = "https://epic-transcript.robyncrane.com"
+VIDEO = "https://youtu.be/dQw4w9WgXcQ"
 OWNER = "phase3-quote-integrity-" + secrets.token_hex(12)
 UA = "Mozilla/5.0 Epic Transcript Phase3 Quote Integrity Smoke"
-OUT = Path("evidence/phase3-quote-integrity-report.json")
 QUOTE_LINE_RE = re.compile(r'^- "(?P<quote>.+?)" - Source (?P<source>\[\d{2}:\d{2}(?::\d{2})?\] .+)$')
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("base", nargs="?", default=BASE, help="Base URL for the public Transcript Machine app")
+    parser.add_argument("video", nargs="?", default=VIDEO, help="Video URL used for quote-integrity proof")
+    parser.add_argument("--out", type=Path, default=Path("evidence/phase3-quote-integrity-report.json"), help="JSON file path for saving the proof report")
+    return parser.parse_args(argv)
 
 
 def request(path: str, *, method: str = "GET", data: dict[str, str] | None = None, headers: dict[str, str] | None = None, timeout: int = 90) -> tuple[int, bytes, dict[str, str]]:
@@ -59,6 +67,14 @@ def normalize(text: str) -> str:
     return " ".join(text.replace("\u2019", "'").replace("\u2018", "'").replace("\u201c", '"').replace("\u201d", '"').split())
 
 
+def write_report(report: dict[str, Any], out_path: Path | None = None) -> None:
+    payload = json.dumps(report, indent=2) + "\n"
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(payload, encoding="utf-8")
+    print(payload, end="")
+
+
 def complete_transcript() -> dict[str, Any]:
     start = as_json("/api/transcribe-url-job", method="POST", data={"url": VIDEO, "owner": OWNER})
     require(start.get("_http_status") == 202 and start.get("job", {}).get("id"), f"job start failed: {start}")
@@ -77,6 +93,11 @@ def complete_transcript() -> dict[str, Any]:
 
 
 def main() -> int:
+    global BASE, VIDEO
+    args = parse_args()
+    BASE = args.base.rstrip("/")
+    VIDEO = args.video
+
     started = time.monotonic()
     rec = complete_transcript()
     owner = rec.get("owner_token") or OWNER
@@ -131,9 +152,7 @@ def main() -> int:
         "download": {"status": status, "bytes": len(body), "content_type": headers.get("Content-Type") or headers.get("content-type")},
         "checked_quotes": checked,
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps(report, indent=2))
+    write_report(report, args.out)
     return 0
 
 

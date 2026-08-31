@@ -20,7 +20,7 @@
   ],
   "root_format_copy": {
     "http_status": 200,
-    "bytes": 57881,
+    "bytes": 60152,
     "missing_exts": [],
     "missing_markers": [],
     "ok": true
@@ -49,11 +49,11 @@
   },
   "delete_cleanup_readback": {
     "upload_status": 200,
-    "record_id": "894ad7ee5ad5",
+    "record_id": "ece81763973e",
     "method": "passthrough",
     "word_count": 8,
     "analysis_status": 200,
-    "analysis_id": "605a71157d18",
+    "analysis_id": "330b681f9618",
     "delete_status": 200,
     "transcript_readback_status": 404,
     "analysis_download_after_delete_status": 404,

@@ -142,6 +142,19 @@ def test_owner_ui_history_correction_contract():
     assert "const RELEASE_VERSION" in html
 
 
+def test_owner_ui_source_qc_regressions_are_blocked():
+    html = HTML.read_text()
+    assert ".accent-machine" in html
+    style = html[html.index("<style>"):html.index("</style>")]
+    accent_start = style.index(".accent-machine")
+    assert "-webkit-background-clip:text" in style[accent_start:accent_start + 500]
+    mobile_css = html[html.index("@media (max-width: 760px)"):html.index("@media (max-width: 420px)")]
+    assert ".machine-card-grid" in mobile_css
+    assert "grid-template-columns:repeat(2" in mobile_css
+    assert 'id="drawerHead" role="button" tabindex="0"' in html
+    assert "els.drawerHead.addEventListener('keydown'" in html
+
+
 def test_100_assets_quality_gate_blocks_template_duplication():
     html = HTML.read_text()
     # Design smoke documents that this UI still exposes the currently open Phase 3 gate.
@@ -152,10 +165,15 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert "browserLocal: $('browserLocal')" in html
     assert 'function isBrowserWhisperCandidate(file)' in html
     assert 'async function transcribeInBrowser(file)' in html
-    assert 'Xenova/whisper-tiny.en' in html
+    assert 'Xenova/whisper-tiny.en' not in html
+    assert 'Xenova/whisper-small' in html
     assert 'browser-whisper-webgpu' in html
     assert 'browser-whisper-wasm' in html
-    assert 'await transcribeInBrowser(file)' in html
+    assert 'shouldPreferBrowserWhisper(file)' in html
+    assert 'await transcribeInBrowser(file)' in html.split("jfetch('/api/transcribe-upload'", 1)[0]
+    assert 'return_timestamps: true' in html
+    assert 'chunks.map' in html
+    assert 'const segment = { start: 0, end: 2, text: transcript }' not in html
     assert 'Server upload failed, trying private browser transcription' in html
     assert 'window.__EPIC_BROWSER_WHISPER_TEST_STUB' in html
     assert 'Browser fallback test stub is not active' in html

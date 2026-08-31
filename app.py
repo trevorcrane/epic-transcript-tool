@@ -1036,177 +1036,44 @@ def _asset_takeaway(text: str, index: int) -> str:
 
 
 def build_100_content_assets(rec: dict) -> list[str]:
-    """Return 100 finished, distinct, timestamp-grounded asset drafts without paid AI."""
+    """Return 100 finished, distinct asset drafts grounded in the cited source excerpt."""
     categories = [
         "Hook", "Short post", "Email subject", "Newsletter angle", "Reel script",
         "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt",
     ]
-    hook_frames = [
-        "The mistake is selling the tool instead of the system.",
-        "This is the difference between a demo and a business outcome.",
-        "Most agencies stop at setup. The money is in the repeatable path.",
-        "If the process cannot repeat, the offer cannot scale.",
-        "A buyer pays more when the result is visible before the call.",
-        "The system is what makes the promise believable.",
-        "A tool is easy to copy. A working operating system is not.",
-        "The follow-up path is where missed revenue gets recovered.",
-        "Make the invisible workflow visible and the offer gets easier to sell.",
-        "Proof beats hype when you are selling AI to real businesses.",
-    ]
-    short_frames = [
-        "The practical lesson is simple: sell the operating result, then show how the system keeps producing it.",
-        "A service becomes more valuable when it has a documented path, measurable checkpoints, and proof after the handoff.",
-        "Do not lead with the software. Lead with the business pain it removes and the outcome it protects.",
-        "The strongest content does not just explain the idea. It shows the mechanism that makes the idea usable.",
-        "If a buyer can see the follow-up, the proof, and the next step, the offer becomes easier to trust.",
-        "Every missed lead is a process problem first. The system turns that leak into a recoverable moment.",
-        "The repeatable asset is the moat. It turns one win into a process the team can run again.",
-        "AI gets easier to sell when it is packaged as a complete business workflow, not a disconnected feature.",
-        "Proof should be built into the delivery path. That is what turns results into retention.",
-        "The best sales story is not ‘we installed AI.’ It is ‘we built the system that keeps working.’",
-    ]
-    subject_frames = [
-        "Stop selling AI tools. Sell the system.",
-        "The follow-up machine hiding in your offer",
-        "Why buyers pay more for a repeatable result",
-        "The missing system behind missed leads",
-        "Proof, process, and the AI offer that lasts",
-        "Make the workflow visible before the sales call",
-        "From one-off service to scalable asset",
-        "A better way to package AI for local businesses",
-        "The retention lever most agencies skip",
-        "Build the operating system before the pitch",
-    ]
-    newsletter_frames = [
-        "Open with the cost of a disconnected tool, then show how a full operating path changes the buyer's confidence.",
-        "Frame the lesson around repeatability: one good result is useful, but a documented system is sellable.",
-        "Use the moment to explain why speed-to-lead is not a tactic. It is a revenue protection system.",
-        "Contrast basic automation with a complete business workflow that captures, follows up, proves, and retains.",
-        "Show how valuation changes when a service business depends less on the owner's manual effort.",
-        "Teach the reader to identify one leak in the current process and convert it into an asset.",
-        "Make the promise concrete by tying the lesson to a measurable checkpoint the team can run every week.",
-        "Explain why the offer should bundle strategy, system, proof, and training instead of selling a raw agent.",
-        "Turn the timestamp into a story about business leverage, not tech novelty.",
-        "Close by asking readers to name the workflow that would make their next sale easier to keep.",
-    ]
-    reel_frames = [
-        "Open on the claim, cut to the workflow, show the missed-revenue gap, then close with the system fix.",
-        "Start with ‘This is why AI agents are not enough,’ then show the business process that makes them useful.",
-        "Use a before-after structure: missed lead, instant follow-up, booked call, retained customer.",
-        "Show the buyer problem first, then reveal the AI as only one part of the operating system.",
-        "Lead with proof, point to the timestamp, and end with the line: ‘The system is the product.’",
-        "Make the clip a mini case study: problem, process, proof, next action.",
-        "Use the hook ‘Your tool is not the offer’ and explain the workflow that makes the offer valuable.",
-        "Show a local business example, then connect it to speed, follow-up, and retention.",
-        "Use the visual of a broken funnel, then rebuild it as a complete response path.",
-        "End with a practical challenge: document one repeatable step before adding another tool.",
-    ]
-    carousel_frames = [
-        "Slide: Tool sellers get compared. System builders get trusted.",
-        "Slide: A lead is only valuable if the follow-up path works.",
-        "Slide: Buyers pay for outcomes they can understand and track.",
-        "Slide: The system should make the next action obvious.",
-        "Slide: Retention improves when proof is built into delivery.",
-        "Slide: Automation without process is just another loose part.",
-        "Slide: Make the workflow visible before asking for the sale.",
-        "Slide: The best offer includes setup, follow-up, reporting, and training.",
-        "Slide: Repeatable delivery turns service work into business value.",
-        "Slide: Build the path once. Improve it every time it runs.",
-    ]
-    quote_frames = [
-        "The value is not the task. The value is the repeatable system behind it.",
-        "A tool can start the conversation, but the system earns the renewal.",
-        "If the buyer cannot see the path, they cannot trust the promise.",
-        "Speed-to-lead is not a hack. It is revenue protection.",
-        "The best AI offer is a business process with proof attached.",
-        "A documented workflow turns delivery into an asset.",
-        "Do not sell novelty. Sell the result that keeps repeating.",
-        "Missed follow-up is missed money wearing a process disguise.",
-        "The system is what makes the promise survive the demo.",
-        "Build the operating path before you scale the pitch.",
-    ]
-    cta_frames = [
-        "Audit one lead path today and mark the first place follow-up slows down.",
-        "Pick one service promise and write the system that proves it after delivery.",
-        "Choose one customer journey and add a measurable checkpoint this week.",
-        "Document one repeatable step before adding another AI tool.",
-        "Find the handoff that still depends on memory and turn it into a trigger.",
-        "Review your best offer and name the proof point a buyer sees first.",
-        "Map the first five minutes after a lead opts in and remove one delay.",
-        "Turn one win into a repeatable process the team can run without you.",
-        "Add one retention proof point to your delivery path before the next sale.",
-        "Replace one manual reminder with a tested follow-up asset.",
-    ]
-    objection_frames = [
-        "If this feels too big, start with one workflow that already creates revenue and make it repeatable.",
-        "If the buyer only wants a tool, reframe the conversation around the result the tool must produce.",
-        "If the market feels crowded, show the complete operating path competitors are not showing.",
-        "If implementation feels risky, begin with a bounded pilot and one measurable checkpoint.",
-        "If the client has tried automation before, prove how this system closes the loop they missed.",
-        "If pricing feels high, anchor it to recovered leads, retained customers, and enterprise value.",
-        "If the team is overwhelmed, turn the process into a playbook before expanding the scope.",
-        "If the result is hard to believe, lead with proof and make the next action small.",
-        "If AI sounds abstract, translate it into follow-up, booking, reporting, and retention.",
-        "If the owner worries about complexity, show the simplest path that can run every week.",
-    ]
-    repurpose_frames = [
-        "LinkedIn angle: explain the system. Email angle: show the business cost. Clip angle: demonstrate the missed step.",
-        "LinkedIn angle: make the offer shift. Email angle: tell the proof story. Clip angle: contrast tool vs. system.",
-        "LinkedIn angle: teach the process. Email angle: invite an audit. Clip angle: show the first five minutes after opt-in.",
-        "LinkedIn angle: spotlight retention. Email angle: show the renewal logic. Clip angle: prove the workflow running.",
-        "LinkedIn angle: explain valuation. Email angle: show owner independence. Clip angle: map the repeatable asset.",
-        "LinkedIn angle: call out missed leads. Email angle: offer a speed-to-lead check. Clip angle: dramatize the delay.",
-        "LinkedIn angle: show the playbook. Email angle: give the checklist. Clip angle: walk through the handoff.",
-        "LinkedIn angle: compare offers. Email angle: position the complete package. Clip angle: name the missing proof.",
-        "LinkedIn angle: teach differentiation. Email angle: share the system audit. Clip angle: show what competitors skip.",
-        "LinkedIn angle: simplify the next step. Email angle: ask for one workflow. Clip angle: challenge viewers to document it.",
-    ]
-    frame_map = {
-        "Hook": hook_frames,
-        "Short post": short_frames,
-        "Email subject": subject_frames,
-        "Newsletter angle": newsletter_frames,
-        "Reel script": reel_frames,
-        "Carousel slide": carousel_frames,
-        "Quote card": quote_frames,
-        "CTA": cta_frames,
-        "Objection reply": objection_frames,
-        "Repurpose prompt": repurpose_frames,
-    }
     points = _asset_evidence_points(rec, 100)
     assets = [
         "## Create 100 content assets",
-        "Each item is a finished draft grounded in a timestamped transcript moment and sampled across the full recording.",
+        "Each item is a finished draft built from the cited transcript excerpt. The citation supports the claim because the source excerpt is included in the asset itself.",
     ]
     for i, point in enumerate(points, 1):
         kind = categories[(i - 1) // 10]
         slot = ((i - 1) % 10) + 1
         timestamp = point["timestamp"]
-        takeaway = _asset_takeaway(point["text"], i)
-        frame = frame_map[kind][slot - 1]
+        excerpt = _asset_sentence(point["text"], max_words=34)
+        short_excerpt = _asset_phrase(point["text"], max_words=12)
         if kind == "Hook":
-            body = f"{frame} {takeaway} [{timestamp}]"
+            body = f"Hook angle {slot}: Lead with this transcript moment: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Short post":
-            body = f"{frame} {takeaway} [{timestamp}]"
+            body = f"Short post {slot}: {excerpt} Use this as the main point and ask what the viewer should do with it next. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: {frame} [{timestamp}]"
+            body = f"Subject {slot}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"{frame} Timestamped proof: {takeaway} [{timestamp}]"
+            body = f"Newsletter angle {slot}: Open with the problem or insight stated here, then unpack only what this moment supports. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Script: {frame} Takeaway: {takeaway} [{timestamp}]"
+            body = f"Reel script {slot}: Open by repeating the source idea, show the on-screen timestamp, then explain this exact moment in one practical step. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"{frame} Supporting line: {takeaway} [{timestamp}]"
+            body = f"Carousel slide {slot}: Headline from source: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
-            body = f"Quote-card takeaway: {frame} Context: {takeaway} [{timestamp}]"
+            body = f"Quote-card takeaway {slot}: Feature this as a paraphrased lesson, not a verbatim quote. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
-            body = f"Get the next step: {frame} Why it matters: {takeaway} [{timestamp}]"
+            body = f"CTA {slot}: Review this exact transcript moment and decide the next action it implies. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: {frame} Proof angle: {takeaway} [{timestamp}]"
+            body = f"Objection reply {slot}: If someone challenges the point, answer only with the evidence in this moment. Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle: {frame} Source grounding: {takeaway} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn angle: teach this moment. Email angle: summarize this moment. Clip angle: play this timestamp. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
-
 
 def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
     if output_type not in ANALYSIS_OUTPUTS:

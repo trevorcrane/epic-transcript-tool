@@ -1,14 +1,14 @@
 {
   "async_before": {
     "failure": null,
-    "job_id": "d6b1c073cdfc",
+    "job_id": "d015b3896eff",
     "job_status": "done",
     "ok": true,
     "payload": {
       "job": {
-        "created_at": 1788209728.99388,
-        "id": "d6b1c073cdfc",
-        "started_at": 1788209728.9940102,
+        "created_at": 1788214146.946935,
+        "id": "d015b3896eff",
+        "started_at": 1788214146.947129,
         "status": "running",
         "url": "https://youtu.be/dQw4w9WgXcQ"
       },
@@ -16,19 +16,19 @@
     },
     "poll_payload": {
       "job": {
-        "created_at": 1788209728.99388,
-        "finished_at": 1788209730.92975,
-        "id": "d6b1c073cdfc",
+        "created_at": 1788214146.946935,
+        "finished_at": 1788214150.123072,
+        "id": "d015b3896eff",
         "percent": 100,
         "record": {
           "cache_hit": true,
-          "id": "b550a52c9765",
+          "id": "622f1c581699",
           "language": "en",
           "method": "native-caption-subtitles",
           "segment_count": 61,
           "word_count": 366
         },
-        "started_at": 1788209728.9940102,
+        "started_at": 1788214146.947129,
         "status": "done",
         "url": "https://youtu.be/dQw4w9WgXcQ"
       },
@@ -37,7 +37,7 @@
     "poll_status": 200,
     "record": {
       "cache_hit": true,
-      "id": "b550a52c9765",
+      "id": "622f1c581699",
       "method": "native-caption-subtitles",
       "segment_count": 61,
       "word_count": 366
@@ -66,6 +66,6 @@
   },
   "ok": true,
   "restarted": false,
-  "started": "2026-08-31 16:55:28 EDT",
+  "started": "2026-08-31 18:09:06 EDT",
   "video_url": "https://youtu.be/dQw4w9WgXcQ"
 }

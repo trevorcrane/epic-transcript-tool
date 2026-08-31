@@ -165,7 +165,8 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     assert sum(1 for ts in timestamps if ts <= 900) >= 10
     assert sum(1 for ts in timestamps if 1800 <= ts <= 3600) >= 10
     assert sum(1 for ts in timestamps if ts >= 4500) >= 10
-    assert "Strategy lesson" not in text
+    assert "Source excerpt:" in text
+    assert "Strategy lesson" in text
     assert "Email subject" in text and "Subject:" in text
     assert "CTA" in text and "Get" in text
     assert "Objection reply" in text and "Reply:" in text
@@ -181,6 +182,47 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     subjects = [line for line in numbered if "**Email subject" in line]
     subject_stems = {line.split("Subject:", 1)[1].split(" - ", 1)[0].strip() for line in subjects}
     assert len(subject_stems) == 10
+
+
+def test_phase3_100_assets_do_not_attach_unrelated_claims_to_citations(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    segments = [
+        {"start": i * 15, "end": i * 15 + 10, "text": f"Segment {i} says zebra alpha {i} and orchard beta {i} only."}
+        for i in range(120)
+    ]
+    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+    rec = app.save_transcript(
+        source="Grounding Test",
+        source_kind="youtube",
+        method="native-caption-automatic_captions",
+        transcript=transcript,
+        duration_seconds=1800,
+        processing_seconds=0,
+        media_id="grounding-assets-123",
+        source_url="https://youtu.be/grounding123",
+        title="Grounding Test",
+        creator="Tester",
+        language="en",
+        segments=segments,
+        provider_attempts=[],
+        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+    )
+    client = TestClient(app.app)
+    res = client.post(
+        f"/api/analyze/{rec['id']}",
+        data={"output_type": "content_assets_100"},
+        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+    )
+    assert res.status_code == 200
+    text = res.json()["analysis"]
+    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+    assert len(numbered) == 100
+    forbidden_unrelated = ["local business", "speed-to-lead", "follow-up machine", "enterprise value", "missed leads", "valuation"]
+    assert not any(term in text.lower() for term in forbidden_unrelated)
+    for line in numbered:
+        assert "zebra alpha" in line and "orchard beta" in line
+        assert "Source excerpt:" in line
 
 
 def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):

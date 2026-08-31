@@ -74,6 +74,7 @@
   body[data-theme='light'] .upload-mini { background:#fff; border-color:rgba(0,0,0,.16); }
   body[data-theme='light'] .upload-mini:hover { color:#171719; background:rgba(241,7,163,.06); }
   body[data-theme='light'] .file-name { color:#7b2ff7; }
+  body[data-theme='light'] .browser-option { color:rgba(23,23,25,.66); }
   body[data-theme='light'] .divider::before, body[data-theme='light'] .divider::after { background:rgba(0,0,0,.12); }
   body[data-theme='light'] .status { background:#fff; border-color:rgba(0,0,0,.10); }
   body[data-theme='light'] .upload-mini { background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.12); color:#171719; }
@@ -120,6 +121,8 @@
   .upload-mini input[type=file] { position:absolute; inline-size:1px; block-size:1px; opacity:0; pointer-events:none; }
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .file-name { color:#ff77bf; font-weight:800; margin-top:6px; }
+  .browser-option { display:flex; align-items:center; justify-content:center; gap:8px; margin:10px auto 0; color:rgba(255,255,255,.50); font-size:12px; font-weight:700; }
+  .browser-option input { accent-color:var(--color-pink); }
   .types { display:none; }
 
   .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:block; text-align:center; color:rgba(255,255,255,.35); font-size:14px; }
@@ -277,7 +280,7 @@
               </label>
             </div>
             <div class="file-name" id="fileName" aria-live="polite"></div>
-            <input id="browserLocal" type="checkbox" hidden />
+            <label class="browser-option"><input id="browserLocal" type="checkbox" checked /> Prefer private browser transcription for uploads</label>
           </form>
         </section>
 
@@ -629,18 +632,31 @@
       fd.append('file', file);
       fd.append('owner', ownerToken());
       let data;
-      try {
-        data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
-        setStatus('Done', 'done');
-        renderResult(data.record);
-      } catch (serverError) {
-        if (isBrowserWhisperCandidate(file)) {
-          setStatus('Server upload failed, trying private browser transcription...');
+      if (shouldPreferBrowserWhisper(file)) {
+        try {
           data = await transcribeInBrowser(file);
           setStatus('Done', 'done');
           renderResult(data.record);
-        } else {
-          throw serverError;
+        } catch (browserError) {
+          setStatus('Private browser transcription failed, trying server upload...');
+          data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
+          setStatus('Done', 'done');
+          renderResult(data.record);
+        }
+      } else {
+        try {
+          data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
+          setStatus('Done', 'done');
+          renderResult(data.record);
+        } catch (serverError) {
+          if (isBrowserWhisperCandidate(file)) {
+            setStatus('Server upload failed, trying private browser transcription...');
+            data = await transcribeInBrowser(file);
+            setStatus('Done', 'done');
+            renderResult(data.record);
+          } else {
+            throw serverError;
+          }
         }
       }
       loadRecent();
@@ -662,9 +678,15 @@
       && typeof Blob !== 'undefined';
   }
 
+  function shouldPreferBrowserWhisper(file) {
+    return isBrowserWhisperCandidate(file) && (!els.browserLocal || els.browserLocal.checked);
+  }
+
   async function transcribeInBrowser(file) {
     setStatus('Loading private browser Whisper model...');
-    const method = (navigator.gpu ? 'browser-whisper-webgpu' : 'browser-whisper-wasm');
+    const forceWasm = new URLSearchParams(location.search).has('forceBrowserWasm');
+    const requestedDevice = (!forceWasm && navigator.gpu) ? 'webgpu' : 'wasm';
+    const method = requestedDevice === 'webgpu' ? 'browser-whisper-webgpu' : 'browser-whisper-wasm';
     if (window.__EPIC_BROWSER_WHISPER_TEST_STUB) {
       if (location.hostname !== '127.0.0.1' && location.hostname !== 'localhost') {
         throw new Error('Browser fallback test stub is not active on public hosts.');
@@ -683,31 +705,40 @@
     try {
       const makePipeline = async () => {
         try {
-          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en', {
-            device: navigator.gpu ? 'webgpu' : 'wasm',
+          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+            device: requestedDevice,
             progress_callback: (progress) => {
               if (progress && progress.status) setStatus('Browser model: ' + progress.status);
             }
           });
         } catch (_) {
-          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+          return await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small');
         }
       };
       const transcriber = await makePipeline();
       setStatus('Transcribing privately in this browser...');
-      const out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5 });
+      const out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
       const transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
       if (!transcript) throw new Error('Browser Whisper returned no transcript.');
       const now = new Date().toISOString();
-      const segment = { start: 0, end: 2, text: transcript };
+      const chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
+      const segments = chunks.map((chunk, idx) => {
+        const ts = Array.isArray(chunk.timestamp) ? chunk.timestamp : [];
+        const start = Number.isFinite(ts[0]) ? ts[0] : idx * 30;
+        const end = Number.isFinite(ts[1]) ? ts[1] : start + 30;
+        return { start, end: Math.max(end, start + 0.5), text: (chunk.text || '').trim() };
+      }).filter(seg => seg.text);
+      if (!segments.length) {
+        throw new Error('Browser Whisper returned text without timestamp chunks.');
+      }
       return { record: {
         id: 'browser-' + Date.now(),
         source: file.name,
         title: file.name,
         method,
         transcript,
-        segments: [segment],
-        language: 'unknown',
+        segments,
+        language: (out && out.language) || 'multilingual',
         browser_only: true,
         created_at: now,
         processing_seconds: 0
