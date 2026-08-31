@@ -65,6 +65,23 @@ def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):
     assert "Action" in res.text or "proposal" in res.text
 
 
+def test_phase3_combined_outputs_can_be_saved_copied_and_downloaded(monkeypatch, tmp_path):
+    rec = seed_record(tmp_path, monkeypatch)
+    client = TestClient(app.app)
+    made = client.post(f"/api/analyze-all/{rec['id']}", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+    assert made.status_code == 200
+    data = made.json()
+    assert data["output_type"] == "all_outputs"
+    assert "# Executive summary" in data["analysis"]
+    assert "# Create 100 content assets" in data["analysis"]
+    assert "Ask the video" not in data["analysis"]
+    assert data["analysis"].count("AI-generated from the transcript") >= 10
+    res = client.get(f"/api/analysis/{data['analysis_id']}/download")
+    assert res.status_code == 200
+    assert "# Executive summary" in res.text
+    assert "# Create 100 content assets" in res.text
+
+
 def test_phase3_analysis_schema_migrates_existing_partial_table(monkeypatch, tmp_path):
     import sqlite3
     db_path = tmp_path / "transcripts.db"

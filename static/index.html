@@ -299,6 +299,7 @@
           <button class="btn ai" id="summaryBtn" type="button">AI Summary</button>
           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
           <button class="btn ai" id="allAnalysisBtn" type="button">All Outputs</button>
+          <button class="btn" id="analysisCopyBtn" type="button" disabled>Copy Analysis</button>
           <button class="btn" id="analysisDownloadBtn" type="button" disabled>Download Analysis</button>
           <button class="btn" id="emailBtn" type="button">Email to Me</button>
         </div>
@@ -364,7 +365,7 @@
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
     copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), emailBtn: $('emailBtn'),
-    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
+    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisCopyBtn: $('analysisCopyBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'),
     banner: $('banner'),
@@ -479,6 +480,7 @@
     currentAnalysis = null;
     els.analysisPanel.classList.remove('show');
     els.analysisBox.textContent = '';
+    els.analysisCopyBtn.disabled = true;
     els.analysisDownloadBtn.disabled = true;
     els.result.classList.add('show');
     autoCopy(rec.transcript || '');
@@ -612,6 +614,7 @@
       els.analysisTitle.textContent = label;
       els.analysisBox.textContent = data.analysis || '';
       els.analysisPanel.classList.add('show');
+      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
       els.analysisDownloadBtn.disabled = !data.analysis_id;
       setStatus(label + ' ready', 'done');
       setTimeout(clearStatus, 1200);
@@ -638,18 +641,13 @@
     els.analysisPanel.classList.add('show');
     els.analysisTitle.textContent = 'All video intelligence outputs';
     els.analysisBox.textContent = 'Creating all outputs...';
-    const parts = [];
     try {
-      for (const [id, label] of analysisOutputs) {
-        setStatus('Creating ' + label.toLowerCase() + '...', '');
-        const fd = new URLSearchParams();
-        fd.append('output_type', id);
-        const data = await jfetch('/api/analyze/' + currentRecord.id, { method: 'POST', headers: ownerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), body: fd });
-        parts.push(data.analysis || '');
-        currentAnalysis = data;
-        els.analysisBox.textContent = parts.join('\n\n---\n\n');
-        els.analysisDownloadBtn.disabled = !data.analysis_id;
-      }
+      setStatus('Creating all outputs...', '');
+      const data = await jfetch('/api/analyze-all/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
+      currentAnalysis = data;
+      els.analysisBox.textContent = data.analysis || '';
+      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
+      els.analysisDownloadBtn.disabled = !data.analysis_id;
       setStatus('All outputs ready', 'done');
       setTimeout(clearStatus, 1200);
     } catch (e) {
@@ -673,6 +671,14 @@
     if (currentAnalysis && currentAnalysis.analysis_id) {
       window.location.href = apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download');
     }
+  });
+  els.analysisCopyBtn.addEventListener('click', async () => {
+    const text = els.analysisBox.textContent || '';
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Analysis copied ✓');
+    } catch (e) { showToast('Analysis copy failed', true); }
   });
   els.emailBtn.addEventListener('click', async () => {
     if (!currentRecord) return;

@@ -942,6 +942,15 @@ def save_analysis(*, transcript_id: str, output_type: str, question: Optional[st
         row = conn.execute("SELECT * FROM analyses WHERE id=?", (analysis_id,)).fetchone()
     return dict(row)
 
+
+def build_combined_analysis_text(rec: dict) -> str:
+    parts = []
+    for output_type in ANALYSIS_OUTPUTS:
+        if output_type == "ask_question":
+            continue
+        parts.append(build_analysis_text(rec, output_type))
+    return "\n\n---\n\n".join(parts).strip() + "\n"
+
 def make_markdown(row: dict) -> str:
     title = row.get("title") or row.get("source") or "Transcript"
     lines = [f"# {title}", "", f"Source: {row.get('source_url') or row.get('source') or ''}", f"Method: {row.get('method','')}", f"Language: {row.get('language') or 'unknown'}", f"Words: {row.get('word_count') or transcript_word_count(row.get('transcript',''))}", "", "## Transcript", ""]
@@ -1213,6 +1222,25 @@ def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[st
         owner_token=dict(row).get("owner_token") or "",
     )
     return {"ok": True, "analysis_id": saved["id"], "transcript_id": rec_id, "output_type": output_type, "analysis": analysis}
+
+
+@app.post("/api/analyze-all/{rec_id}")
+def api_analyze_all(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    with db() as conn:
+        row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Transcript not found.")
+    require_owner(row, x_transcript_owner)
+    rec = row_to_record(row)
+    analysis = build_combined_analysis_text(rec)
+    saved = save_analysis(
+        transcript_id=rec_id,
+        output_type="all_outputs",
+        question=None,
+        analysis=analysis,
+        owner_token=dict(row).get("owner_token") or "",
+    )
+    return {"ok": True, "analysis_id": saved["id"], "transcript_id": rec_id, "output_type": "all_outputs", "analysis": analysis}
 
 
 @app.get("/api/analysis/{analysis_id}/download")

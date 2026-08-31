@@ -16,7 +16,7 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
     html = HTML.read_text()
     assert "hero-control" in html
     assert html.index('id="url"') < html.index('id="result"')
-    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisDownloadBtn"]:
+    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
         assert f'id="{required_id}"' in html
 
 
@@ -29,7 +29,9 @@ def test_phase3_video_intelligence_ui_is_wired_to_analysis_api():
     for label in ["Main ideas", "Chapters", "Best quotes", "Blog post", "Create 100 content assets"]:
         assert label in html
     assert "/api/analyze/" in html
+    assert "/api/analyze-all/" in html
     assert "/api/analysis/" in html
+    assert "Copy Analysis" in html
     assert "Video intelligence" in html
 
 
