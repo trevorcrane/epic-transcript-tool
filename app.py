@@ -1143,17 +1143,17 @@ def build_100_content_assets(rec: dict) -> list[str]:
         short_excerpt = _asset_phrase(point["text"], max_words=12).rstrip(" ,;:")
         takeaway = _asset_takeaway(point["text"], i)
         if kind == "Hook":
-            body = f"{hooks[idx]}. {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{hooks[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Short post":
-            body = f"{short_posts[idx]}. In this case, the evidence is: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{short_posts[idx]}. {takeaway} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: {subjects[idx]}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Subject: {subjects[idx]} for a stronger system. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"Newsletter angle {slot}: {newsletter_openers[idx]}. {takeaway} Evidence: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Newsletter angle {slot}: {newsletter_openers[idx]}. {takeaway} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} Evidence: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {takeaway} Supporting copy: make the operating lesson clear in one visual step. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
             body = f"Quote-card takeaway {slot}: {takeaway} Evidence line: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
@@ -1161,7 +1161,7 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Objection reply":
             body = f"Reply: {slot}: {replies[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: {excerpt} Clip caption: {carousel_heads[idx]} at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: apply this lesson before adding another disconnected step. Clip caption: {carousel_heads[idx]} at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
