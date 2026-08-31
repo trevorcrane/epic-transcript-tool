@@ -157,7 +157,7 @@ def test_hosted_staging_smoke_print_plan_lists_all_release_lanes(tmp_path):
     assert payload["steps"][2]["command"][-2:] == ["scripts/phase3_ui_contract_smoke.py", "https://staging.example.test"]
 
 
-def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
+def make_transfer_bundle(tmp_path: Path) -> tuple[Path, Path, Path]:
     seed_db = tmp_path / "transcripts.db"
     seed_package = tmp_path / "hosted-staging-seed.tar.gz"
     bundle = tmp_path / "hosted-staging-transfer-bundle.tar.gz"
@@ -176,6 +176,25 @@ def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
         capture_output=True,
         check=True,
     )
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_bundle.py"),
+            "--seed-package",
+            str(seed_package),
+            "--out",
+            str(bundle),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return seed_db, seed_package, bundle
+
+
+def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
+    _seed_db, seed_package, bundle = make_transfer_bundle(tmp_path)
 
     result = subprocess.run(
         [
@@ -198,6 +217,7 @@ def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
     assert payload["seed_package"] == str(seed_package.resolve())
     assert payload["next_steps"][0].startswith("tar -xzf")
     assert "scripts/hosted_staging_verify.py" in payload["members"]
+    assert "scripts/hosted_staging_bundle_verify.py" in payload["members"]
     assert "scripts/hosted_staging_smoke.py" in payload["members"]
     assert "Dockerfile" in payload["members"]
     assert "docs/HOSTED_BACKEND_MIGRATION.md" in payload["members"]
@@ -213,3 +233,37 @@ def test_hosted_staging_bundle_includes_seed_scripts_and_manifest(tmp_path):
 
     assert manifest["seed_package_sha256"] == payload["seed_package_sha256"]
     assert manifest["verify_command"] == "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>"
+
+
+def test_hosted_staging_bundle_verify_extracts_embedded_seed(tmp_path):
+    _seed_db, _seed_package, bundle = make_transfer_bundle(tmp_path)
+    target = tmp_path / "verified-host-data"
+    report = tmp_path / "transfer-verify-report.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_bundle_verify.py"),
+            str(bundle),
+            "--extract-to",
+            str(target),
+            "--out",
+            str(report),
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(result.stdout)
+    saved_payload = json.loads(report.read_text())
+    assert saved_payload == payload
+    assert payload["ok"] is True
+    assert payload["manifest_members_verified"] is True
+    assert payload["seed_package_sha256_verified"] is True
+    assert payload["seed_verify"]["ok"] is True
+    assert payload["seed_verify"]["transcript_count"] == 4
+    assert payload["seed_verify"]["required_media_ids"]["v34Eg12mhDM"] == 1
+    assert Path(payload["seed_verify"]["extracted_db"]).exists()
+    assert "scripts/hosted_staging_smoke.py" in payload["smoke_command"]

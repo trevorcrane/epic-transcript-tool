@@ -1,0 +1,43 @@
+{
+  "bundle": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-bundle.tar.gz",
+  "bundle_size_bytes": 4620968,
+  "extract_to": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-verify-data",
+  "manifest_members_verified": true,
+  "member_count": 12,
+  "next_steps": [
+    "tar -xzf hosted-staging-transfer-bundle.tar.gz",
+    "python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to <persistent-data-dir>",
+    "docker build -t epic-transcript-machine .",
+    "docker run --rm -p 8090:8090 -v <persistent-data-dir>:/data epic-transcript-machine",
+    "python3 scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json"
+  ],
+  "ok": true,
+  "required_members_verified": true,
+  "seed_package_sha256": "ffdd12b38fb789247803b8b7235e88682b6b418289a1072a9499582178c5e4c9",
+  "seed_package_sha256_verified": true,
+  "seed_verify": {
+    "extracted_db": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/hosted-staging-transfer-verify-data/transcripts.db",
+    "next_smokes": [
+      "docker run --rm -p 8090:8090 -v \"$PWD/data-hosted-test:/data\" epic-transcript-machine",
+      "docker exec <container> python - <<'PY'\nimport os, sqlite3\np='/data/transcripts.db'\nprint(os.path.exists(p), os.stat(p).st_size)\ncon=sqlite3.connect(p)\nprint(con.execute('select count(*) from transcripts').fetchone()[0])\nPY",
+      "./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json"
+    ],
+    "ok": true,
+    "package": "/private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/epic-transfer-verify-ie1jzuzu/evidence/hosted-staging-seed.tar.gz",
+    "package_size_bytes": 4583649,
+    "required_media_ids": {
+      "SXHMnicI6Pg": 15,
+      "aircAruvnKk": 15,
+      "dQw4w9WgXcQ": 76,
+      "v34Eg12mhDM": 91
+    },
+    "required_media_ids_verified": true,
+    "sha256": "ce83c5b88b91e7f1a44f293e47de2c8c62a707bd87894a284893e86c81b6f4f3",
+    "sha256_verified": true,
+    "target_path": "/data/transcripts.db",
+    "transcript_count": 347,
+    "transcript_count_verified": true
+  },
+  "seed_verify_returncode": 0,
+  "smoke_command": "python3 scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json"
+}

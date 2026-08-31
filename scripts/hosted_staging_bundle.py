@@ -25,6 +25,7 @@ REQUIRED_PROJECT_FILES = (
     "requirements.txt",
     "app.py",
     "scripts/hosted_staging_verify.py",
+    "scripts/hosted_staging_bundle_verify.py",
     "scripts/hosted_staging_smoke.py",
     "scripts/phase1_matrix.py",
     "scripts/phase2_upload_smoke.py",
