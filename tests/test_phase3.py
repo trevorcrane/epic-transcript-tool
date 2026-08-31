@@ -77,6 +77,64 @@ def test_phase3_create_100_content_assets_returns_100_assets(monkeypatch, tmp_pa
         assert label in text
 
 
+def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    segments = [
+        {
+            "start": i * 60,
+            "end": i * 60 + 20,
+            "text": f"Strategy lesson {i}: build system {i} before selling service {i}, then prove result {i} with a client story.",
+        }
+        for i in range(90)
+    ]
+    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+    rec = app.save_transcript(
+        source="Long Sales System Training",
+        source_kind="youtube",
+        method="native-caption-automatic_captions",
+        transcript=transcript,
+        duration_seconds=5400,
+        processing_seconds=0,
+        media_id="long-assets-123",
+        source_url="https://youtu.be/longassets123",
+        title="Long Sales System Training",
+        creator="Tester",
+        language="en",
+        segments=segments,
+        provider_attempts=[],
+        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+    )
+    client = TestClient(app.app)
+    res = client.post(
+        f"/api/analyze/{rec['id']}",
+        data={"output_type": "content_assets_100"},
+        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+    )
+    assert res.status_code == 200
+    text = res.json()["analysis"]
+    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+    assert len(numbered) == 100
+    lower = text.lower()
+    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator"]:
+        assert forbidden not in lower
+    unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
+    assert len(unique_bodies) >= 90
+    covered_indexes = {
+        int(match.group(1))
+        for line in numbered
+        for match in [__import__("re").search(r"Strategy lesson (\d+)", line)]
+        if match
+    }
+    assert len(covered_indexes) >= 45
+    assert any(i <= 10 for i in covered_indexes)
+    assert any(35 <= i <= 55 for i in covered_indexes)
+    assert any(i >= 79 for i in covered_indexes)
+    assert "Email subject" in text and "Subject:" in text
+    assert "CTA" in text and "Get" in text
+    assert "Objection reply" in text and "Reply:" in text
+
+
 def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):
     rec = seed_record(tmp_path, monkeypatch)
     client = TestClient(app.app)

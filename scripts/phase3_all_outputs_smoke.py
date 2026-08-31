@@ -103,13 +103,44 @@ def validate_analysis(output_type: str, text: str) -> dict[str, Any]:
         require("Transcript evidence" in text and has_timestamp, "best_quotes must be tied to transcript timestamps")
     if output_type == "ask_question":
         require("Trevor" in text or "video" in text.lower(), "ask_question did not preserve the question context")
-    return {
+    detail: dict[str, Any] = {
         "chars": len(text),
         "has_timestamp": has_timestamp,
         "has_disclaimer": has_disclaimer,
         "has_evidence": has_evidence,
         "copy_ready": bool(text.strip()),
     }
+    if output_type == "content_assets_100":
+        numbered = [line for line in text.splitlines() if re.match(r"^\d+\. \*\*", line)]
+        require(len(numbered) == 100, f"content_assets_100 expected 100 numbered assets, got {len(numbered)}")
+        lower = text.lower()
+        forbidden = ["use `", " use [", " to create:", "starter map", "brief a creator", "turn the moment into"]
+        require(not any(term in lower for term in forbidden), "content_assets_100 contains instruction-placeholder phrasing")
+        bodies = [line.split(" - ", 1)[-1] for line in numbered]
+        require(len(set(bodies)) >= 90, f"content_assets_100 too repetitive: {len(set(bodies))} unique bodies")
+        timestamps = []
+        for line in numbered:
+            for match in re.finditer(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]", line):
+                a, b, c = match.groups()
+                if c is None:
+                    timestamps.append(int(a) * 60 + int(b))
+                else:
+                    timestamps.append(int(a) * 3600 + int(b) * 60 + int(c))
+        require(len(timestamps) >= 90, f"content_assets_100 missing timestamps on assets: {len(timestamps)}")
+        require(min(timestamps) <= 60, "content_assets_100 missing early coverage")
+        require(max(timestamps) >= 20 * 60, "content_assets_100 missing late coverage")
+        require(any(10 * 60 <= ts <= 18 * 60 for ts in timestamps), "content_assets_100 missing middle coverage")
+        for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+            require(label in text, f"content_assets_100 missing label {label}")
+        detail.update({
+            "asset_count": len(numbered),
+            "unique_asset_bodies": len(set(bodies)),
+            "earliest_timestamp_seconds": min(timestamps),
+            "latest_timestamp_seconds": max(timestamps),
+            "has_middle_coverage": any(10 * 60 <= ts <= 18 * 60 for ts in timestamps),
+            "no_placeholder_phrasing": True,
+        })
+    return detail
 
 
 def main() -> int:

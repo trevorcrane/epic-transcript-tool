@@ -916,26 +916,94 @@ def _strip_timestamp(line: str) -> str:
     return re.sub(r"^\[[0-9:,]+\]\s*", "", line).strip() or line
 
 
-def build_100_content_assets(evidence: list[str]) -> list[str]:
-    """Return 100 distinct, timestamp-grounded asset drafts without paid AI."""
+def _asset_evidence_points(rec: dict, count: int = 100) -> list[dict]:
+    """Pick broad timestamped evidence across the whole transcript."""
+    segs = rec.get("segments") or []
+    points: list[dict] = []
+    usable = [seg for seg in segs if clean_whitespace(seg.get("text", ""))]
+    if usable:
+        if len(usable) <= count:
+            selected = usable[:]
+            i = 0
+            while len(selected) < count:
+                selected.append(usable[i % len(usable)])
+                i += 1
+        else:
+            selected = []
+            seen = set()
+            for i in range(count):
+                idx = round(i * (len(usable) - 1) / (count - 1))
+                while idx in seen and idx + 1 < len(usable):
+                    idx += 1
+                seen.add(idx)
+                selected.append(usable[idx])
+        for seg in selected:
+            text = clean_whitespace(seg.get("text", ""))
+            points.append({"timestamp": seconds_to_timestamp(seg.get("start", 0)), "text": text})
+    if points:
+        return points[:count]
+
+    fallback = []
+    for line in (rec.get("transcript") or "").splitlines():
+        line = clean_whitespace(line)
+        if not line:
+            continue
+        match = re.match(r"^\[([^\]]+)\]\s*(.*)$", line)
+        fallback.append({"timestamp": match.group(1) if match else "00:00", "text": match.group(2) if match else line})
+    if not fallback:
+        fallback = [{"timestamp": "00:00", "text": "The transcript did not include enough readable text for detailed assets."}]
+    selected = []
+    for i in range(count):
+        idx = round(i * (len(fallback) - 1) / max(1, count - 1)) if len(fallback) > 1 else 0
+        selected.append(fallback[idx])
+    return selected
+
+
+def _asset_phrase(text: str, max_words: int = 18) -> str:
+    clean = _strip_timestamp(clean_whitespace(text)).strip(" -–—:;,.\"")
+    words = clean.split()
+    if len(words) > max_words:
+        clean = " ".join(words[:max_words]).rstrip(" ,;:")
+    return clean or "the most important transcript moment"
+
+
+def build_100_content_assets(rec: dict) -> list[str]:
+    """Return 100 finished, distinct, timestamp-grounded asset drafts without paid AI."""
     categories = [
-        ("Hook", "Lead with a curiosity gap"),
-        ("Short post", "Teach one useful idea"),
-        ("Email subject", "Open a nurture email"),
-        ("Newsletter angle", "Frame a longer takeaway"),
-        ("Reel script", "Turn the moment into a 20-second script"),
-        ("Carousel slide", "Make one swipeable teaching point"),
-        ("Quote card", "Pull a quotable line"),
-        ("CTA", "Invite the next action"),
-        ("Objection reply", "Answer a likely hesitation"),
-        ("Repurpose prompt", "Brief a creator/editor"),
+        "Hook", "Short post", "Email subject", "Newsletter angle", "Reel script",
+        "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt",
     ]
-    samples = _evidence_cycle(evidence, 100)
-    assets = ["## Create 100 content assets", "Each item is grounded in a timestamped transcript moment."]
-    for i, sample in enumerate(samples, 1):
-        kind, purpose = categories[(i - 1) // 10]
-        clean = _strip_timestamp(sample)
-        assets.append(f"{i}. **{kind} {((i - 1) % 10) + 1}** - {purpose}: use `{sample}` to create: {clean[:170]}")
+    points = _asset_evidence_points(rec, 100)
+    assets = [
+        "## Create 100 content assets",
+        "Each item is a finished draft grounded in a timestamped transcript moment and sampled across the full recording.",
+    ]
+    for i, point in enumerate(points, 1):
+        kind = categories[(i - 1) // 10]
+        slot = ((i - 1) % 10) + 1
+        timestamp = point["timestamp"]
+        phrase = _asset_phrase(point["text"])
+        if kind == "Hook":
+            body = f"What changes when {phrase}? Start here. [{timestamp}]"
+        elif kind == "Short post":
+            body = f"{phrase}. That is the shift: stop treating it like a one-off task and turn it into a repeatable result. [{timestamp}]"
+        elif kind == "Email subject":
+            body = f"Subject: {phrase[:84]} [{timestamp}]"
+        elif kind == "Newsletter angle":
+            body = f"Open with the moment at [{timestamp}], then show why {phrase} matters and close with one practical next step."
+        elif kind == "Reel script":
+            body = f"Clip opener: “{phrase}.” Beat two: name the problem. Beat three: show the better path. Close: “Build the system before you scale it.” [{timestamp}]"
+        elif kind == "Carousel slide":
+            body = f"Slide headline: {phrase}. Supporting line: make the idea visible, measurable, and easy to repeat. [{timestamp}]"
+        elif kind == "Quote card":
+            body = f"“{phrase}.” [{timestamp}]"
+        elif kind == "CTA":
+            body = f"Get the next step: turn the lesson at [{timestamp}] into one documented action before the day ends."
+        elif kind == "Objection reply":
+            body = f"Reply: If {phrase} feels too big, shrink it to the next verified step and prove that step first. [{timestamp}]"
+        else:
+            body = f"Editor note: package the [{timestamp}] moment as a standalone asset with this takeaway: {phrase}."
+        assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
 
@@ -1075,7 +1143,7 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
             f"- Use {third} as a timestamped proof point in a client-facing asset.",
             f"- Pull {fourth} into the next offer/content angle.",
         ],
-        "content_assets_100": build_100_content_assets(evidence),
+        "content_assets_100": build_100_content_assets(rec),
         "ask_question": [
             "## Answer",
             f"Question: {question or 'What should I know from this video?'}",
