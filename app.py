@@ -943,7 +943,7 @@ def _asset_evidence_points(rec: dict, count: int = 100) -> list[dict]:
             selected_indexes = [usable.index(seg) for seg in selected]
         for idx, seg in zip(selected_indexes, selected):
             window = usable[idx:idx + 4] or [seg]
-            text = clean_whitespace(" ".join(clean_whitespace(item.get("text", "")) for item in window))
+            text = _merge_caption_window(clean_whitespace(item.get("text", "")) for item in window)
             points.append({"timestamp": seconds_to_timestamp(seg.get("start", 0)), "text": text})
     if points:
         return points[:count]
@@ -972,6 +972,29 @@ def _asset_phrase(text: str, max_words: int = 18) -> str:
     return clean or "the most important transcript moment"
 
 
+def _merge_caption_window(parts) -> str:
+    """Merge caption snippets while removing adjacent overlap/repetition."""
+    words: list[str] = []
+    for part in parts:
+        next_words = clean_whitespace(part).split()
+        if not next_words:
+            continue
+        max_overlap = min(len(words), len(next_words), 12)
+        overlap = 0
+        for size in range(max_overlap, 0, -1):
+            if [w.lower().strip(",.?!;:") for w in words[-size:]] == [w.lower().strip(",.?!;:") for w in next_words[:size]]:
+                overlap = size
+                break
+        words.extend(next_words[overlap:])
+    # Remove immediate duplicate words left by auto-caption overlap.
+    deduped: list[str] = []
+    for word in words:
+        if deduped and word.lower().strip(",.?!;:") == deduped[-1].lower().strip(",.?!;:"):
+            continue
+        deduped.append(word)
+    return clean_whitespace(" ".join(deduped))
+
+
 def _asset_sentence(text: str, max_words: int = 26) -> str:
     clean = _asset_phrase(text, max_words=max_words).strip()
     if clean and clean[-1] not in ".!?":
@@ -997,25 +1020,25 @@ def build_100_content_assets(rec: dict) -> list[str]:
         phrase = _asset_phrase(point["text"])
         sentence = _asset_sentence(point["text"])
         if kind == "Hook":
-            body = f"Stop selling isolated tasks. Build the system behind this moment: {sentence} [{timestamp}]"
+            body = f"Stop selling isolated tasks. Build the system that makes the result repeat. Grounded at [{timestamp}]: {sentence}"
         elif kind == "Short post":
-            body = f"{sentence} The lesson: package the process, not just the service, so the result can repeat. [{timestamp}]"
+            body = f"Package the process, not just the service. {sentence} That is how a one-time delivery becomes a repeatable asset. [{timestamp}]"
         elif kind == "Email subject":
             body = f"Subject: The system hiding inside this lesson: {phrase[:58]} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"The big idea from [{timestamp}]: {sentence} Turn that into a practical note about building assets that keep working after the first sale."
+            body = f"The big idea: systems make expertise easier to sell, deliver, and retain. Ground it in [{timestamp}]: {sentence}"
         elif kind == "Reel script":
-            body = f"Script: “Most people miss the system.” Show the [{timestamp}] moment, explain {phrase}, then close with: “Build the repeatable path before you scale.”"
+            body = f"Script: “Most people miss the system.” Show the [{timestamp}] proof, name the gap around {phrase}, then close: “Build the repeatable path before you scale.”"
         elif kind == "Carousel slide":
             body = f"Slide headline: Build the repeatable path. Supporting line: {sentence} Proof point: [{timestamp}]."
         elif kind == "Quote card":
-            body = f"“The value is not the task. The value is the repeatable system behind it.” Inspired by: {sentence} [{timestamp}]"
+            body = f"“The value is not the task. The value is the repeatable system behind it.” Source proof: {sentence} [{timestamp}]"
         elif kind == "CTA":
-            body = f"Get the next step: audit one process today and turn this lesson into a measurable follow-up asset: {sentence} [{timestamp}]"
+            body = f"Get the next step: audit one process today and turn this lesson into a measurable follow-up asset. Source proof: {sentence} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: You do not need the whole system finished today. Start here: {sentence} Prove one small outcome, then document the repeatable step. [{timestamp}]"
+            body = f"Reply: You do not need the whole system finished today. Start with one verified outcome, then document the repeatable step. Source proof: {sentence} [{timestamp}]"
         else:
-            body = f"Repurpose plan: Post angle, email angle, and short-clip angle all center on this finished takeaway: {sentence} [{timestamp}]"
+            body = f"Repurpose plan: post angle, email angle, and short-clip angle all center on one finished takeaway: {sentence} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
