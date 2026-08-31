@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "base": "https://epic-transcript.robyncrane.com",
+  "elapsed_seconds": 3.15,
+  "job_id": "e98c0f0f7f5d",
+  "record_id": "837a9891f74d",
+  "title": "2 Hours of the Craziest Philosophical Theories to Fall Asleep to",
+  "transcript_words": 19298,
+  "transcript_segments": 1446,
+  "duration_seconds": 7244.0,
+  "transcript_method": "queued-chunked-local-whisper",
+  "cache_hit": true,
+  "analysis_id": "9a0a8861c6ee",
+  "combined_chars": 48828,
+  "combined_outputs": 16,
+  "latest_analysis_timestamp_seconds": 7242,
+  "download_status": 200,
+  "download_bytes": 48848,
+  "download_content_type": "text/markdown; charset=utf-8",
+  "unauthenticated_download_status": 403,
+  "analysis_download_privacy": "owner-required"
+}

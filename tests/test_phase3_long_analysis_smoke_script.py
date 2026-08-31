@@ -46,3 +46,15 @@ def test_long_analysis_download_verifier_requires_privacy_and_owner_markers(monk
     assert detail["owner_download_status"] == 200
     assert detail["owner_download_bytes"] > 50
     assert "text/markdown" in detail["owner_download_content_type"]
+
+
+def test_write_report_persists_same_json_that_is_printed(tmp_path, capsys):
+    module = load_smoke()
+    report = {"ok": True, "analysis_id": "analysis123"}
+    out = tmp_path / "phase3-long-report.json"
+
+    module.write_report(report, out)
+
+    assert out.exists()
+    assert out.read_text() == '{\n  "ok": true,\n  "analysis_id": "analysis123"\n}\n'
+    assert capsys.readouterr().out == out.read_text()

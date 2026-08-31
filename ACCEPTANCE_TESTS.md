@@ -62,6 +62,11 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 17:40 EDT, long-transcript Phase 3 proof archiving.
+
+- Long combined-analysis JSON proof archive: PASS. Added `--out` to `scripts/phase3_long_analysis_smoke.py` with failing-first regression coverage and saved public proof to `evidence/phase3-long-analysis-report.json`. Report proof: cached long record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, combined analysis `9a0a8861c6ee`, 48,828 chars, latest timestamp 7,242s, unauthenticated Markdown download HTTP 403, owner-authenticated Markdown download HTTP 200 / 48,848 bytes.
+- Regression suite and public phase smokes: PASS. Script-targeted test returned 2 passed; full suite returned 76 passed; Phase 1 health returned cache-hit PASS for regression/control; Phase 2 release gate returned `all_ok=true`; Phase 3 UI contract returned combined analysis `e070d379572e` with authenticated Markdown download HTTP 200 / 41,227 bytes.
+
 Run time: 2026-08-31 17:26 EDT, long-transcript Phase 3 download privacy hardening.
 
 - Long combined-analysis Markdown privacy: PASS. `scripts/phase3_long_analysis_smoke.py` now verifies the two-hour long-transcript combined analysis download is owner-protected. Public proof used cached long record `837a9891f74d`; transcript 19,298 words, 1,446 segments, duration 7,244s, method `queued-chunked-local-whisper`; combined analysis `61946223d75f` returned 48,828 chars with latest timestamp 7,242s; unauthenticated `/api/analysis/{id}/download` returned HTTP 403; owner-authenticated download returned HTTP 200 / 48,848 bytes with `text/markdown`.

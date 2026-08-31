@@ -15,9 +15,11 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import argparse
 from dataclasses import dataclass
+from pathlib import Path
 
-BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "https://epic-transcript.robyncrane.com"
+BASE = "https://epic-transcript.robyncrane.com"
 OWNER = "phase3-long-smoke-owner-token-abcdefghijklmnopqrstuvwxyz"
 VIDEO = "https://www.youtube.com/watch?v=rwfk91ya81s"
 UA = "Mozilla/5.0 Epic Transcript Phase3 Long Smoke"
@@ -89,7 +91,23 @@ def verify_analysis_download(analysis_id: str, owner: str) -> dict[str, object]:
     }
 
 
+def write_report(report: dict[str, object], out_path: Path | None = None) -> None:
+    """Print the JSON report and optionally persist identical bytes to disk."""
+    payload = json.dumps(report, indent=2) + "\n"
+    if out_path is not None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(payload)
+    print(payload, end="")
+
+
 def main() -> int:
+    global BASE
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("base", nargs="?", default=BASE, help="Base URL for the public Transcript Machine app")
+    parser.add_argument("--out", type=Path, help="Optional JSON file path for saving the proof report")
+    args = parser.parse_args()
+    BASE = args.base.rstrip("/")
+
     started = time.monotonic()
     start = as_json(request("/api/transcribe-url-job", method="POST", data={"url": VIDEO, "owner": OWNER}))
     if start.get("ok") is not True:
@@ -123,7 +141,7 @@ def main() -> int:
 
     download_detail = verify_analysis_download(combined["analysis_id"], OWNER)
 
-    print(json.dumps({
+    report = {
         "ok": True,
         "base": BASE,
         "elapsed_seconds": round(time.monotonic() - started, 2),
@@ -144,7 +162,8 @@ def main() -> int:
         "download_content_type": download_detail["owner_download_content_type"],
         "unauthenticated_download_status": download_detail["unauthenticated_download_status"],
         "analysis_download_privacy": "owner-required",
-    }, indent=2))
+    }
+    write_report(report, args.out)
     return 0
 
 
