@@ -1,0 +1,83 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "ok": false,
+  "webgpu": {
+    "mode": "webgpu",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=webgpu",
+    "ok": false,
+    "elapsedSeconds": 421.648,
+    "statuses": [
+      "Browser model: initiate",
+      "Browser model: progress",
+      "Browser model: done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fconfig.json=&etag=%22a239fdd538b77d3c496d13d085848eca67fe993a%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/preprocessor_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/generation_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%2266f96818620f7b67c276aed4a35bedc4f6986dc3%22",
+      "POST https://epic-transcript.robyncrane.com/api/transcribe-upload"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "state": {
+      "status": "Browser model: done",
+      "visible": false,
+      "method": "",
+      "transcript": "",
+      "historyCount": 0,
+      "segments": 0
+    },
+    "vtt": {
+      "path": null,
+      "bytes": 0,
+      "hasWebVtt": false,
+      "hasTimestamp": false
+    },
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-webgpu.png"
+  },
+  "wasm": {
+    "mode": "wasm",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=wasm&forceBrowserWasm=1",
+    "ok": true,
+    "elapsedSeconds": 42.997,
+    "statuses": [
+      "Browser model: download",
+      "Browser model: progress",
+      "Transcribing privately in this browser with WASM...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/preprocessor_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fconfig.json=&etag=%22a239fdd538b77d3c496d13d085848eca67fe993a%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/generation_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%2266f96818620f7b67c276aed4a35bedc4f6986dc3%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "errors": [],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-wasm · 74 chars",
+      "transcript": "Browser Whisper Multi-Lingual Time Stamp Proof for Epic Transcript Machine",
+      "historyCount": 1,
+      "segments": 0
+    },
+    "vtt": {
+      "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.vtt",
+      "bytes": 113,
+      "hasWebVtt": true,
+      "hasTimestamp": true
+    },
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.png"
+  }
+}

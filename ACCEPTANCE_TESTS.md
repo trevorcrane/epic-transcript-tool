@@ -62,6 +62,12 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 18:54 EDT, Phase 2 public dual browser WebGPU/WASM smoke.
+
+- Phase 2 browser WebGPU/WASM gate: QC FAIL / OPEN. Public root returned HTTP 200 with `Xenova/whisper-small`, `shouldPreferBrowserWhisper(file)`, `return_timestamps: true`, `chunks.map`, and `forceBrowserWasm` markers. Forced no-WebGPU/WASM browser transcription passed on the public URL with method `browser-whisper-wasm · 74 chars`, credible transcript text, and local VTT `WEBVTT` timestamp proof. WebGPU did not clear: after 421.586s, the public browser remained at `Browser model: done`, no result was rendered, no transcript/history item existed, and the forced-failing server upload route was hit. Evidence saved at `evidence/phase2-public-browser-whisper-dual-report.json` plus mode screenshots.
+- Defensive route patch: SHIPPED. The public UI now retries private WASM when a WebGPU browser result lacks timestamp chunks. Netlify review deploy `6a96061cf0937d814873e690` shipped the same static patch. Production, stable review, and immutable review URLs returned HTTP 200 with the new fallback marker.
+- Production watchdog: PASS. Public `/health` returned HTTP 200 with `ready=true`, required `missing=[]`, and async control job `3067b793eb14` completed with record `6c3bf65cf6d0`, method `native-caption-subtitles`, 61 segments, 366 words.
+
 Run time: 2026-08-31 18:15 EDT, Phase 2 real browser Whisper preferred-route/timestamp proof.
 
 - Browser fallback model/wiring proof: PASS. Public root returned HTTP 200 with upgraded `Xenova/whisper-small` model marker, preferred browser route wiring `shouldPreferBrowserWhisper(file)`, real timestamp chunk wiring `return_timestamps: true` plus `chunks.map`, failed-upload fallback wiring, and subtitle formatter.
@@ -242,6 +248,7 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 18:54 EDT: public dual browser proof is QC FAIL / OPEN for WebGPU and PASS for forced no-WebGPU/WASM. `scripts/phase2_public_browser_whisper_dual_smoke.py https://epic-transcript.robyncrane.com` saved `evidence/phase2-public-browser-whisper-dual-report.json`: forced WASM rendered `browser-whisper-wasm · 74 chars`, credible transcript text, and VTT `WEBVTT` timestamp proof; WebGPU stayed at `Browser model: done` for 421.586s without rendering a transcript and then hit the forced-failing server upload route. A defensive UI patch now retries private WASM when a WebGPU browser result lacks timestamp chunks, and Netlify review deploy `6a96061cf0937d814873e690` verified the marker. Do not clear Phase 2 until WebGPU passes or Fizz accepts the route change.
 - 2026-08-31 14:58 EDT: browser-local fallback proof now includes non-stub real browser Whisper execution plus local browser-only TXT/Markdown/SRT/VTT download verification and full SRT/VTT timestamp formatting. Phase 2 public no-login media gate is release-clear; broader hosted durability remains tracked separately.
 - 2026-08-31 14:25 EDT: browser-local fallback moved from marker-only to shipped failed-upload recovery wiring. Public root, stable Netlify review, and immutable deploy `6a95c6ef4bcd59c584c116de` verified `3.2.1`, `transcribeInBrowser(file)`, `Server upload failed, trying private browser transcription`, `Xenova/whisper-tiny.en`, `browser-whisper-webgpu`, and `browser-whisper-wasm`; visible fallback clutter remains absent. Full real-browser downloaded-model transcription proof is still OPEN and is the next Phase 2 action.
 - 2026-08-31 11:58 EDT: direct/social URL matrix is now covered by `scripts/phase2_url_matrix_smoke.py`. PASS public evidence: direct public MP3 URL returned HTTP 200 `audio/mpeg` and completed through async `/api/transcribe-url-job` as `local-whisper`; TikTok, Instagram, Facebook, and X/Twitter sample links each returned helpful platform-specific HTTP 422 upload guidance instead of a dead-end. Evidence saved to `evidence/phase2-url-matrix-report.json`.
