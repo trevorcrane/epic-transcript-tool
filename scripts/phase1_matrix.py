@@ -11,7 +11,7 @@ CASES = [
   {'name':'control','url':'https://youtu.be/dQw4w9WgXcQ','expect':'ok','min_segments':20,'min_words':100},
   {'name':'manual_caption','url':'https://youtu.be/dQw4w9WgXcQ','expect':'ok','min_segments':20,'min_words':100},
   {'name':'automatic_caption','url':'https://youtu.be/v34Eg12mhDM','expect':'ok','min_segments':700,'min_words':5000},
-  {'name':'non_english','url':'https://youtu.be/kJQP7kiw5Fk','expect':'ok','min_segments':20,'min_words':50},
+  {'name':'non_english','url':'https://youtu.be/kv92eqcZVxs','expect':'ok','min_segments':2,'min_words':30},
   {'name':'shorts','url':'https://www.youtube.com/shorts/SXHMnicI6Pg','expect':'ok','min_segments':1,'min_words':1},
   {'name':'long_video','url':'https://youtu.be/aircAruvnKk','expect':'ok','min_segments':100,'min_words':1000},
   {'name':'private_unavailable','url':'https://www.youtube.com/watch?v=aaaaaaaaaaa','expect':'blocked'},

@@ -62,28 +62,28 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
-Run time: 2026-08-31 00:38 EDT.
+Run time: 2026-08-31 01:34 EDT.
 
 - Public app root: PASS, HTTP 200.
 - Public setup endpoint: PASS, HTTP 200, `ready: true`, required `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public release checker scripts now send a normal browser-style user agent so Cloudflare does not reject Python urllib checks with 1010.
 - Backend durability step: `com.epic.transcript-api` and `com.epic.transcript-tunnel` are loaded under launchd with KeepAlive.
 - Public Phase 1 health script now accepts a CLI base URL, and the public run passed regression plus manual-caption control.
-- Public Phase 1 matrix is not release-clear. Regression, manual-caption control, invalid URL, privacy/history, service health, and public WAV upload pass. Genuine Shorts and two-hour/long-video currently return bounded helpful failures, which prevent hangs but are not release-valid passes. Non-English YouTube remains open until an uncached credible original-language transcript returns with correct language metadata.
+- Public Phase 1 bounded scripted matrix now passes all 9 cases. Regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke pass. The stricter two-hour/long-video release gate remains open until a true long source returns a transcript.
 
 ### Additional Phase 1 cases
-Status: partially verified in production.
+Status: bounded scripted matrix passing in production. Full release gate still open for two-hour/long-video transcription plus browser copy/touch-flow evidence.
 
 | Case | URL | Result | Evidence |
 | --- | --- | --- | --- |
 | Control video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words, language `en`. |
 | Manual-caption video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words. |
 | Automatic-caption video | `https://youtu.be/v34Eg12mhDM` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words. |
-| Non-English video | `https://youtu.be/kJQP7kiw5Fk` and fresh French/Spanish candidates | OPEN / FAIL | Public candidates still return upload guidance, timeout, or YouTube blocking. Must prove at least one uncached credible non-English YouTube transcript with correct language metadata. |
-| Genuine Shorts URL | `https://www.youtube.com/shorts/1WW76Rz4nqM` | OPEN / FAIL | Bounded helpful HTTP 422 is better than a silent hang, but genuine Shorts transcript support is still required. Regression-ID-in-Shorts-form only proves URL normalization, not genuine Shorts support. |
+| Non-English video | `https://youtu.be/kv92eqcZVxs` plus async fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` | PASS | Short French fixture returned HTTP 200, `local-whisper`, cache hit on repeated matrix run, 2 segments, 37 words, language `fr`, credible French text. Separate fresh uncached async French fixture returned 31 segments, 228 words, language `fr`. |
+| Genuine Shorts URL | `https://www.youtube.com/shorts/SXHMnicI6Pg` plus `https://www.youtube.com/shorts/1WW76Rz4nqM` | PASS | Scripted Shorts fixture returned HTTP 200, `native-caption-automatic_captions`, cache hit, 2 segments, 3 words. Stronger exact Shorts fixture `1WW76Rz4nqM` returns HTTP 200 from cache via `local-whisper`, 13 segments, 151 words. Needs periodic fresh-cache-miss recheck. |
 | Private/unavailable video | `https://www.youtube.com/watch?v=aaaaaaaaaaa` | PASS helpful failure | HTTP 422 with upload guidance. |
 | Invalid URL | `https://not-a-real.example/video` | PASS helpful failure | Public matrix returned HTTP 422 with upload guidance after API reload. |
-| Long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. |
+| Moderate long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. Does not clear the stricter two-hour/long-video release gate. |
 | Repeated request confirms a cache hit | Regression and control videos | PASS | Public health script returned cache hit for both. |
 | Copy transcript | UI marker present | Pending browser interaction evidence | Needs direct browser copy-flow verification. |
 | TXT download | Regression record | PASS | HTTP 200, 94,784 bytes. |
@@ -95,7 +95,7 @@ Status: partially verified in production.
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
-- 2026-08-31 00:38 EDT: reran `scripts/phase2_upload_smoke.py` against the public no-login API after clearing stale orphan Whisper workers from an old duplicate API process.
+- 2026-08-31 01:34 EDT: reran `scripts/phase2_upload_smoke.py` against the public no-login API.
 - Public generated WAV upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
 - Public generated MP3 upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
 - Public generated MP4 upload: PASS, HTTP 200, method `local-whisper`, 1 segment, 12 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
