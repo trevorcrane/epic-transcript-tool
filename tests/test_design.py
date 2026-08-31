@@ -170,7 +170,12 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert '@huggingface/transformers@' in html
     assert 'actualDevice' in html
     assert 'method = requestedDevice ===' not in html
-    assert 'Xenova/whisper-small' in html
+    assert 'onnx-community/whisper-tiny' in html
+    assert 'Xenova/whisper-small' not in html
+    assert 'browserWhisperDtype' in html
+    assert "encoder_model: 'fp32'" in html
+    assert "decoder_model_merged: 'q4'" in html
+    assert 'withBrowserWhisperTimeout' in html
     assert 'browser-whisper-webgpu' in html
     assert 'browser-whisper-wasm' in html
     assert 'shouldPreferBrowserWhisper(file)' in html

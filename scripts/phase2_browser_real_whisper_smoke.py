@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
 OUT = ROOT / "evidence" / "phase2-browser-real-whisper-attempt.json"
 PUBLIC_BASE = (sys.argv[1] if len(sys.argv) > 1 else "https://epic-transcript.robyncrane.com").rstrip("/")
-MODEL_MARKER = "Xenova/whisper-small"
+MODEL_MARKER = "onnx-community/whisper-tiny"
 
 
 def require(condition: bool, message: str) -> None:

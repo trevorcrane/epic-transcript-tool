@@ -109,7 +109,7 @@ def main():
     with urlopen(req, timeout=30) as res:
         html = res.read().decode('utf-8', errors='ignore')
     require(res.status == 200, f'public root {res.status}')
-    for marker in ['@huggingface/transformers@3.7.2','Xenova/whisper-small','shouldPreferBrowserWhisper(file)','return_timestamps: true','chunks.map','forceBrowserWasm','actualDevice']:
+    for marker in ['@huggingface/transformers@3.7.2','onnx-community/whisper-tiny','shouldPreferBrowserWhisper(file)','return_timestamps: true','chunks.map','forceBrowserWasm','actualDevice','withBrowserWhisperTimeout','browserWhisperDtype']:
         require(marker in html, f'missing public marker {marker}')
     require('@xenova/transformers@2.17.2' not in html, 'old Transformers.js v2 import still present')
     OUT.parent.mkdir(parents=True, exist_ok=True)

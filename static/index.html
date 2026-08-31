@@ -683,10 +683,19 @@
     return isBrowserWhisperCandidate(file) && (!els.browserLocal || els.browserLocal.checked);
   }
 
+  function withBrowserWhisperTimeout(promise, label, timeoutMs = 90000) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out after ' + timeoutMs + 'ms')), timeoutMs))
+    ]);
+  }
+
   async function transcribeInBrowser(file) {
     setStatus('Loading private browser Whisper model...');
     const forceWasm = new URLSearchParams(location.search).has('forceBrowserWasm');
     const requestedDevice = (!forceWasm && navigator.gpu) ? 'webgpu' : 'wasm';
+    const browserWhisperModel = 'onnx-community/whisper-tiny';
+    const browserWhisperDtype = { encoder_model: 'fp32', decoder_model_merged: 'q4' };
     let actualDevice = requestedDevice;
     if (window.__EPIC_BROWSER_WHISPER_TEST_STUB) {
       if (location.hostname !== '127.0.0.1' && location.hostname !== 'localhost') {
@@ -711,19 +720,21 @@
         };
         try {
           actualDevice = requestedDevice;
-          const transcriber = await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+          const transcriber = await withBrowserWhisperTimeout(mod.pipeline('automatic-speech-recognition', browserWhisperModel, {
             device: actualDevice,
+            dtype: browserWhisperDtype,
             progress_callback
-          });
+          }), actualDevice.toUpperCase() + ' model load');
           return { transcriber, actualDevice };
         } catch (primaryError) {
           if (requestedDevice !== 'webgpu') throw primaryError;
           setStatus('WebGPU model failed, using private browser WASM...');
           actualDevice = 'wasm';
-          const transcriber = await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+          const transcriber = await withBrowserWhisperTimeout(mod.pipeline('automatic-speech-recognition', browserWhisperModel, {
             device: actualDevice,
+            dtype: browserWhisperDtype,
             progress_callback
-          });
+          }), actualDevice.toUpperCase() + ' model load');
           return { transcriber, actualDevice };
         }
       };
@@ -731,20 +742,21 @@
       let transcriber = browserPipeline.transcriber;
       actualDevice = browserPipeline.actualDevice;
       setStatus('Transcribing privately in this browser with ' + actualDevice.toUpperCase() + '...');
-      let out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+      let out = await withBrowserWhisperTimeout(transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true }), actualDevice.toUpperCase() + ' transcription', 120000);
       let transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
       let chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
       if ((!transcript || !chunks.length) && actualDevice === 'webgpu') {
         setStatus('WebGPU browser transcript missing timestamps, using private browser WASM...');
         actualDevice = 'wasm';
-        transcriber = await mod.pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
+        transcriber = await withBrowserWhisperTimeout(mod.pipeline('automatic-speech-recognition', browserWhisperModel, {
           device: actualDevice,
+          dtype: browserWhisperDtype,
           progress_callback: (progress) => {
             if (progress && progress.status) setStatus('Browser model: ' + progress.status);
           }
-        });
+        }), 'WASM model load after WebGPU empty result');
         setStatus('Transcribing privately in this browser with WASM...');
-        out = await transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true });
+        out = await withBrowserWhisperTimeout(transcriber(objectUrl, { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true }), 'WASM transcription after WebGPU empty result', 120000);
         transcript = (typeof out === 'string' ? out : (out && out.text) || '').trim();
         chunks = Array.isArray(out && out.chunks) ? out.chunks : [];
       }
@@ -763,7 +775,7 @@
         id: 'browser-' + Date.now(),
         source: file.name,
         title: file.name,
-        method: 'browser-whisper-' + actualDevice,
+        method: 'browser-whisper-' + actualDevice + ' · ' + browserWhisperModel,
         transcript,
         segments,
         language: (out && out.language) || 'multilingual',

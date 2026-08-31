@@ -7,7 +7,8 @@ def test_phase2_browser_real_whisper_smoke_runs_without_test_stub_and_saves_repo
     script = SCRIPT.read_text()
     assert "__EPIC_BROWSER_WHISPER_TEST_STUB" not in script
     assert "Xenova/whisper-tiny.en" not in script
-    assert "Xenova/whisper-small" in script
+    assert "onnx-community/whisper-tiny" in script
+    assert "Xenova/whisper-small" not in script
     assert "has_preferred_browser_route" in script
     assert "has_timestamps" in script
     assert "phase2-browser-real-whisper-attempt.json" in script
