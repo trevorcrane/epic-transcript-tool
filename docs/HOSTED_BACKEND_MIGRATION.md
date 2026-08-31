@@ -73,17 +73,44 @@ Current package evidence from 2026-08-31 13:06 EDT:
 - Transcript rows: 339.
 - Required cached media present: `v34Eg12mhDM` 87 rows, `dQw4w9WgXcQ` 72 rows, `SXHMnicI6Pg` 15 rows, `aircAruvnKk` 15 rows.
 
+## Host-side seed verification
+
+After copying `evidence/hosted-staging-seed.tar.gz` to the selected host, verify and extract it before starting the container:
+
+```bash
+python3 scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to /path/to/persistent-data
+```
+
+The command checks that:
+
+- `manifest.json` and `transcripts.db` are present in the tarball.
+- The extracted database SHA-256 matches the manifest.
+- The transcript row count matches the manifest.
+- Required cached Phase 1 media IDs are present.
+- `transcripts.db` is copied into the chosen persistent data directory.
+
+Current local verification evidence from 2026-08-31 13:21 EDT:
+
+- Command: `./.venv/bin/python scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to evidence/hosted-staging-verify-data`.
+- Result: PASS, `ok=true`.
+- Extracted DB: `evidence/hosted-staging-verify-data/transcripts.db`.
+- SHA-256 verified: `d04607cef60c26f79eb2b52a5c076b51b476269d56ebe3cba5e9df8f7ceb5915`.
+- Transcript rows verified: 339.
+- Required cached media verified: `v34Eg12mhDM` 87, `dQw4w9WgXcQ` 72, `SXHMnicI6Pg` 15, `aircAruvnKk` 15.
+
 ## Cutover checklist
 
 1. Build container locally: `docker build -t epic-transcript-machine .`
-2. Run with persistent data: `docker run --rm -p 8090:8090 -v "$PWD/data-hosted-test:/data" epic-transcript-machine`.
-3. Verify `/health` returns HTTP 200 and required `missing: []`.
-4. Run public-style Phase 1 matrix against the container URL. The matrix uses the async UI path for YouTube links so long YouTube sources do not depend on the older synchronous endpoint.
-5. Run Phase 2 upload smoke against the container URL with generated spoken fixtures.
-6. Run Phase 3 UI contract smoke against the container URL.
-7. Deploy to the selected host with a persistent `/data` volume.
-8. Move DNS only after hosted `/health`, transcript, upload, download, and analysis evidence passes.
-9. Keep the launchd iMac/tunnel path as rollback until the hosted domain has passed a 24-hour health window.
+2. Copy `evidence/hosted-staging-seed.tar.gz` to the selected persistent host.
+3. Run `scripts/hosted_staging_verify.py` on the host with `--extract-to` pointed at the mounted persistent data directory.
+4. Run with persistent data: `docker run --rm -p 8090:8090 -v "$PWD/data-hosted-test:/data" epic-transcript-machine`.
+5. Verify `/health` returns HTTP 200 and required `missing: []`.
+6. Run public-style Phase 1 matrix against the container URL. The matrix uses the async UI path for YouTube links so long YouTube sources do not depend on the older synchronous endpoint.
+7. Run Phase 2 upload smoke against the container URL with generated spoken fixtures.
+8. Run Phase 3 UI contract smoke against the container URL.
+9. Deploy to the selected host with a persistent `/data` volume.
+10. Move DNS only after hosted `/health`, transcript, upload, download, and analysis evidence passes.
+11. Keep the launchd iMac/tunnel path as rollback until the hosted domain has passed a 24-hour health window.
 
 ## Current status
 
@@ -92,3 +119,4 @@ Current package evidence from 2026-08-31 13:06 EDT:
 - Automated coverage includes `test_hosted_backend_can_move_runtime_data_dir_without_code_changes` to prove the hosted data path contract initializes SQLite outside the repo.
 - Seeded local Docker validation passed on 2026-08-31: `/health`, Phase 1 async matrix, Phase 2 upload/download smoke, and Phase 3 UI contract all passed against `127.0.0.1:8091` when `/data` was seeded from the current SQLite cache.
 - Staging cache packaging passed on 2026-08-31 13:06 EDT. `scripts/hosted_staging_pack.py` created the seed tarball and automated manifest, and `tests/test_hosted_staging_pack.py` covers the copy/manifest contract.
+- Host-side seed verification tooling passed on 2026-08-31 13:21 EDT. `scripts/hosted_staging_verify.py` validates the package manifest, SHA-256, transcript count, and required cached media IDs, then extracts `transcripts.db` into the selected persistent data directory before container start.
