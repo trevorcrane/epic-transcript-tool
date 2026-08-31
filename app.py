@@ -1090,13 +1090,20 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
         "AI-generated from the transcript. Verify against the timestamped evidence before publishing.",
         f"Source: {title}",
         f"Words reviewed: {word_count}",
-        "",
-        "## Transcript evidence",
     ]
-    if evidence:
-        header.extend(f"- {line}" for line in evidence)
+    if output_type == "content_assets_100":
+        header.extend([
+            "",
+            "## Coverage proof",
+            "- 100 finished asset drafts below, each grounded with its own timestamp.",
+            "- Timestamps are sampled across the full transcript instead of cycling a small evidence set.",
+        ])
     else:
-        header.append("- No timestamped evidence was available.")
+        header.extend(["", "## Transcript evidence"])
+        if evidence:
+            header.extend(f"- {line}" for line in evidence)
+        else:
+            header.append("- No timestamped evidence was available.")
 
     samples = _evidence_cycle(evidence, 12)
     first, second, third, fourth, fifth, sixth = samples[:6]

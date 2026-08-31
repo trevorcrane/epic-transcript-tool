@@ -120,11 +120,11 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
         assert forbidden not in lower
     unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
     assert len(unique_bodies) >= 90
-    timestamps = [
-        int(match.group(1)) * 60 + int(match.group(2))
-        for line in numbered
-        for match in __import__("re").finditer(r"\[(\d{2}):(\d{2})\]", line)
-    ]
+    timestamps = []
+    for line in numbered:
+        for match in __import__("re").finditer(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]", line):
+            a, b, c = match.groups()
+            timestamps.append(int(a) * 60 + int(b) if c is None else int(a) * 3600 + int(b) * 60 + int(c))
     assert len(timestamps) == 100
     assert sum(1 for ts in timestamps if ts <= 900) >= 10
     assert sum(1 for ts in timestamps if 1800 <= ts <= 3600) >= 10
