@@ -1197,13 +1197,13 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Carousel slide":
             body = f"{frame} Supporting line: {takeaway} [{timestamp}]"
         elif kind == "Quote card":
-            body = f"“{frame}” Context: {takeaway} [{timestamp}]"
+            body = f"Quote-card takeaway: {frame} Context: {takeaway} [{timestamp}]"
         elif kind == "CTA":
             body = f"Get the next step: {frame} Why it matters: {takeaway} [{timestamp}]"
         elif kind == "Objection reply":
             body = f"Reply: {frame} Proof angle: {takeaway} [{timestamp}]"
         else:
-            body = f"Finished prompt: {frame} Source grounding: {takeaway} [{timestamp}]"
+            body = f"Repurpose bundle: {frame} Source grounding: {takeaway} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 

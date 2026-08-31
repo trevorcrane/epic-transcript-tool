@@ -81,6 +81,27 @@ def main() -> int:
     bodies = [line.split(" - ", 1)[-1] for line in numbered]
     unique = len(set(bodies))
     require(unique >= 90, f"too repetitive: {unique} unique bodies")
+    duplicate_stems: dict[str, list[str]] = {}
+    for label in ["Hook", "Short post", "Reel script", "Carousel slide", "CTA", "Objection reply", "Repurpose prompt"]:
+        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+        stems: dict[str, int] = {}
+        for body in subset:
+            stem = " ".join(body.lower().split()[:7])
+            stems[stem] = stems.get(stem, 0) + 1
+        dup = [stem for stem, count in stems.items() if count > 1]
+        if dup:
+            duplicate_stems[label] = dup
+    require(not duplicate_stems, f"repeated prefix/template stems: {duplicate_stems}")
+    first_sentence_counts: dict[str, int] = {}
+    for body in bodies:
+        first_sentence = body.split(".", 1)[0].lower().strip(" “”\"")
+        first_sentence_counts[first_sentence] = first_sentence_counts.get(first_sentence, 0) + 1
+    max_sentence_frame_repeat = max(first_sentence_counts.values())
+    require(max_sentence_frame_repeat <= 3, f"sentence frame repeated too often: {max_sentence_frame_repeat}")
+    quote_cards = [line for line in numbered if "**Quote card" in line]
+    require(bool(quote_cards) and all("“" not in line and "”" not in line for line in quote_cards), "quote cards contain invented quote formatting")
+    repurpose = [line for line in numbered if "**Repurpose prompt" in line]
+    require(bool(repurpose) and all("LinkedIn" in line and "Email" in line and "Clip" in line for line in repurpose), "repurpose prompts are not finished multi-channel assets")
     timestamps = [ts_seconds(m.group(1)) for line in numbered for m in re.finditer(r"\[(\d{2}:\d{2}(?::\d{2})?)\]", line)]
     require(len(timestamps) >= 90, f"too few timestamped assets: {len(timestamps)}")
     duration = rec.get("duration_seconds") or max(timestamps)
@@ -112,8 +133,12 @@ def main() -> int:
         "asset_count": len(numbered),
         "unique_asset_bodies": unique,
         "timestamped_asset_count": len(timestamps),
+        "max_sentence_frame_repeat": max_sentence_frame_repeat,
         "coverage": {"early": early, "middle": middle, "late": late, "earliest_seconds": min(timestamps), "latest_seconds": max(timestamps)},
         "no_placeholder_phrasing": True,
+        "no_invented_quote_cards": True,
+        "no_repeated_prefix_stems": True,
+        "repurpose_are_finished_multi_channel_assets": True,
         "sample_first_10": numbered[:10],
         "sample_middle_10": numbered[45:55],
         "sample_last_10": numbered[-10:],

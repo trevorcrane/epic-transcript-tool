@@ -120,6 +120,16 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
         assert forbidden not in lower
     unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
     assert len(unique_bodies) >= 90
+    bodies = [line.split(" - ", 1)[-1] for line in numbered]
+    for label in ["Hook", "Short post", "Reel script", "Carousel slide", "CTA", "Objection reply", "Repurpose prompt"]:
+        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+        stems = {" ".join(body.lower().split()[:7]) for body in subset}
+        assert len(stems) == len(subset)
+    repeated_sentence_frames = {}
+    for body in bodies:
+        first_sentence = body.split(".", 1)[0].lower().strip(" “”\"")
+        repeated_sentence_frames[first_sentence] = repeated_sentence_frames.get(first_sentence, 0) + 1
+    assert max(repeated_sentence_frames.values()) <= 3
     timestamps = []
     for line in numbered:
         for match in __import__("re").finditer(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]", line):
@@ -133,6 +143,12 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     assert "Email subject" in text and "Subject:" in text
     assert "CTA" in text and "Get" in text
     assert "Objection reply" in text and "Reply:" in text
+    quote_cards = [line for line in numbered if "**Quote card" in line]
+    assert quote_cards
+    assert all("“" not in line and "”" not in line for line in quote_cards)
+    repurpose = [line for line in numbered if "**Repurpose prompt" in line]
+    assert repurpose
+    assert all("LinkedIn" in line and "Email" in line and "Clip" in line for line in repurpose)
     hooks = [line for line in numbered if "**Hook" in line]
     hook_stems = {line.split(":", 1)[0] for line in hooks}
     assert len(hook_stems) == 10
