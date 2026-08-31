@@ -185,6 +185,16 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
     assert all(len(line.split("Subject:", 1)[1].split("Source excerpt:", 1)[0].strip().split()) >= 6 for line in subjects)
     hooks = [line for line in numbered if "**Hook" in line]
     assert all("Source excerpt:" in line and line.split(" - ", 1)[1].split("Source excerpt:", 1)[0].strip().endswith((".", "?", "!")) for line in hooks)
+    repeated_shells = [
+        "stop losing the lesson hiding in plain sight",
+        "the practical takeaway is this",
+        "fix that moment before adding another layer",
+        "the part worth fixing now",
+        "the story starts with this proof point",
+        "start with the visible proof point",
+    ]
+    for shell in repeated_shells:
+        assert lower.count(shell) <= 2
 
 
 def test_phase3_100_assets_do_not_attach_unrelated_claims_to_citations(monkeypatch, tmp_path):

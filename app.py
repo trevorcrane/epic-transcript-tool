@@ -1041,6 +1041,94 @@ def build_100_content_assets(rec: dict) -> list[str]:
         "Hook", "Short post", "Email subject", "Newsletter angle", "Reel script",
         "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt",
     ]
+    hooks = [
+        "Most teams miss the money because they miss this moment",
+        "The system gets valuable when this detail stops slipping",
+        "This is the quiet gap that turns attention into lost revenue",
+        "A better offer starts where the current process breaks",
+        "The fastest improvement is usually hiding in the handoff",
+        "Before buying another tool, fix the moment already in front of you",
+        "This is how a small process gap becomes a business problem",
+        "The result changes when the follow-through becomes automatic",
+        "The proof is not in the promise, it is in this operating detail",
+        "If the system cannot handle this moment, the offer is not finished",
+    ]
+    short_posts = [
+        "The strongest systems are built around the moments customers actually experience",
+        "A useful process does not need more hype; it needs one clear handoff that works",
+        "Growth gets easier when the business can repeat the important step without guessing",
+        "The gap in this transcript is not abstract. It is a place the team can fix",
+        "This is the difference between having a tool and having an operating system",
+        "Better follow-through turns the same lead, call, or lesson into a cleaner outcome",
+        "The asset here is not the software. The asset is the repeatable behavior it creates",
+        "The business improves when the next action is obvious before the moment is over",
+        "Proof makes the offer easier to trust because the mechanism is visible",
+        "The next version should remove friction, not add another disconnected step",
+    ]
+    subjects = [
+        "The process gap costing the next result",
+        "Where the system needs to get sharper",
+        "A better follow-through starts here",
+        "The moment your offer has to prove itself",
+        "What the transcript says to fix next",
+        "The handoff that deserves attention now",
+        "A clearer system from one real moment",
+        "The proof point behind the next improvement",
+        "What to tighten before adding tools",
+        "The operational detail worth acting on",
+    ]
+    newsletter_openers = [
+        "Here is the operational lesson worth pulling out",
+        "The useful story is not bigger tech; it is cleaner execution",
+        "This excerpt points to a place where the business can become easier to run",
+        "The next improvement starts with a specific customer-facing moment",
+        "A system becomes more valuable when the team can see the exact gap",
+        "This proof point turns the lesson from theory into something actionable",
+        "The transcript gives a concrete example of what should happen next",
+        "There is a practical upgrade hiding inside this small section",
+        "The strongest takeaway is the repeatable behavior behind the result",
+        "This is the kind of detail that makes a service easier to package",
+    ]
+    reel_lines = [
+        "Show the moment, then make the business consequence impossible to miss",
+        "Put the timestamp on screen and explain why this exact handoff matters",
+        "Use the clip to make one fix feel obvious, immediate, and measurable",
+        "Open with the problem, then show the transcript line that proves it exists",
+        "Make the viewer see the gap before you name the solution",
+        "Turn the excerpt into a simple before-and-after explanation",
+        "Anchor the reel in the quote, then connect it to the operating system",
+        "Let the source line carry the credibility, then add one practical takeaway",
+        "Make this a quick lesson about the step that should not be left to chance",
+        "End the reel with the next action this evidence makes clear",
+    ]
+    carousel_heads = [
+        "The gap", "The proof", "The fix", "The handoff", "The risk",
+        "The system", "The next step", "The leverage", "The lesson", "The action",
+    ]
+    ctas = [
+        "Get the broken handoff written down before another tool is added",
+        "Get one measurable follow-up step assigned from this evidence today",
+        "Get the next action out of the transcript and into the operating checklist",
+        "Get the proof point into the sales story so the buyer sees the mechanism",
+        "Get the team aligned on what should happen immediately after this moment",
+        "Get the repeatable step documented while the evidence is still clear",
+        "Get the offer tightened around the result this excerpt actually supports",
+        "Get the friction removed before it becomes another missed opportunity",
+        "Get the source-backed lesson turned into one owner and one deadline",
+        "Get the clip, caption, and follow-up built around this exact evidence",
+    ]
+    replies = [
+        "The evidence shows why this should be handled directly, not treated as optional",
+        "This is not a theory; the transcript gives a concrete place to improve",
+        "The safest answer is to stay with the source and fix the step it exposes",
+        "The point is supported when the team can point to the exact moment and outcome",
+        "A tool alone will not solve this unless the handoff around it is clear",
+        "The reply should focus on the process gap the transcript already makes visible",
+        "This objection gets weaker when the operating detail is shown plainly",
+        "The right response is to make the evidence easier to act on",
+        "If the buyer questions the value, connect it back to this specific proof",
+        "The transcript supports action because it names a concrete place to tighten execution",
+    ]
     points = _asset_evidence_points(rec, 100)
     assets = [
         "## Create 100 content assets",
@@ -1049,30 +1137,31 @@ def build_100_content_assets(rec: dict) -> list[str]:
     for i, point in enumerate(points, 1):
         kind = categories[(i - 1) // 10]
         slot = ((i - 1) % 10) + 1
+        idx = slot - 1
         timestamp = point["timestamp"]
         excerpt = _asset_sentence(point["text"], max_words=34)
         short_excerpt = _asset_phrase(point["text"], max_words=12).rstrip(" ,;:")
         takeaway = _asset_takeaway(point["text"], i)
         if kind == "Hook":
-            body = f"Hook {slot}: Stop losing the lesson hiding in plain sight. {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{hooks[idx]}. {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Short post":
-            body = f"Short post {slot}: The practical takeaway is this: {excerpt} Fix that moment before adding another layer to the system. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"{short_posts[idx]}. In this case, the evidence is: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject: The part worth fixing now: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Subject: {subjects[idx]}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
-            body = f"Newsletter angle {slot}: {takeaway} The story starts with this proof point: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Newsletter angle {slot}: {newsletter_openers[idx]}. {takeaway} Evidence: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
-            body = f"Reel script {slot}: Start with the visible proof point. {excerpt} Then connect it to the business result in one clear sentence. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} Evidence: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"Carousel slide {slot}: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {short_excerpt}. Supporting copy: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
-            body = f"Quote-card takeaway {slot}: {takeaway} Ground it with this moment: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Quote-card takeaway {slot}: {takeaway} Evidence line: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
-            body = f"CTA {slot}: Get one concrete next step from this evidence and apply it before adding another tool. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"CTA {slot}: {ctas[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Reply: {slot}: This is not optional if the transcript shows the moment clearly: {excerpt} Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reply: {slot}: {replies[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: {excerpt} Clip caption: The proof point starts at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: {excerpt} Clip caption: {carousel_heads[idx]} at {timestamp}. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 
