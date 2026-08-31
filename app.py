@@ -1057,7 +1057,7 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Short post":
             body = f"Short post {slot}: {excerpt} Use this as the main point and ask what the viewer should do with it next. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Email subject":
-            body = f"Subject {slot}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Subject: {slot}: {short_excerpt}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Newsletter angle":
             body = f"Newsletter angle {slot}: Open with the problem or insight stated here, then unpack only what this moment supports. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Reel script":
@@ -1067,9 +1067,9 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Quote card":
             body = f"Quote-card takeaway {slot}: Feature this as a paraphrased lesson, not a verbatim quote. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
-            body = f"CTA {slot}: Review this exact transcript moment and decide the next action it implies. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"CTA {slot}: Get the next step from this exact transcript moment and decide the action it implies. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Objection reply":
-            body = f"Objection reply {slot}: If someone challenges the point, answer only with the evidence in this moment. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Reply: {slot}: If someone challenges the point, answer only with the evidence in this moment. Source excerpt: {excerpt} [{timestamp}]"
         else:
             body = f"Repurpose bundle {slot}: LinkedIn angle: teach this moment. Email angle: summarize this moment. Clip angle: play this timestamp. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
