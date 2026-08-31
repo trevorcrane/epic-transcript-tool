@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 10:06 EDT
+Updated: 2026-08-31 11:06 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -8,19 +8,20 @@ Phase 1: Bulletproof YouTube Transcripts. Active gate is production release veri
 ## Version / phase status
 
 ### Version 1 / Phase 1: Bulletproof YouTube transcripts
-Status: Release-clear on the public no-login product for the current fixture gate. Non-English, genuine Shorts, two-hour/long-video, desktop copy, mobile touch, downloads, and the bounded public matrix have passed; backend migration hardening is now started with a containerized hosted-backend spike.
+Status: Release-clear on the public no-login product for the current fixture gate. Non-English, genuine Shorts, two-hour/long-video, desktop copy, mobile touch, downloads, and the bounded public matrix have passed; backend migration hardening has advanced from container packaging to seeded-container release smoke validation.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
 - Public Phase 1 scripted matrix is now passing against the durable no-login URL for the bounded fixture set: regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents. Hosted-backend migration spike now adds env-configurable runtime paths, Docker container packaging, and a migration checklist in `docs/HOSTED_BACKEND_MIGRATION.md`.
+- Hosted backend validation advanced: a Docker container on `127.0.0.1:8091` with a repo-local bind-mounted `/data` volume seeded from `data/transcripts.db` passed the updated async Phase 1 matrix. The same container also passed Phase 2 upload smoke and Phase 3 UI contract smoke. A cold empty `/data` container exposed the expected staging risk: current YouTube/IP conditions can block some uncached YouTube fixtures, so first staging needs the existing transcript cache migrated before DNS cutover.
 - UX alignment advanced: the live public root now shows `Free Video Transcript Generator`, `FAST · FREE · V3`, `Get Video Transcript`, `How it works`, and `Frequently Asked Questions (FAQ)` markers in the expected first-control then support-section order.
 - Netlify review URL was updated to the same public UX build. Stable review URL `https://epic-transcript-machine-review.netlify.app` and immutable deploy `https://6a9579a7b662aa6824e325ab--epic-transcript-machine-review.netlify.app` both returned HTTP 200 with the new UX markers and the production API base marker.
 - New non-English production evidence: `https://youtu.be/kv92eqcZVxs`, title `✅ 10 phrases simples en français à apprendre en 1 minute !`, HTTP 200, method `local-whisper`, language `fr`, 2 segments, 37 words, credible French text. First uncached run passed at 2026-08-31 01:34 EDT and repeated matrix run confirmed cache hit.
 - New two-hour public long-video proof: `https://www.youtube.com/watch?v=rwfk91ya81s`, job `115c983594bd`, record `5919d7b3c99a`, title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`, duration 7,244 seconds, HTTP 202 async start then job `done`, method `queued-chunked-local-whisper`, cache miss, 13 audio chunks, 1,446 segments, 19,298 words, language `en`. Native captions, YouTube Transcript API, and yt-dlp subtitles failed/skipped, then chunked local Whisper produced a credible beginning and ending. Public TXT, Markdown, and SRT signed downloads verified HTTP 200.
 
 ### Version 2 / Phase 2: Any video or audio
-Status: Advanced, not release-complete.
+Status: Advanced, not release-complete. Hosted-container upload path now passes against a seeded persistent `/data` volume.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
 - Full upload/media release matrix now has public proof for generated WAV, MP3, M4A, MP4, MOV, WebM, non-English French WAV, a 31-minute MP3 recording, and a supported public non-YouTube MP3 URL. Remaining Phase 2 evidence is fuller browser UX proof.
 - Cleanup/retention hardening advanced on 2026-08-31 08:18 EDT: upload temp directories are covered by an automated removal regression, transcript deletion now also removes saved analyses, SQLite connections now enable foreign-key enforcement, and the public API verified delete cleanup with record `c40edf087acd` / analysis `c3e5e11163a0` returning HTTP 404 after deletion.
@@ -33,7 +34,7 @@ Status: Advanced, not release-complete.
 - Fresh 30+ minute public upload proof from 2026-08-31 04:42 EDT: generated 31-minute MP3, 7,448,625 bytes, returned HTTP 200 in 54.50s through `local-whisper`, language `en`, cache miss, duration `1862.0` seconds, 3 segments, 34 words. Credible transcript begins `Epic transcript machine long upload proof...` and includes text at `[31:00]`.
 
 ### Version 3 / Phase 3: Video intelligence
-Status: Advanced publicly, not release-complete.
+Status: Advanced publicly, not release-complete. Hosted-container UI/API contract now passes against a seeded persistent `/data` volume.
 - Added the first provider-safe Phase 3 backend: `/api/analyze/{transcript_id}` now produces timestamp-cited executive summary, action items, chapters, quotes, FAQ, sales insights, Trevor-use, starter content-asset maps, and question-answer outputs without paid providers or hiding the original transcript.
 - Added `/api/analysis/{analysis_id}/download` so generated analysis can be downloaded as Markdown.
 - Expanded the public UI from two starter buttons to the full starter intelligence menu: `All Outputs`, 16 individual output choices, ask-a-question input, `Ask`, and `Download Analysis` controls in the transcript workspace.
@@ -71,6 +72,7 @@ Status: Advanced publicly, not release-complete.
 - Advanced the public UX/design acceptance gate from the ChatGPT-reference prompt: added and satisfied regression coverage for `Free Video Transcript Generator`, `FAST · FREE · V3`, `Get Video Transcript`, `How it works`, `Frequently Asked Questions (FAQ)`, `faq-stage`, and `step-grid` markers.
 - Added `scripts/phase3_ui_contract_smoke.py`, a no-Chrome public UI contract harness that verifies visible Phase 3 controls, async job wiring, absence of the old synchronous submit path, all-outputs analysis, ask-question analysis, and Markdown download against the public no-login URL.
 - Deployed the synchronized static review build to Netlify site `epic-transcript-machine-review`, deploy `6a9579a7b662aa6824e325ab`, and verified both stable and immutable Netlify URLs anonymously.
+- Updated `scripts/phase1_matrix.py` to test YouTube links through the public UI's async job path (`/api/transcribe-url-job` plus `/api/jobs/{id}`) instead of relying on the older synchronous URL endpoint for long YouTube sources.
 
 ## Latest production regression evidence
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
@@ -102,6 +104,10 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
+- `python3 -m py_compile scripts/phase1_matrix.py`: passed on 2026-08-31 11:06 EDT after switching the matrix to the async public UI path for YouTube links.
+- Seeded hosted-container Phase 1 matrix passed on 2026-08-31 11:06 EDT at `http://127.0.0.1:8091`: all 9 cases passed. Regression returned HTTP 200, cache hit, 1,460 segments, 15,744 words; control/manual caption returned HTTP 200, cache hit, 61 segments, 366 words; non-English returned HTTP 200, cache hit, 37 words, `fr`; Shorts returned HTTP 200, cache hit; moderate long returned HTTP 200, cache hit; private/unavailable and invalid URL returned helpful HTTP 422 guidance.
+- Seeded hosted-container Phase 2 upload smoke passed on 2026-08-31 11:06 EDT at `http://127.0.0.1:8091`: WAV, MP3, M4A, MP4, MOV, and WebM returned HTTP 200 through `local-whisper`; repeat WAV cache check returned `cache_hit=true`; signed TXT, Markdown, and SRT downloads returned HTTP 200.
+- Seeded hosted-container Phase 3 UI contract smoke passed on 2026-08-31 11:06 EDT at `http://127.0.0.1:8091`: root HTTP 200, required UI IDs present, async wiring present, old sync submit absent, Rick Astley transcript job done with cache hit, all-output analysis produced 16 sections and 13,076 chars, Markdown download HTTP 200 with 13,960 bytes, ask-question output 784 chars.
 - `./.venv/bin/python -m pytest -q`: passed, 45 tests on 2026-08-31 10:06 EDT.
 - `scripts/phase1_health.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 10:06 EDT. Regression returned HTTP 200, cache hit, 1,460 segments, 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments, 366 words.
 - Hosted-backend spike verification passed on 2026-08-31 10:06 EDT: `docker build -t epic-transcript-machine:hosted-spike .` succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted `/data` created `transcripts.db`.
@@ -137,6 +143,7 @@ Prior full regression evidence:
 
 ## Known problems
 - The public hostname now has launchd KeepAlive hardening, but it still depends on this iMac and Cloudflare Tunnel. A hosted durable backend remains the cleaner whole-project final release path.
+- A fresh empty hosted `/data` volume is not enough for release parity under current YouTube/IP conditions. The cold container passed non-English, control via Whisper, upload, and analysis paths, but failed the regression and Shorts fixtures when captions/audio were blocked. Staging cutover must seed the existing SQLite transcript cache into the persistent volume first, then verify the matrix.
 - Browser Use automation can still hit a fresh macOS `Allow remote debugging?` prompt in new browser sessions. This no longer blocks Version 1 proof because prior direct Chrome desktop/mobile proof passed and the new no-Chrome public UI contract harness covers the release-critical wiring.
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
@@ -148,7 +155,7 @@ Prior full regression evidence:
 - Phase 1 public product proof is no longer blocked. New browser sessions may still need the macOS Chrome remote-debug prompt approved, but release-critical proof has a prior direct Chrome pass plus the no-Chrome UI contract harness.
 
 ## Exact next action
-Run the public Phase 1 matrix and Phase 2 upload smoke against the local hosted-backend container, then choose the lowest-risk persistent host for the first no-DNS-cutover staging deployment.
+Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
@@ -179,3 +186,10 @@ Run the public Phase 1 matrix and Phase 2 upload smoke against the local hosted-
 - PASS: Added `Dockerfile`, `.dockerignore`, and `docs/HOSTED_BACKEND_MIGRATION.md` for a no-surprise hosted backend path that keeps ffmpeg, yt-dlp, and local Whisper instead of adding paid providers.
 - PASS: Added regression coverage `test_hosted_backend_can_move_runtime_data_dir_without_code_changes`. Full suite now returns 45 passed.
 - PASS: Built `epic-transcript-machine:hosted-spike` locally and ran it with a mounted `/data` volume. Container `/health` returned HTTP 200, `ready=true`, `missing=[]`, `local_whisper=true`; root returned HTTP 200 with the live UI bytes; persistent `transcripts.db` was created in the mounted data directory.
+
+### 2026-08-31 hosted backend seeded-container validation
+- PASS: Restarted the hosted Docker container with a repo-local bind-mounted persistent volume seeded from the current `data/transcripts.db`. Docker Desktop did not reliably expose a `/tmp/...` seed path into the container, so staging instructions now prefer a repo or real host volume path.
+- PASS: Updated and compiled `scripts/phase1_matrix.py` so YouTube cases use the async UI path. Seeded container Phase 1 matrix passed all 9 cases on `http://127.0.0.1:8091`.
+- PASS: Seeded container Phase 2 upload smoke passed for WAV, MP3, M4A, MP4, MOV, WebM, repeat cache, and TXT/Markdown/SRT downloads.
+- PASS: Seeded container Phase 3 UI contract smoke passed for async transcript, all-output analysis, ask-question, and Markdown download.
+- FINDING: An empty cold hosted container is not release-parity yet because current YouTube/IP behavior can block fresh uncached regression and Shorts pulls. First staging deployment must migrate the existing transcript cache before it can replace the iMac tunnel safely.

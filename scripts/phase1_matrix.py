@@ -24,16 +24,53 @@ PUBLIC_HEADERS = {
     "Accept": "application/json,text/plain,*/*",
 }
 
-def post(url):
-    body=parse.urlencode({'url':url}).encode()
-    req=request.Request(BASE + '/api/transcribe-url', data=body, headers={**PUBLIC_HEADERS, 'Content-Type':'application/x-www-form-urlencoded'}, method='POST')
+def post(path, data, timeout=240):
+    body=parse.urlencode(data).encode()
+    req=request.Request(BASE + path, data=body, headers={**PUBLIC_HEADERS, 'Content-Type':'application/x-www-form-urlencoded'}, method='POST')
     try:
-        with request.urlopen(req, timeout=240) as r:
+        with request.urlopen(req, timeout=timeout) as r:
             return r.status, r.read().decode('utf-8','replace')
     except error.HTTPError as e:
         return e.code, e.read().decode('utf-8','replace')
     except Exception as e:
         return 0, str(e)
+
+def get_json(path, timeout=30):
+    req=request.Request(BASE + path, headers=PUBLIC_HEADERS, method='GET')
+    try:
+        with request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode('utf-8','replace')
+    except error.HTTPError as e:
+        return e.code, e.read().decode('utf-8','replace')
+    except Exception as e:
+        return 0, str(e)
+
+def transcribe_url(url):
+    """Use the same async YouTube path as the public UI, sync for other URLs."""
+    if 'youtube.com/' in url or 'youtu.be/' in url:
+        status, text = post('/api/transcribe-url-job', {'url': url}, timeout=60)
+        if status != 202:
+            return status, text
+        try:
+            job_id = json.loads(text)['job']['id']
+        except Exception:
+            return status, text
+        deadline = time.monotonic() + 900
+        last_status, last_text = status, text
+        while time.monotonic() < deadline:
+            last_status, last_text = get_json(f'/api/jobs/{job_id}', timeout=30)
+            try:
+                payload = json.loads(last_text)
+                job = payload.get('job') or {}
+                if job.get('status') == 'done':
+                    return 200, json.dumps({'ok': True, 'record': job.get('record')}, ensure_ascii=False)
+                if job.get('status') == 'error':
+                    return int(job.get('status_code') or 422), json.dumps({'detail': job.get('error') or 'Job failed'}, ensure_ascii=False)
+            except Exception:
+                pass
+            time.sleep(2)
+        return 0, f'job timed out; last_status={last_status} body={last_text[:300]}'
+    return post('/api/transcribe-url', {'url': url}, timeout=240)
 
 def valid_record(rec, case):
     segs=rec.get('segments') or []
@@ -42,7 +79,7 @@ def valid_record(rec, case):
 
 results=[]
 for c in CASES:
-    t=time.monotonic(); status, text=post(c['url']); dur=round(time.monotonic()-t,3)
+    t=time.monotonic(); status, text=transcribe_url(c['url']); dur=round(time.monotonic()-t,3)
     row={'case':c['name'],'http_status':status,'duration':dur,'ok':False}
     try:
         data=json.loads(text)

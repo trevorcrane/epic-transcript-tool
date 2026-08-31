@@ -62,6 +62,14 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 11:06 EDT.
+
+- Hosted backend seeded-container validation: PASS. A Docker container at `http://127.0.0.1:8091` using a repo-local bind-mounted `/data` volume seeded from `data/transcripts.db` returned `/health` HTTP 200 with `ready: true` and required `missing: []`.
+- Updated async Phase 1 matrix: PASS against the seeded container. `scripts/phase1_matrix.py` now tests YouTube links through `/api/transcribe-url-job` plus `/api/jobs/{id}`, matching the public UI path. All 9 cases passed: regression 1,460 segments / 15,744 words, manual-caption control 61 segments / 366 words, non-English French, Shorts, moderate long, private/unavailable helpful 422, and invalid URL helpful 422.
+- Phase 2 seeded-container upload smoke: PASS. WAV, MP3, M4A, MP4, MOV, and WebM uploads returned HTTP 200 through `local-whisper`; repeat WAV cache returned `cache_hit=true`; TXT, Markdown, and SRT downloads returned HTTP 200.
+- Phase 3 seeded-container UI contract: PASS. Root HTML returned HTTP 200 with required IDs and async wiring. Rick Astley transcript job completed from seeded cache. Combined analysis returned 16 sections and 13,076 chars; Markdown download returned HTTP 200 with 13,960 bytes; ask-question returned 784 chars.
+- Cold-container finding: an empty `/data` volume is not release-parity under current YouTube/IP conditions. It can process uploads and some fresh YouTube audio through Whisper, but the regression and Shorts fixtures can fail if uncached. Hosted staging must migrate the existing SQLite cache before public release verification and DNS cutover.
+
 Run time: 2026-08-31 10:06 EDT.
 
 - Hosted backend migration spike: PASS. App supports `TRANSCRIPT_DATA_DIR` and `TRANSCRIPT_STATIC_DIR`; `Dockerfile` build succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, required `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted data volume created `transcripts.db`.
@@ -305,5 +313,7 @@ Current status: in progress.
 
 - iMac launchd plus Cloudflare Tunnel: PASS hardened bridge, not final durability.
 - Hosted container readiness: PASS spike on 2026-08-31 10:06 EDT. Docker image built and local container health/root checks passed with persistent `/data` volume and local Whisper available.
+- Hosted seeded release smoke: PASS on 2026-08-31 11:06 EDT for Phase 1 async matrix, Phase 2 uploads/downloads, and Phase 3 UI contract on `127.0.0.1:8091` with `/data` seeded from the current SQLite cache.
+- Cache migration requirement: OPEN. The first hosted staging target must receive `transcripts.db` in its persistent `/data` volume before release verification, because a cold empty cache currently fails selected YouTube fixtures under current provider/IP conditions.
 - Staging hosted deployment: OPEN. Needs selected persistent host and public no-login staging URL.
 - DNS cutover from iMac tunnel: OPEN. Do only after hosted staging passes Phase 1, Phase 2, and Phase 3 smoke tests.

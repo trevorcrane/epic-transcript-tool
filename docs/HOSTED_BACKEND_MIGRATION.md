@@ -26,16 +26,35 @@ Optional and intentionally non-blocking:
 ## First provider candidates
 
 1. Existing owned Mac/iMac plus named Cloudflare Tunnel. Current hardened bridge, not final durability.
-2. A small persistent Linux VM with Docker and a mounted disk. Best fit for free/local Whisper, ffmpeg, long jobs, and no API surprise billing.
+2. Orgo or a small persistent Linux VM with Docker and a mounted disk. Best fit for free/local Whisper, ffmpeg, long jobs, and no API surprise billing. This is the preferred first no-DNS-cutover staging path.
 3. Fly.io, Render, Railway, or similar container host only if a persistent disk and predictable spend cap are configured first.
 4. Cloudflare Workers/Pages are not a fit for local Whisper or long ffmpeg jobs by themselves. They can remain the static/API front door later.
+
+## Data migration requirement
+
+- Seed the hosted persistent volume before release verification: copy the current `data/transcripts.db` to the host volume as `/data/transcripts.db` before the container starts.
+- Do not rely on an empty volume for release parity. A cold empty container can process uploads and some fresh YouTube audio through local Whisper, but current YouTube/IP conditions can block uncached regression and Shorts pulls.
+- Verify the seed inside the container before running the matrix:
+
+```bash
+docker exec <container> python - <<'PY'
+import sqlite3, os
+p='/data/transcripts.db'
+print(os.path.exists(p), os.stat(p).st_size)
+con=sqlite3.connect(p)
+print(con.execute('select count(*) from transcripts').fetchone()[0])
+print(con.execute("select count(*) from transcripts where media_id='v34Eg12mhDM'").fetchone()[0])
+PY
+```
+
+- On Docker Desktop, avoid using `/tmp/...` as the seed path for bind-mount proof. A repo-local or real host volume path exposed the expected SQLite file reliably.
 
 ## Cutover checklist
 
 1. Build container locally: `docker build -t epic-transcript-machine .`
 2. Run with persistent data: `docker run --rm -p 8090:8090 -v "$PWD/data-hosted-test:/data" epic-transcript-machine`.
 3. Verify `/health` returns HTTP 200 and required `missing: []`.
-4. Run public-style Phase 1 matrix against the container URL.
+4. Run public-style Phase 1 matrix against the container URL. The matrix uses the async UI path for YouTube links so long YouTube sources do not depend on the older synchronous endpoint.
 5. Run Phase 2 upload smoke against the container URL with generated spoken fixtures.
 6. Run Phase 3 UI contract smoke against the container URL.
 7. Deploy to the selected host with a persistent `/data` volume.
@@ -47,3 +66,4 @@ Optional and intentionally non-blocking:
 - App code now supports `TRANSCRIPT_DATA_DIR` and `TRANSCRIPT_STATIC_DIR`, so the database and bundled static directory can be moved cleanly in a container without source edits.
 - `Dockerfile` is present as the first hosted-backend spike. It installs ffmpeg, Python dependencies, and local Whisper, exposes port 8090, and defines `/data` as the persistent volume.
 - Automated coverage includes `test_hosted_backend_can_move_runtime_data_dir_without_code_changes` to prove the hosted data path contract initializes SQLite outside the repo.
+- Seeded local Docker validation passed on 2026-08-31: `/health`, Phase 1 async matrix, Phase 2 upload/download smoke, and Phase 3 UI contract all passed against `127.0.0.1:8091` when `/data` was seeded from the current SQLite cache.
