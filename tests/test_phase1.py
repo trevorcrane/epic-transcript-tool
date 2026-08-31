@@ -1,4 +1,6 @@
 import json
+import subprocess
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from urllib.parse import urlparse
@@ -324,3 +326,20 @@ def test_upload_reuses_file_hash_cache_for_identical_media(monkeypatch, tmp_path
     assert second.json()["record"]["cache_hit"] is True
     assert second.json()["record"]["media_id"] == first.json()["record"]["media_id"]
     assert second.json()["record"]["language"] == "fr"
+
+
+def test_local_whisper_reports_detected_language_from_output(monkeypatch, tmp_path):
+    audio = tmp_path / "french.wav"
+    audio.write_bytes(b"fake")
+    fake_bin = tmp_path / "whisper"
+    fake_bin.write_text("#!/bin/sh\nexit 0\n")
+    fake_bin.chmod(0o755)
+    def fake_run(cmd, capture_output, text, timeout):
+        out_dir = Path(cmd[cmd.index("--output_dir") + 1])
+        (out_dir / "french.vtt").write_text("WEBVTT\n\n00:00.000 --> 00:02.000\nBonjour tout le monde\n")
+        return subprocess.CompletedProcess(cmd, 0, stdout="Detected language: French\n", stderr="")
+    monkeypatch.setattr(app, "resolve_whisper_binary", lambda: str(fake_bin))
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    segs, lang = app.transcribe_with_local_whisper(audio)
+    assert lang == "fr"
+    assert segs[0]["text"] == "Bonjour tout le monde"

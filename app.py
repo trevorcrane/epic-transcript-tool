@@ -423,6 +423,19 @@ def yt_dlp_metadata(url: str) -> dict:
     return json.loads(proc.stdout)
 
 
+WHISPER_LANGUAGE_NAMES = {
+    "english": "en", "spanish": "es", "french": "fr", "german": "de", "italian": "it",
+    "portuguese": "pt", "korean": "ko", "japanese": "ja", "chinese": "zh", "dutch": "nl",
+}
+
+def detected_whisper_language(stdout: str, stderr: str = "") -> Optional[str]:
+    text = f"{stdout or ''}\n{stderr or ''}"
+    match = re.search(r"Detected language:\s*([^\n]+)", text, re.IGNORECASE)
+    if not match:
+        return None
+    name = match.group(1).strip().lower()
+    return WHISPER_LANGUAGE_NAMES.get(name, normalize_caption_language(name))
+
 def normalize_caption_language(lang: Optional[str]) -> str:
     lang = (lang or "unknown").strip()
     if not lang:
@@ -472,9 +485,9 @@ def infer_expected_language(meta: dict) -> Optional[str]:
 
 def fetch_caption_url_segments(meta: dict) -> tuple[list[dict], str, str]:
     import requests
-    for track in _caption_candidates(meta):
+    for track in _caption_candidates(meta)[:6]:
         try:
-            resp = requests.get(track["url"], timeout=30)
+            resp = requests.get(track["url"], timeout=8)
             if resp.status_code != 200 or not resp.text.strip():
                 continue
             if track["ext"] == "srt":
@@ -507,7 +520,7 @@ def yt_dlp_grab_caption_segments(url: str, work_dir: Path) -> tuple[list[dict], 
     out_template = str(work_dir / "captions.%(ext)s")
     cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--no-warnings", "--skip-download", "--write-sub", "--write-auto-sub", "--sub-format", "vtt/srt/best", "--sub-langs", "all", "-o", out_template, url]
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        subprocess.run(cmd, capture_output=True, text=True, timeout=45)
     except subprocess.TimeoutExpired:
         raise RuntimeError("yt-dlp subtitle extraction timed out")
     candidates = list(work_dir.glob("captions*.vtt")) + list(work_dir.glob("captions*.srt"))
@@ -564,7 +577,8 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     shutil.rmtree(out_dir, ignore_errors=True)
     if not segs:
         raise RuntimeError("Local Whisper transcript came back empty")
-    return segs, language or "unknown"
+    detected_lang = detected_whisper_language(proc.stdout, proc.stderr)
+    return segs, language or detected_lang or "unknown"
 
 
 def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str] = None, meta: Optional[dict] = None) -> dict:
