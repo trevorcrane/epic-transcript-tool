@@ -61,25 +61,34 @@ Credible beginning:
 Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
-### Additional Phase 1 cases
-Status: pending production matrix evidence unless marked below.
+### Fresh production health evidence
+Run time: 2026-08-30 22:40 EDT.
 
-- Control video: `dQw4w9WgXcQ`.
-- Manual-caption video.
-- Automatic-caption video.
-- Non-English video.
-- Shorts URL.
-- No-caption video.
-- Invalid URL.
-- Private/unavailable video.
-- Long video.
-- Repeated request confirms a cache hit.
-- Copy transcript.
-- TXT download: PASS for regression record.
-- Markdown download: PASS for regression record.
-- SRT download: PASS for regression record.
-- Mobile layout.
-- Button contrast and accessibility.
+- Public app root: PASS, HTTP 200.
+- Public setup endpoint: PASS, HTTP 200, `ready: true`, required `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Public release checker scripts now send a normal browser-style user agent so Cloudflare does not reject Python urllib checks with 1010.
+- Backend durability step: `com.epic.transcript-api` and `com.epic.transcript-tunnel` are loaded under launchd with KeepAlive.
+
+### Additional Phase 1 cases
+Status: partially verified in production.
+
+| Case | URL | Result | Evidence |
+| --- | --- | --- | --- |
+| Control video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words, language `en`. |
+| Manual-caption video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words. |
+| Automatic-caption video | `https://youtu.be/v34Eg12mhDM` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words. |
+| Non-English video | `https://youtu.be/kJQP7kiw5Fk` | FAIL, source blocked | HTTP 422 with helpful upload guidance. Needs replacement source or fallback coverage. |
+| Shorts URL | `https://www.youtube.com/shorts/SXHMnicI6Pg` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 2 segments, 3 words. Low word count but accepted for URL-shape handling only. |
+| Private/unavailable video | `https://www.youtube.com/watch?v=aaaaaaaaaaa` | PASS helpful failure | HTTP 422 with upload guidance. |
+| Invalid URL | `https://not-a-real.example/video` | PASS helpful failure | HTTP 422 with upload guidance. |
+| Long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. |
+| Repeated request confirms a cache hit | Regression and control videos | PASS | Public health script returned cache hit for both. |
+| Copy transcript | UI marker present | Pending browser interaction evidence | Needs direct browser copy-flow verification. |
+| TXT download | Regression record | PASS | HTTP 200, 94,784 bytes. |
+| Markdown download | Regression record | PASS | HTTP 200, 100,829 bytes. |
+| SRT download | Regression record | PASS | HTTP 200, 134,557 bytes. |
+| Mobile layout | Redesign evidence | PASS visual smoke | Mobile screenshot evidence exists in `evidence/`; full touch-flow still pending. |
+| Button contrast and accessibility | Automated design tests | PASS smoke | Design tests passed for dark presentation surface, light results workspace, and functional IDs. Full accessibility audit still pending. |
 
 ## Phase 2 release gate: Any video or audio
 

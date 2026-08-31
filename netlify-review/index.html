@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EPIC Transcript Machine</title>
+<style>
+  :root {
+    --color-bg: #09090b;
+    --color-bg-raised: #0d0d10;
+    --color-surface-light: #f7f6f3;
+    --color-surface-light-raised: #fbfaf8;
+    --color-surface-white: #ffffff;
+    --color-text-on-dark: #ffffff;
+    --color-text-dark: #171719;
+    --color-text-body: #3f3f46;
+    --color-text-muted: #71717a;
+    --color-purple: #7b2ff7;
+    --color-purple-bright: #c22ffc;
+    --color-pink: #f107a3;
+    --color-coral: #ff3d6b;
+    --color-success: #059669;
+    --color-error-text: #fee2e2;
+    --color-error-bg: rgba(248, 113, 113, 0.08);
+    --color-error-border: rgba(248, 113, 113, 0.20);
+    --white-4: rgba(255, 255, 255, 0.04);
+    --white-6: rgba(255, 255, 255, 0.06);
+    --white-7: rgba(255, 255, 255, 0.07);
+    --white-10: rgba(255, 255, 255, 0.10);
+    --white-12: rgba(255, 255, 255, 0.12);
+    --white-30: rgba(255, 255, 255, 0.30);
+    --white-45: rgba(255, 255, 255, 0.45);
+    --white-50: rgba(255, 255, 255, 0.50);
+    --white-55: rgba(255, 255, 255, 0.55);
+    --white-60: rgba(255, 255, 255, 0.60);
+    --black-4: rgba(0, 0, 0, 0.04);
+    --black-7: rgba(0, 0, 0, 0.07);
+    --black-8: rgba(0, 0, 0, 0.08);
+    --black-10: rgba(0, 0, 0, 0.10);
+    --font-sans: "Avenir Next", Avenir, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --page-max: 1152px;
+    --display-max: 896px;
+    --form-max: 896px;
+    --radius-small: 8px;
+    --radius-control: 12px;
+    --radius-alert: 16px;
+    --radius-primary-action: 18px;
+    --radius-form: 24px;
+    --radius-card: 28px;
+    --radius-round: 999px;
+    --shadow-glass: 0 30px 100px rgba(0, 0, 0, 0.35);
+    --shadow-action: 0 10px 35px rgba(183, 48, 255, 0.25);
+    --shadow-card: 0 24px 70px rgba(33, 25, 43, 0.08);
+    --shadow-brand: 0 0 40px rgba(242, 16, 165, 0.22);
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text-on-dark);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button, input { font: inherit; }
+  .page { min-height: 100vh; background: var(--color-bg); }
+  .dark-stage {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 20px 20px 72px;
+    background:
+      linear-gradient(180deg, rgba(9, 9, 11, 0.88), rgba(9, 9, 11, 1)),
+      radial-gradient(circle at 50% 70px, rgba(123, 47, 247, 0.18) 0%, rgba(241, 7, 163, 0.06) 38%, transparent 72%);
+  }
+  .dark-stage::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(820px, 90vw);
+    height: 430px;
+    border-radius: 999px;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(123, 47, 247, 0.18) 0%, rgba(241, 7, 163, 0.06) 38%, transparent 72%);
+    opacity: .78;
+    z-index: -2;
+  }
+  .dark-stage::after {
+    content: '';
+    position: absolute;
+    right: -180px;
+    top: 410px;
+    width: 480px;
+    height: 480px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(241, 7, 163, 0.08) 0%, transparent 68%);
+    z-index: -2;
+  }
+  .shell { width: min(var(--page-max), calc(100vw - 40px)); margin: 0 auto; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:24px; padding: 0 0 52px; }
+  .logo { display:inline-flex; align-items:center; gap:12px; color:#fff; text-decoration:none; }
+  .logo-mark { width:36px; height:36px; border-radius:12px; display:grid; place-items:center; background:#fff; color:#000; box-shadow: var(--shadow-brand); font-weight:800; letter-spacing:-.05em; }
+  .title { font-size:14px; font-weight:700; letter-spacing:.04em; }
+  .nav { display:flex; align-items:center; gap:22px; color: var(--white-55); font-size:13px; }
+  .nav a { color:inherit; text-decoration:none; }
+  .nav .pill { padding:10px 14px; border-radius:999px; color:#fff; background: linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); box-shadow: var(--shadow-action); }
+  .hero { text-align:center; max-width: var(--display-max); margin:0 auto; }
+  .eyebrow { display:inline-flex; align-items:center; gap:8px; margin-bottom:22px; padding:8px 12px; border:1px solid var(--white-10); border-radius:999px; background:var(--white-6); color:var(--white-60); text-transform:uppercase; letter-spacing:.24em; font-size:11px; font-weight:700; }
+  .hero h1 { margin:0; font-size:clamp(48px, 8vw, 78px); line-height:1.02; font-weight:600; letter-spacing:-.05em; }
+  .accent-text { background: linear-gradient(105deg, #ffffff 0%, #dca7ff 38%, #ff77bf 72%, #ffffff 108%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .tagline { max-width:720px; margin:24px auto 0; color:var(--white-60); font-size:clamp(18px, 2vw, 20px); line-height:1.6; }
+  .hero-control { max-width: var(--form-max); margin:48px auto 0; padding:10px; border:1px solid var(--white-10); border-radius: var(--radius-form); background: rgba(255,255,255,.07); backdrop-filter: blur(24px); box-shadow: var(--shadow-glass); text-align:left; }
+  .url-row { display:flex; gap:10px; }
+  .url-input { flex:1; min-width:0; height:58px; border:1px solid transparent; border-radius:18px; background:#fff; color:var(--color-text-dark); padding:0 18px; outline:none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.04); }
+  .url-input::placeholder { color:#8a8a91; }
+  .url-input:focus { box-shadow:0 0 0 4px rgba(194,47,252,.18), inset 0 0 0 1px rgba(194,47,252,.5); }
+  .grab-btn { height:58px; border:0; border-radius:18px; padding:0 24px; cursor:pointer; font-weight:800; color:#fff; background: linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); box-shadow: var(--shadow-action); transition:transform .14s ease, filter .14s ease; white-space:nowrap; }
+  .grab-btn:hover:not(:disabled) { transform:translateY(-1px); background: linear-gradient(115deg, #8c41ff 0%, #cf40ff 48%, #ff1cad 100%); }
+  .grab-btn:disabled { opacity:.55; cursor:not-allowed; }
+  .divider { display:flex; align-items:center; gap:14px; margin:18px 8px 14px; color:var(--white-45); font-size:11px; letter-spacing:.18em; text-transform:uppercase; }
+  .divider::before, .divider::after { content:''; height:1px; flex:1; background:var(--white-10); }
+  .drop-zone { display:block; border:1.5px dashed var(--white-30); border-radius:20px; padding:20px 18px; text-align:center; cursor:pointer; color:var(--white-55); transition:.15s ease; background:var(--white-4); }
+  .drop-zone:hover, .drop-zone.dragover { color:#fff; border-color:var(--color-purple-bright); background:rgba(194,47,252,.08); }
+  .drop-zone input[type=file] { display:none; }
+  .file-name { color:#ff77bf; font-weight:700; margin-top:6px; }
+  .types { display:block; margin-top:6px; font-size:12px; color:var(--white-45); }
+  .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:8px; border:1px solid var(--white-10); border-radius:18px; background:var(--white-4); }
+  .proof-strip span { text-align:center; color:var(--white-50); font-size:12px; padding:12px 6px; border-radius:12px; background:var(--white-4); }
+  .banner { max-width:var(--form-max); margin:18px auto 0; padding:14px 16px; border-radius:16px; border:1px solid var(--color-error-border); background:var(--color-error-bg); color:var(--color-error-text); font-size:14px; }
+  .banner.hidden { display:none; }
+  .status { max-width:var(--form-max); margin:18px auto 0; display:none; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--white-12); border-radius:16px; background:rgba(255,255,255,.08); color:#fff; }
+  .status.show { display:flex; }
+  .status .dot { width:10px; height:10px; border-radius:50%; background:var(--color-purple-bright); box-shadow:0 0 16px var(--color-purple-bright); animation:pulse 1.2s ease-in-out infinite; }
+  .status.error { border-color:var(--color-error-border); background:var(--color-error-bg); color:var(--color-error-text); }
+  .status.error .dot { background:var(--color-coral); box-shadow:0 0 16px var(--color-coral); animation:none; }
+  .status.done .dot { background:var(--color-success); box-shadow:0 0 16px var(--color-success); animation:none; }
+  @keyframes pulse { 0%,100% { opacity:.35; transform:scale(.85); } 50% { opacity:1; transform:scale(1.15); } }
+  .light-stage { background:var(--color-surface-light); color:var(--color-text-dark); padding:72px 20px 96px; }
+  .result { display:none; max-width:var(--page-max); margin:0 auto; }
+  .result.show { display:block; }
+  .result-card { background:var(--color-surface-white); border:1px solid rgba(0,0,0,.06); border-radius:var(--radius-card); box-shadow:var(--shadow-card); overflow:hidden; }
+  .result-head { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; padding:24px; border-bottom:1px solid rgba(0,0,0,.07); }
+  .result-meta { display:flex; flex-direction:column; gap:6px; color:var(--color-text-muted); font-size:13px; }
+  .result-meta .source { max-width:760px; color:var(--color-text-dark); font-size:24px; font-weight:600; letter-spacing:-.02em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .method-chip { align-self:flex-start; color:var(--color-purple); background:rgba(123,47,247,.08); border-radius:999px; padding:8px 10px; font-size:12px; font-weight:700; }
+  .transcript-box { margin:0; max-height:520px; overflow:auto; padding:24px; white-space:pre-wrap; word-break:break-word; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.85; background:var(--color-surface-light-raised); }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; padding:18px 24px 24px; background:#fff; }
+  .btn { height:40px; padding:0 14px; border:1px solid rgba(0,0,0,.1); border-radius:12px; background:#fff; color:var(--color-text-dark); font-weight:700; cursor:pointer; }
+  .btn:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.1); }
+  .support-grid { max-width:var(--page-max); margin:72px auto 0; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .mini-card { background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:22px; padding:22px; box-shadow:var(--shadow-card); }
+  .mini-card b { display:block; margin-bottom:8px; }
+  .mini-card p { margin:0; color:var(--color-text-muted); font-size:14px; line-height:1.6; }
+  .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-12px); opacity:0; pointer-events:none; z-index:50; padding:10px 16px; border-radius:999px; background:rgba(5,150,105,.12); border:1px solid rgba(5,150,105,.3); color:#bbf7d0; font-weight:700; transition:.18s ease; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.error { background:var(--color-error-bg); color:var(--color-error-text); border-color:var(--color-error-border); }
+  .drawer { position:fixed; right:18px; bottom:18px; width:320px; max-width:calc(100vw - 36px); background:#111116; color:#fff; border:1px solid var(--white-12); border-radius:18px; box-shadow:var(--shadow-glass); overflow:hidden; z-index:30; }
+  .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; background:var(--white-6); }
+  .drawer-head .title-row { font-size:11px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; color:#ff77bf; }
+  .chev { color:var(--white-45); transition:.2s; }
+  .drawer.open .chev { transform:rotate(180deg); }
+  .drawer-body { max-height:0; overflow:hidden; transition:max-height .25s ease; }
+  .drawer.open .drawer-body { max-height:360px; overflow:auto; }
+  .recent-empty { padding:18px; color:var(--white-50); text-align:center; font-size:13px; }
+  .recent-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-top:1px solid var(--white-7); cursor:pointer; }
+  .recent-item:hover { background:var(--white-6); }
+  .recent-item .meta { min-width:0; flex:1; }
+  .recent-item .src { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+  .recent-item .when { margin-top:3px; color:var(--white-45); font-size:11px; }
+  .recent-item .del { background:transparent; border:1px solid transparent; color:var(--white-45); border-radius:8px; width:28px; height:28px; cursor:pointer; }
+  .recent-item .del:hover { color:var(--color-coral); border-color:rgba(255,61,107,.3); }
+  .footer { padding:36px 20px; background:#09090b; color:var(--white-45); text-align:center; font-size:13px; }
+  @media (max-width: 760px) {
+    .dark-stage { padding:16px 20px 56px; }
+    .topbar { padding-bottom:34px; }
+    .nav a:not(.pill) { display:none; }
+    .url-row { flex-direction:column; }
+    .grab-btn { width:100%; }
+    .proof-strip { grid-template-columns:repeat(2,1fr); }
+    .result-head { flex-direction:column; }
+    .result-meta .source { max-width:100%; white-space:normal; font-size:20px; }
+    .support-grid { grid-template-columns:1fr; margin-top:40px; }
+    .drawer { width:calc(100vw - 24px); right:12px; bottom:12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="dark-stage">
+    <div class="shell">
+      <header class="topbar">
+        <a class="logo" href="#" aria-label="EPIC Transcript Machine">
+          <span class="logo-mark">E</span>
+          <span class="title">EPIC Transcript Machine</span>
+        </a>
+        <nav class="nav" aria-label="Product navigation">
+          <a href="#how">How it works</a>
+          <a href="#results">Results</a>
+          <a class="pill" href="#start">Start</a>
+        </nav>
+      </header>
+
+      <main class="hero" id="start">
+        <div class="eyebrow">No login · Fast transcripts</div>
+        <h1>Turn video into <span class="accent-text">clean transcripts.</span></h1>
+        <p class="tagline">Paste a YouTube link or upload a media file. Get a timestamped, copyable, downloadable transcript without making visitors sign up.</p>
+
+        <div id="banner" class="banner hidden"></div>
+
+        <section class="hero-control" aria-label="Transcript input">
+          <form id="form" autocomplete="off">
+            <div class="url-row">
+              <input id="url" class="url-input" type="url" placeholder="Paste a YouTube, Shorts, live, embed, or public media URL" inputmode="url" autocomplete="off" spellcheck="false" />
+              <button id="grab" class="grab-btn" type="submit">Grab Transcript</button>
+            </div>
+            <div class="divider">or drop a file</div>
+            <label class="drop-zone" id="drop">
+              <input id="file" type="file" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt" />
+              <div class="dz-text">Click or drag audio, video, or transcript files here</div>
+              <div class="file-name" id="fileName"></div>
+              <div class="types">MP4 · MOV · WebM · MP3 · M4A · WAV · TXT · MD · SRT</div>
+            </label>
+          </form>
+        </section>
+
+        <div class="proof-strip" aria-label="Transcript promises">
+          <span>Timestamped</span><span>Copyable</span><span>TXT / MD / SRT</span><span>Cached</span>
+        </div>
+
+        <div id="status" class="status">
+          <div class="dot"></div>
+          <div id="statusText">Working...</div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <section class="light-stage" id="results">
+    <div id="result" class="result">
+      <div class="result-card">
+        <div class="result-head">
+          <div class="result-meta">
+            <div class="source" id="resultSource"></div>
+            <div>Clean transcript workspace</div>
+          </div>
+          <div class="method-chip" id="resultMethod"></div>
+        </div>
+        <div class="transcript-box" id="transcript"></div>
+        <div class="actions">
+          <button class="btn" id="copyBtn" type="button">Copy</button>
+          <button class="btn" id="downloadBtn" type="button">TXT</button>
+          <button class="btn" id="downloadMdBtn" type="button">Markdown</button>
+          <button class="btn" id="downloadSrtBtn" type="button">SRT</button>
+          <button class="btn" id="emailBtn" type="button">Email to Me</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="support-grid" id="how">
+      <div class="mini-card"><b>1. Paste or upload.</b><p>Give it a video URL, audio file, video file, or existing transcript file.</p></div>
+      <div class="mini-card"><b>2. Route the fastest path.</b><p>It checks cache and captions first, then falls back to local Whisper when needed.</p></div>
+      <div class="mini-card"><b>3. Take the transcript.</b><p>Copy it or download TXT, Markdown, or SRT with timestamps intact.</p></div>
+    </div>
+  </section>
+
+  <footer class="footer">EPIC Transcript Machine · Public, no-login review build</footer>
+</div>
+
+<div id="toast" class="toast">Copied to clipboard ✓</div>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-head" id="drawerHead">
+    <div class="title-row">Recent <span id="drawerCount" style="opacity:.6"></span></div>
+    <div class="chev">▲</div>
+  </div>
+  <div class="drawer-body" id="drawerBody">
+    <div class="recent-empty">No transcripts yet.</div>
+  </div>
+</div>
+
+<script>window.EPIC_TRANSCRIPT_API = "https://chilly-elephant-93.loca.lt";</script>
+<script>
+(() => {
+  // Detect base path. When served behind the suite-server proxy at
+  // /epic-transcript/, all API calls must include that prefix.
+  function detectBase() {
+    if (typeof window.EPIC_TRANSCRIPT_API === 'string' && window.EPIC_TRANSCRIPT_API) {
+      return window.EPIC_TRANSCRIPT_API.replace(/\/$/, '');
+    }
+    const p = window.location.pathname || '/';
+    const m = p.match(/^(\/epic-transcript)(?:\/|$)/);
+    return m ? m[1] : '';
+  }
+  const API = detectBase();
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    form: $('form'), url: $('url'), grab: $('grab'),
+    file: $('file'), drop: $('drop'), fileName: $('fileName'),
+    status: $('status'), statusText: $('statusText'),
+    result: $('result'), source: $('resultSource'), method: $('resultMethod'),
+    transcript: $('transcript'),
+    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), emailBtn: $('emailBtn'),
+    toast: $('toast'),
+    drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'),
+    banner: $('banner'),
+  };
+  let currentRecord = null;
+  const OWNER_KEY = 'epicTranscriptOwnerToken';
+  function ownerToken() {
+    let token = localStorage.getItem(OWNER_KEY);
+    if (!token) {
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      token = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+      localStorage.setItem(OWNER_KEY, token);
+    }
+    return token;
+  }
+  function ownerHeaders(extra = {}) {
+    return { ...extra, 'X-Transcript-Owner': ownerToken() };
+  }
+
+  const apiUrl = (path) => API + path;
+
+  async function jfetch(path, opts = {}) {
+    const r = await fetch(apiUrl(path), opts);
+    let data = null;
+    try { data = await r.json(); } catch (_) { /* non-json */ }
+    if (!r.ok) {
+      const msg = (data && (data.detail || data.error)) || r.statusText || 'Request failed';
+      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    }
+    return data;
+  }
+
+  function setStatus(text, mode) {
+    els.status.classList.remove('error', 'done');
+    els.statusText.classList.remove('err-msg');
+    els.status.classList.add('show');
+    if (mode === 'error') {
+      els.status.classList.add('error');
+      els.statusText.classList.add('err-msg');
+    } else if (mode === 'done') {
+      els.status.classList.add('done');
+    }
+    els.statusText.textContent = text;
+  }
+  function clearStatus() { els.status.classList.remove('show', 'error', 'done'); }
+
+  function showToast(msg, isError = false) {
+    els.toast.textContent = msg;
+    els.toast.classList.toggle('error', !!isError);
+    els.toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => els.toast.classList.remove('show'), 3000);
+  }
+
+  function renderResult(rec) {
+    currentRecord = rec;
+    els.source.textContent = rec.source || '(unknown source)';
+    const len = rec.transcript ? rec.transcript.length : 0;
+    const methodLabel = rec.method === 'captions' ? 'native captions'
+      : rec.method === 'whisper' ? 'whisper'
+      : rec.method === 'passthrough' ? 'pass-through'
+      : rec.method;
+    const dur = rec.duration_seconds ? ` · ${formatDuration(rec.duration_seconds)}` : '';
+    const proc = rec.processing_seconds ? ` · ${rec.processing_seconds.toFixed(1)}s` : '';
+    els.method.textContent = `${methodLabel} · ${len.toLocaleString()} chars${dur}${proc}`;
+    els.transcript.textContent = rec.transcript || '';
+    els.result.classList.add('show');
+    autoCopy(rec.transcript || '');
+  }
+
+  function formatDuration(secs) {
+    secs = Math.round(secs || 0);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+  }
+
+  async function autoCopy(text) {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard ✓');
+    } catch (e) { /* ignore */ }
+  }
+
+  function lockUI(locked) {
+    els.grab.disabled = locked;
+    els.url.disabled = locked;
+    els.file.disabled = locked;
+    els.drop.style.pointerEvents = locked ? 'none' : '';
+    els.drop.style.opacity = locked ? '0.55' : '';
+  }
+
+  // URL submit
+  els.form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = els.url.value.trim();
+    if (!url) { els.url.focus(); return; }
+    lockUI(true);
+    els.result.classList.remove('show');
+    setStatus('Grabbing captions...');
+    try {
+      const stages = ['Grabbing captions...', 'Extracting audio...', 'Transcribing...'];
+      let i = 0;
+      const stageTimer = setInterval(() => {
+        i = Math.min(i + 1, stages.length - 1);
+        setStatus(stages[i]);
+      }, 6000);
+      const fd = new FormData();
+      fd.append('url', url);
+      fd.append('owner', ownerToken());
+      const data = await jfetch('/api/transcribe-url', { method: 'POST', body: fd });
+      clearInterval(stageTimer);
+      setStatus('Done', 'done');
+      renderResult(data.record);
+      loadRecent();
+      setTimeout(clearStatus, 1200);
+    } catch (e) {
+      setStatus('Error: ' + e.message, 'error');
+    } finally {
+      lockUI(false);
+    }
+  });
+
+  // File picker / drop
+  els.drop.addEventListener('click', (e) => {
+    if (e.target === els.file) return;
+    els.file.click();
+  });
+  ['dragenter','dragover'].forEach(ev => els.drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    els.drop.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(ev => els.drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    els.drop.classList.remove('dragover');
+  }));
+  els.drop.addEventListener('drop', (e) => {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  });
+  els.file.addEventListener('change', () => {
+    if (els.file.files && els.file.files[0]) handleFile(els.file.files[0]);
+  });
+
+  async function handleFile(file) {
+    els.fileName.textContent = file.name;
+    lockUI(true);
+    els.result.classList.remove('show');
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const isText = ['txt','md','srt','vtt'].includes(ext);
+    setStatus(isText ? 'Reading file...' : 'Transcribing...');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('owner', ownerToken());
+      const data = await jfetch('/api/transcribe-upload', { method: 'POST', body: fd });
+      setStatus('Done', 'done');
+      renderResult(data.record);
+      loadRecent();
+      setTimeout(clearStatus, 1200);
+    } catch (e) {
+      setStatus('Error: ' + e.message, 'error');
+    } finally {
+      lockUI(false);
+      els.file.value = '';
+    }
+  }
+
+  // Result actions
+  els.copyBtn.addEventListener('click', async () => {
+    if (!currentRecord) return;
+    try {
+      await navigator.clipboard.writeText(currentRecord.transcript || '');
+      showToast('Copied to clipboard ✓');
+    } catch (e) { showToast('Copy failed', true); }
+  });
+  function downloadCurrent(format) {
+    if (!currentRecord) return;
+    jfetch('/api/transcripts/' + currentRecord.id + '/download-link?format=' + encodeURIComponent(format), { method: 'POST', headers: ownerHeaders() })
+      .then(data => { window.location.href = data.url; })
+      .catch(e => showToast('Download failed: ' + e.message, true));
+  }
+  els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'));
+  els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
+  els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'));
+  els.emailBtn.addEventListener('click', async () => {
+    if (!currentRecord) return;
+    els.emailBtn.disabled = true;
+    try {
+      const data = await jfetch('/api/email/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
+      showToast('Emailed to ' + (data.to || 'you'));
+    } catch (e) {
+      showToast('Email failed: ' + e.message, true);
+    } finally {
+      els.emailBtn.disabled = false;
+    }
+  });
+
+  // Recent drawer
+  els.drawerHead.addEventListener('click', () => {
+    els.drawer.classList.toggle('open');
+  });
+
+  function timeAgo(iso) {
+    const t = Date.parse(iso);
+    if (!t) return '';
+    const s = Math.max(1, Math.floor((Date.now() - t) / 1000));
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+
+  async function loadRecent() {
+    try {
+      const data = await jfetch('/api/recent?limit=20', { headers: ownerHeaders() });
+      const items = data.items || [];
+      els.drawerCount.textContent = items.length ? '· ' + items.length : '';
+      if (!items.length) {
+        els.drawerBody.innerHTML = '<div class="recent-empty">No transcripts yet.</div>';
+        return;
+      }
+      els.drawerBody.innerHTML = '';
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'recent-item';
+        row.innerHTML = `
+          <div class="meta">
+            <div class="src"></div>
+            <div class="when"></div>
+          </div>
+          <button class="del" title="Delete">×</button>
+        `;
+        row.querySelector('.src').textContent = item.source || '(untitled)';
+        row.querySelector('.when').textContent = timeAgo(item.created_at) + ' · ' + item.method;
+        row.addEventListener('click', async (e) => {
+          if (e.target.classList.contains('del')) return;
+          try {
+            const full = await jfetch('/api/transcripts/' + item.id, { headers: ownerHeaders() });
+            renderResult(full);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch (err) { showToast('Could not open: ' + err.message, true); }
+        });
+        row.querySelector('.del').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!confirm('Delete this transcript?')) return;
+          try {
+            await jfetch('/api/transcripts/' + item.id, { method: 'DELETE', headers: ownerHeaders() });
+            if (currentRecord && currentRecord.id === item.id) {
+              els.result.classList.remove('show');
+              currentRecord = null;
+            }
+            loadRecent();
+          } catch (err) { showToast('Delete failed: ' + err.message, true); }
+        });
+        els.drawerBody.appendChild(row);
+      });
+    } catch (e) { /* keep silent */ }
+  }
+
+  async function loadSetup() {
+    try {
+      const s = await jfetch('/api/setup');
+      if (s.missing && s.missing.length) {
+        els.banner.innerHTML = '<b>Setup needed.</b> Missing: ' + s.missing.map(m => `<code>${m}</code>`).join(', ') + '. Add to <code>.env</code> and restart.';
+        els.banner.classList.remove('hidden');
+      } else {
+        els.banner.classList.add('hidden');
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  loadSetup();
+  loadRecent();
+})();
+</script>
+</body>
+</html>

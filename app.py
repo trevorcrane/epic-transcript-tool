@@ -112,17 +112,21 @@ init_db()
 
 def setup_status() -> dict:
     missing = []
+    optional_missing = []
     if not shutil.which("yt-dlp"):
         missing.append("yt-dlp")
     if not shutil.which("ffmpeg"):
         missing.append("ffmpeg")
-    # Gemini and local Whisper are optional fallbacks. Missing keys do not block public caption flow.
+    # Gemini, SMTP, and local Whisper are optional fallbacks. Missing keys do not block public caption flow.
     smtp_keys = ("OWNER_EMAIL", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS")
     if any(not os.getenv(k) for k in smtp_keys):
-        missing.append("SMTP config (Email to Me)")
+        optional_missing.append("SMTP config (Email to Me)")
+    if not os.getenv("GEMINI_API_KEY"):
+        optional_missing.append("GEMINI_API_KEY")
     return {
-        "ready": not [m for m in missing if m in {"yt-dlp", "ffmpeg"}],
+        "ready": not missing,
         "missing": missing,
+        "optional_missing": optional_missing,
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
         "local_whisper": bool(shutil.which("whisper")),
         "owner_email": os.getenv("OWNER_EMAIL", ""),
