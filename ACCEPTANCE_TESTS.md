@@ -62,6 +62,11 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 10:06 EDT.
+
+- Hosted backend migration spike: PASS. App supports `TRANSCRIPT_DATA_DIR` and `TRANSCRIPT_STATIC_DIR`; `Dockerfile` build succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, required `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted data volume created `transcripts.db`.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 45 passed.
+
 Run time: 2026-08-31 09:32 EDT.
 
 - Public Phase 3 no-Chrome UI contract: PASS. `scripts/phase3_ui_contract_smoke.py https://epic-transcript.robyncrane.com` verified public root HTTP 200, all required transcript and analysis control IDs present, button labels intact, async submit/job wiring present, old synchronous submit absent, `/api/analyze-all/` and `/api/analyze/` wiring present, analysis copy/download wiring present, transcript job HTTP 202 then done for `dQw4w9WgXcQ`, record `18cc682b7b51`, 366 words, 61 segments, cache hit, combined analysis `b8614a2d6247` with 16 sections and 13,076 chars, Markdown download HTTP 200 with 13,960 bytes, and ask-question analysis `b72d30a12ad0` with 784 chars.
@@ -291,3 +296,13 @@ Run time: 2026-08-31.
 - API wiring observed from browser network: `/api/setup`, `/api/recent`, `/api/transcribe-url-job`, and `/api/jobs/...`.
 - Static HTML check: async job markers present; old synchronous submit call absent.
 - Screenshot/report evidence: `evidence/browser-mobile-qc/report.json`, `desktop-initial.png`, `desktop-result.png`, `mobile-initial.png`, `mobile-result.png`.
+
+
+### Backend durability gate
+
+Current status: in progress.
+
+- iMac launchd plus Cloudflare Tunnel: PASS hardened bridge, not final durability.
+- Hosted container readiness: PASS spike on 2026-08-31 10:06 EDT. Docker image built and local container health/root checks passed with persistent `/data` volume and local Whisper available.
+- Staging hosted deployment: OPEN. Needs selected persistent host and public no-login staging URL.
+- DNS cutover from iMac tunnel: OPEN. Do only after hosted staging passes Phase 1, Phase 2, and Phase 3 smoke tests.

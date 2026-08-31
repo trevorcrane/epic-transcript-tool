@@ -32,16 +32,25 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "data"
-STATIC_DIR = ROOT / "static"
+load_dotenv(ROOT / ".env")
+
+
+def configured_path(env_name: str, default: Path) -> Path:
+    """Return an absolute path from env, preserving safe local defaults."""
+    configured = os.getenv(env_name)
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return default
+
+
+DATA_DIR = configured_path("TRANSCRIPT_DATA_DIR", ROOT / "data")
+STATIC_DIR = configured_path("TRANSCRIPT_STATIC_DIR", ROOT / "static")
 DB_PATH = DATA_DIR / "transcripts.db"
 URL_JOBS: dict[str, dict] = {}
 URL_JOBS_LOCK = threading.Lock()
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
-
-load_dotenv(ROOT / ".env")
 
 AUDIO_EXTS = {".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi"}

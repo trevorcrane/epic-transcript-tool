@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+data
+*.pyc
+evidence
+design-reference
+design_refs
+.env
+.netlify

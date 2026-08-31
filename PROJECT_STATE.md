@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 09:32 EDT
+Updated: 2026-08-31 10:06 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -8,12 +8,12 @@ Phase 1: Bulletproof YouTube Transcripts. Active gate is production release veri
 ## Version / phase status
 
 ### Version 1 / Phase 1: Bulletproof YouTube transcripts
-Status: Release-clear on the public no-login product for the current fixture gate. Non-English, genuine Shorts, two-hour/long-video, desktop copy, mobile touch, downloads, and the bounded public matrix have passed; remaining work is hardening the backend off the iMac/Cloudflare Tunnel dependency.
+Status: Release-clear on the public no-login product for the current fixture gate. Non-English, genuine Shorts, two-hour/long-video, desktop copy, mobile touch, downloads, and the bounded public matrix have passed; backend migration hardening is now started with a containerized hosted-backend spike.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
 - Public Phase 1 scripted matrix is now passing against the durable no-login URL for the bounded fixture set: regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke.
-- Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents.
+- Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents. Hosted-backend migration spike now adds env-configurable runtime paths, Docker container packaging, and a migration checklist in `docs/HOSTED_BACKEND_MIGRATION.md`.
 - UX alignment advanced: the live public root now shows `Free Video Transcript Generator`, `FAST · FREE · V3`, `Get Video Transcript`, `How it works`, and `Frequently Asked Questions (FAQ)` markers in the expected first-control then support-section order.
 - Netlify review URL was updated to the same public UX build. Stable review URL `https://epic-transcript-machine-review.netlify.app` and immutable deploy `https://6a9579a7b662aa6824e325ab--epic-transcript-machine-review.netlify.app` both returned HTTP 200 with the new UX markers and the production API base marker.
 - New non-English production evidence: `https://youtu.be/kv92eqcZVxs`, title `✅ 10 phrases simples en français à apprendre en 1 minute !`, HTTP 200, method `local-whisper`, language `fr`, 2 segments, 37 words, credible French text. First uncached run passed at 2026-08-31 01:34 EDT and repeated matrix run confirmed cache hit.
@@ -102,6 +102,8 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
+- `./.venv/bin/python -m pytest -q`: passed, 45 tests on 2026-08-31 10:06 EDT.
+- Hosted-backend spike verification passed on 2026-08-31 10:06 EDT: `docker build -t epic-transcript-machine:hosted-spike .` succeeded; container run on `127.0.0.1:8091` returned `/health` HTTP 200 with `ready: true`, `missing: []`, `local_whisper: true`; root returned HTTP 200 and 41,404 bytes; mounted `/data` created `transcripts.db`.
 - `./.venv/bin/python -m pytest -q`: passed, 44 tests on 2026-08-31 09:32 EDT.
 - `python3 -m py_compile scripts/phase3_ui_contract_smoke.py`: passed on 2026-08-31 09:32 EDT.
 - `scripts/phase3_ui_contract_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 09:32 EDT. Public root HTTP 200, required UI IDs present, async submit/job and analysis endpoints wired, old sync submit absent, transcript job HTTP 202 then done for `dQw4w9WgXcQ`, record `18cc682b7b51`, 366 words, 61 segments, all-output analysis `b8614a2d6247`, 16 sections, 13,076 chars, Markdown download HTTP 200 with 13,960 bytes, ask-question analysis `b72d30a12ad0`, 784 chars.
@@ -145,7 +147,7 @@ Prior full regression evidence:
 - Phase 1 public product proof is no longer blocked. New browser sessions may still need the macOS Chrome remote-debug prompt approved, but release-critical proof has a prior direct Chrome pass plus the no-Chrome UI contract harness.
 
 ## Exact next action
-Prepare the durable hosted-backend migration plan and first implementation spike so Version 1 can move from iMac+tunnel hardened proof to a deployable backend with the same free/local-provider behavior or an explicitly approved no-surprise equivalent.
+Run the public Phase 1 matrix and Phase 2 upload smoke against the local hosted-backend container, then choose the lowest-risk persistent host for the first no-DNS-cutover staging deployment.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
@@ -170,3 +172,9 @@ Prepare the durable hosted-backend migration plan and first implementation spike
 - Public matrix rerun PASS: `scripts/phase1_matrix.py https://epic-transcript.robyncrane.com` returned `all_ok=true` across regression, control/manual captions, automatic captions, non-English, Shorts, moderate long cached video, private/unavailable helpful failure, and invalid URL helpful failure.
 - Test suite PASS: `pytest -q` returned 44 passed.
 - Evidence saved under `evidence/browser-mobile-qc/` with desktop/mobile initial and result screenshots plus `report.json`.
+
+### 2026-08-31 hosted backend migration spike
+- PASS: Added env-configurable runtime paths: `TRANSCRIPT_DATA_DIR` for the SQLite/cache volume and `TRANSCRIPT_STATIC_DIR` for the bundled UI. Defaults preserve the existing iMac behavior.
+- PASS: Added `Dockerfile`, `.dockerignore`, and `docs/HOSTED_BACKEND_MIGRATION.md` for a no-surprise hosted backend path that keeps ffmpeg, yt-dlp, and local Whisper instead of adding paid providers.
+- PASS: Added regression coverage `test_hosted_backend_can_move_runtime_data_dir_without_code_changes`. Full suite now returns 45 passed.
+- PASS: Built `epic-transcript-machine:hosted-spike` locally and ran it with a mounted `/data` volume. Container `/health` returned HTTP 200, `ready=true`, `missing=[]`, `local_whisper=true`; root returned HTTP 200 with the live UI bytes; persistent `transcripts.db` was created in the mounted data directory.
