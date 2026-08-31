@@ -97,6 +97,9 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 08:18 EDT: added cleanup/retention hardening and regression evidence.
+- Upload temporary media cleanup: PASS automated. `test_upload_temp_directory_is_removed_after_processing` proves the server removes the per-upload temp directory after processing.
+- Transcript and analysis retention cleanup: PASS automated and public. `test_delete_transcript_removes_saved_analysis_for_retention` proves an owner-authorized transcript delete removes the transcript and its saved analysis rows; SQLite connections now enable foreign-key enforcement. Public API verification after restart: record `c40edf087acd` and analysis `c3e5e11163a0` both returned HTTP 404 after delete.
 - 2026-08-31 05:17 EDT: added `test_non_youtube_media_url_falls_back_to_local_whisper` plus `scripts/phase2_public_url_smoke.py`, then ran it against the public no-login API.
 - Public supported non-YouTube media URL: PASS. Fixture `https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3` returned HTTP 206 byte-range, `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 8.93s, method `local-whisper`, source_kind `url`, language `en`, cache miss, 2 segments, 18 words. Credible transcript begins `Epic transcript machine phase 2 public URL test...`. Provider trail shows native captions failed cleanly, then free local Whisper succeeded.
 - 2026-08-31 04:42 EDT: added upload duration detection and ran `scripts/phase2_long_upload_smoke.py` against the public no-login API.
@@ -147,7 +150,7 @@ Verify:
 - Markdown download.
 - SRT download.
 - No required paid provider or surprise usage bills.
-- Automatic deletion of temporary server media.
+- Automatic deletion of temporary server media. PASS automated on 2026-08-31 08:18 EDT for upload work directories; public API uses per-request temp dirs and `finally` cleanup.
 
 ## Phase 3 release gate: Video intelligence
 

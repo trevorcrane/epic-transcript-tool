@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 07:43 EDT
+Updated: 2026-08-31 08:18 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -20,7 +20,8 @@ Status: Near release-clear. Non-English, genuine Shorts, and two-hour/long-video
 ### Version 2 / Phase 2: Any video or audio
 Status: Advanced, not release-complete.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
-- Full upload/media release matrix now has public proof for generated WAV, MP3, M4A, MP4, MOV, WebM, non-English French WAV, a 31-minute MP3 recording, and a supported public non-YouTube MP3 URL. Remaining Phase 2 evidence is cleanup/retention and fuller UX proof.
+- Full upload/media release matrix now has public proof for generated WAV, MP3, M4A, MP4, MOV, WebM, non-English French WAV, a 31-minute MP3 recording, and a supported public non-YouTube MP3 URL. Remaining Phase 2 evidence is fuller browser UX proof.
+- Cleanup/retention hardening advanced on 2026-08-31 08:18 EDT: upload temp directories are covered by an automated removal regression, transcript deletion now also removes saved analyses, SQLite connections now enable foreign-key enforcement, and the public API verified delete cleanup with record `c40edf087acd` / analysis `c3e5e11163a0` returning HTTP 404 after deletion.
 - Advanced public verification: expanded `scripts/phase2_upload_smoke.py`, which generates a spoken fixture with macOS `say`, converts it with `ffmpeg`, uploads WAV/MP3/M4A/MP4/MOV/WebM to the public no-login API, verifies credible nonempty local-Whisper transcripts, confirms repeat-upload cache reuse, and verifies signed TXT/Markdown/SRT downloads for an upload record.
 - Added reusable `scripts/phase2_non_english_upload_smoke.py` for public non-English upload proof without paid providers. It generates French speech with macOS `say -v Thomas`, converts to WAV with `ffmpeg`, uploads to the public no-login API, verifies `local-whisper`, language `fr`, credible French text, and a signed TXT download.
 - Added reusable `scripts/phase2_long_upload_smoke.py` for 30+ minute public upload proof. It generates spoken audio with macOS `say`, pads to a 31-minute MP3 using `ffmpeg`, uploads to the public no-login API, and verifies saved media duration metadata plus credible transcript text.
@@ -36,7 +37,7 @@ Status: Advanced publicly, not release-complete.
 - Fresh public proof from 2026-08-31 06:32 EDT: root HTML served the new Phase 3 UI markers (`All Outputs`, `analysisMenu`, `content_assets_100`, ask-a-question input, `/api/analyze/`); `/api/analysis-outputs` returned 17 output definitions; Rick Astley cached transcript returned HTTP 200 with 366 words; all 17 public analysis calls returned HTTP 200 with `AI-generated` disclaimer and transcript evidence, including `ask_question` with a Trevor-specific question.
 - Fresh combined-output copy/download proof from 2026-08-31 07:07 EDT: root HTML served `Copy Analysis`, `analysisCopyBtn`, and `/api/analyze-all/`; public combined analysis returned HTTP 200 with 16 saved starter outputs, 10,036 copy-ready characters, analysis ID `bfb7ef1f1bab`, and Markdown download HTTP 200 with 10,600 bytes.
 - Fresh long-transcript intelligence proof from 2026-08-31 07:43 EDT: Phase 3 analysis now samples beginning, middle, and ending timestamp evidence for long records. Public two-hour cached fixture `rwfk91ya81s` returned job `c345b34bc0ba`, record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, method `queued-chunked-local-whisper`, cache hit. `/api/analyze-all/837a9891f74d` produced 16 outputs, 19,106 copy-ready characters, latest cited analysis timestamp 7,242s, analysis ID `8215f62db5fa`, and Markdown download HTTP 200 with 19,106 bytes.
-- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected, add fuller mobile/browser interaction proof once Chrome remote-debug permission is cleared, and improve cleanup/retention evidence for Phase 2.
+- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected, and add fuller mobile/browser interaction proof once Chrome remote-debug permission is cleared.
 
 ## Completed work
 - Located active local project at `/Users/tc-imac/.openclaw/workspace/epic-transcript-tool`.
@@ -63,6 +64,7 @@ Status: Advanced publicly, not release-complete.
 - Added `test_non_youtube_media_url_falls_back_to_local_whisper` and reusable `scripts/phase2_public_url_smoke.py`; public proof now covers a no-login hosted MP3 URL at `/static/phase2-public-url.mp3` through `/api/transcribe-url` with local Whisper and no paid provider.
 - Added Phase 3 starter implementation: `ANALYSIS_OUTPUTS`, `/api/analyze/{transcript_id}`, `/api/analyze-all/{transcript_id}`, `/api/analysis/{analysis_id}/download`, active `tests/test_phase3.py`, and public UI buttons for AI Summary, Action Items, All Outputs, Copy Analysis, the full output menu, ask-a-question, and Download Analysis.
 - Improved Phase 3 long-transcript evidence selection so analysis outputs cite beginning, middle, and ending timestamps instead of only the opening segments; added regression coverage and `scripts/phase3_long_analysis_smoke.py` public proof.
+- Advanced Phase 2 cleanup/retention hardening: SQLite now enables `PRAGMA foreign_keys`, deleting a transcript removes saved analyses, tests cover upload temp directory removal after processing, and public delete cleanup verified record `c40edf087acd` plus analysis `c3e5e11163a0` returned HTTP 404 after deletion.
 
 ## Latest production regression evidence
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
@@ -88,10 +90,12 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
-- `./.venv/bin/python -m pytest -q`: passed, 41 tests on 2026-08-31 07:43 EDT.
+- `./.venv/bin/python -m pytest -q`: passed, 43 tests on 2026-08-31 08:18 EDT. New cleanup/retention tests cover upload temp directory removal and transcript-delete analysis cleanup.
 - Static inline browser script check: `node --check` passed for 1 script block on 2026-08-31 07:07 EDT.
 - Public root: HTTP 200, expected app markers present, including new Phase 3 `All Outputs`, `Copy Analysis`, `analysisMenu`, `analysisCopyBtn`, `content_assets_100`, ask-a-question, `/api/analyze/`, and `/api/analyze-all/` markers.
 - Public health: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Public cleanup/delete proof from 2026-08-31 08:18 EDT: after launchd restart, text upload returned HTTP 200, analysis creation returned HTTP 200, owner-authorized delete returned HTTP 200, deleted transcript readback returned HTTP 404, and deleted analysis download returned HTTP 404 for record `c40edf087acd` / analysis `c3e5e11163a0`.
+- Public Phase 2 supported URL smoke from 2026-08-31 08:18 EDT: public fixture `https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3` returned HTTP 206 byte-range, `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 9.59s, method `local-whisper`, source_kind `url`, cache miss, language `en`, 2 segments, 18 words.
 - Public Phase 3 long-transcript proof from 2026-08-31 07:43 EDT: `scripts/phase3_long_analysis_smoke.py https://epic-transcript.robyncrane.com` passed. Public async job `c345b34bc0ba` reused the two-hour cached fixture and returned record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, method `queued-chunked-local-whisper`, cache hit. Combined analysis returned 16 outputs, 19,106 characters, analysis ID `8215f62db5fa`, latest cited timestamp 7,242s, and Markdown download HTTP 200, `text/markdown`, 19,106 bytes.
 - Public Phase 3 full starter menu proof from 2026-08-31 06:32 EDT: cached control transcript `dQw4w9WgXcQ` returned HTTP 200, record `2f2b61d2ccf6`, method `native-caption-subtitles`, 366 words, cache hit. `/api/analysis-outputs` returned 17 outputs. All 17 `/api/analyze/{id}` calls returned HTTP 200 with useful nonempty text, `AI-generated` disclaimer, and transcript evidence; `ask_question` passed with question `What should Trevor do with this video?`.
 - Public Phase 3 combined-output proof from 2026-08-31 07:07 EDT: `scripts/phase3_combined_analysis_smoke.py https://epic-transcript.robyncrane.com` passed. Rick Astley cached transcript returned HTTP 200, record `1f5a2b16abd8`, 366 words, method `native-caption-subtitles`, cache hit. `/api/analyze-all/{id}` returned 16 combined starter outputs, 10,036 copy-ready characters, analysis ID `bfb7ef1f1bab`; `/api/analysis/bfb7ef1f1bab/download` returned HTTP 200, `text/markdown`, 10,600 bytes.
@@ -123,7 +127,7 @@ Prior full regression evidence:
 - Browser copy/touch-flow evidence is blocked by macOS Chrome's `Allow remote debugging?` permission prompt for the browser harness. API and scripted public checks are not blocked; a retry at 2026-08-31 03:30 EDT reproduced the same permission blocker.
 
 ## Exact next action
-Add Phase 2 cleanup/retention evidence, then plan the no-surprise provider path for fuller Phase 3 intelligence. Retry browser DOM/touch-flow proof only after the macOS Chrome `Allow remote debugging?` prompt is approved.
+Add fuller browser UX proof for Phase 2 and Phase 3 once the macOS Chrome `Allow remote debugging?` prompt is approved; meanwhile continue provider-safe Phase 3 intelligence quality and durable hosted-backend planning.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.

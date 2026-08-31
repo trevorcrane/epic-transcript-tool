@@ -110,6 +110,7 @@ app.add_middleware(
 def db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
@@ -1206,6 +1207,7 @@ def api_delete(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) ->
         if not row:
             raise HTTPException(404, "Not found.")
         require_owner(row, x_transcript_owner)
+        conn.execute("DELETE FROM analyses WHERE transcript_id=?", (rec_id,))
         conn.execute("DELETE FROM transcripts WHERE id=?", (rec_id,))
     return {"ok": True}
 

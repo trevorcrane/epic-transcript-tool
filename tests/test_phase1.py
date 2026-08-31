@@ -587,3 +587,63 @@ def test_chunked_whisper_offsets_audio_chunks(monkeypatch, tmp_path):
     assert rec["method"] == "queued-chunked-local-whisper"
     assert rec["segments"][1]["start"] == 601
     assert rec["provider_attempts"][-1]["chunks"] == 2
+
+
+def test_upload_temp_directory_is_removed_after_processing(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    upload_tmp = tmp_path / "upload-work-dir"
+    def fake_mkdtemp(prefix=""):
+        upload_tmp.mkdir(parents=True, exist_ok=False)
+        return str(upload_tmp)
+    monkeypatch.setattr(app.tempfile, "mkdtemp", fake_mkdtemp)
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", lambda path: ([{"start": 0, "end": 2, "text": "temporary upload cleanup proof"}], "en"))
+    monkeypatch.setattr(app, "media_duration_seconds", lambda path: 2.0)
+    client = TestClient(app.app)
+
+    res = client.post(
+        "/api/transcribe-upload",
+        data={"owner": "owner-token-cleanup-upload-aaaa"},
+        files={"file": ("cleanup.wav", b"fake spoken audio", "audio/wav")},
+    )
+
+    assert res.status_code == 200
+    assert res.json()["record"]["word_count"] == 4
+    assert not upload_tmp.exists()
+
+
+def test_delete_transcript_removes_saved_analysis_for_retention(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    owner = "owner-token-delete-retention-aaaa"
+    rec = app.save_transcript(
+        source="Retention Test",
+        source_kind="upload",
+        method="seed",
+        transcript="[00:00] retention cleanup words",
+        duration_seconds=2,
+        processing_seconds=0,
+        media_id="upload:retention",
+        source_url=None,
+        title="Retention Test",
+        creator=None,
+        language="en",
+        segments=[{"start": 0, "end": 2, "text": "retention cleanup words"}],
+        provider_attempts=[],
+        owner_token=owner,
+    )
+    analysis = app.save_analysis(
+        transcript_id=rec["id"],
+        output_type="executive_summary",
+        question=None,
+        analysis="## Executive summary\nRetention cleanup proof.",
+        owner_token=owner,
+    )
+    client = TestClient(app.app)
+
+    res = client.delete(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner": owner})
+
+    assert res.status_code == 200
+    with app.db() as conn:
+        assert conn.execute("SELECT 1 FROM transcripts WHERE id=?", (rec["id"],)).fetchone() is None
+        assert conn.execute("SELECT 1 FROM analyses WHERE id=?", (analysis["id"],)).fetchone() is None
