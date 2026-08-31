@@ -680,7 +680,8 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
                                owner_token=owner_token)
     except Exception as e:
         attempts.append({"provider": "local-whisper", "ok": False, "error": str(e)[:240]})
-        raise RuntimeError(BLOCKED_MESSAGE)
+        detail = json.dumps(attempts[-3:], ensure_ascii=False)
+        raise RuntimeError(f"{BLOCKED_MESSAGE} Provider trail: {detail}")
 
 
 def make_markdown(row: dict) -> str:
