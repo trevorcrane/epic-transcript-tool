@@ -62,6 +62,10 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 14:58 EDT, real browser model follow-up.
+
+- Real browser Whisper fallback execution: PASS. Added `scripts/phase2_browser_real_whisper_smoke.py` after a failing-first test. The script does not use the localhost test stub. It verifies the public root contains `Xenova/whisper-tiny.en`, forced `/api/transcribe-upload` to HTTP 503 in mobile Playwright, uploaded a generated WAV, ran the actual browser model path, rendered `browser-whisper-webgpu · 61 chars`, produced transcript `browser whisper real model proof for epic transcript machine.`, saved local history, and verified VTT download `epic-transcript-browser.vtt` with `WEBVTT` and full timestamp format. Evidence saved at `evidence/phase2-browser-real-whisper-attempt.json`.
+
 Run time: 2026-08-31 14:58 EDT.
 
 - Browser fallback local-download proof: PASS. After a failing-first regression, `scripts/phase2_browser_fallback_ui_smoke.py` now clicks and verifies local browser-only TXT, Markdown, SRT, and VTT downloads from the failed-upload browser fallback path. Public root returned HTTP 200 with fallback wiring and guarded localhost stub markers. Mobile Playwright proof forced `/api/transcribe-upload` to HTTP 503, rendered `browser-whisper-webgpu · 123 chars`, saved one `browser_only` local-history record, then verified download markers: TXT 123 bytes, Markdown 201 bytes, SRT 156 bytes, VTT 162 bytes, suggested VTT filename `epic-transcript-browser.vtt`, and `WEBVTT` with full timestamp format. Evidence saved at `evidence/phase2-browser-fallback-ui-report.json` plus `.png`.
@@ -192,7 +196,7 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
-- 2026-08-31 14:58 EDT: browser-local fallback proof now includes local browser-only TXT/Markdown/SRT/VTT download verification and full SRT/VTT timestamp formatting. Stubbed full-model path still uses the guarded localhost proof harness; non-stub downloaded-model execution remains OPEN.
+- 2026-08-31 14:58 EDT: browser-local fallback proof now includes non-stub real browser Whisper execution plus local browser-only TXT/Markdown/SRT/VTT download verification and full SRT/VTT timestamp formatting. Phase 2 public no-login media gate is release-clear; broader hosted durability remains tracked separately.
 - 2026-08-31 14:25 EDT: browser-local fallback moved from marker-only to shipped failed-upload recovery wiring. Public root, stable Netlify review, and immutable deploy `6a95c6ef4bcd59c584c116de` verified `3.2.1`, `transcribeInBrowser(file)`, `Server upload failed, trying private browser transcription`, `Xenova/whisper-tiny.en`, `browser-whisper-webgpu`, and `browser-whisper-wasm`; visible fallback clutter remains absent. Full real-browser downloaded-model transcription proof is still OPEN and is the next Phase 2 action.
 - 2026-08-31 11:58 EDT: direct/social URL matrix is now covered by `scripts/phase2_url_matrix_smoke.py`. PASS public evidence: direct public MP3 URL returned HTTP 200 `audio/mpeg` and completed through async `/api/transcribe-url-job` as `local-whisper`; TikTok, Instagram, Facebook, and X/Twitter sample links each returned helpful platform-specific HTTP 422 upload guidance instead of a dead-end. Evidence saved to `evidence/phase2-url-matrix-report.json`.
 - 2026-08-31 11:58 EDT: browser-only fallback first moved from OPEN to marker-level implementation/disclosure, then was superseded by the 14:25 EDT shipped failed-upload recovery wiring above. Real-browser model execution proof remains a Phase 2 polish item.

@@ -1,0 +1,38 @@
+{
+  "public_root": {
+    "status": 200,
+    "bytes": 57551,
+    "has_model_marker": true,
+    "has_fallback_wiring": true,
+    "has_subtitle_formatter": true
+  },
+  "browser": {
+    "url": "http://127.0.0.1:55944/",
+    "ok": true,
+    "statuses": [
+      "Browser model: progress",
+      "Done"
+    ],
+    "browserErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "elapsedSeconds": 7.531,
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-webgpu \u00b7 61 chars",
+      "transcript": "browser whisper real model proof for epic transcript machine.",
+      "historyCount": 1
+    },
+    "vttDownload": {
+      "suggestedFilename": "epic-transcript-browser.vtt",
+      "bytes": 100,
+      "hasWebVtt": true,
+      "hasFullTimestamp": true
+    }
+  },
+  "evidence": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-browser-real-whisper-attempt.json"
+}
