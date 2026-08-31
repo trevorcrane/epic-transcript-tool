@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from urllib import request, parse
 
-BASE_URL = os.getenv("EPIC_TRANSCRIPT_BASE_URL", "http://localhost:8090").rstrip("/")
+BASE_URL = (sys.argv[1] if len(sys.argv) > 1 else os.getenv("EPIC_TRANSCRIPT_BASE_URL", "http://localhost:8090")).rstrip("/")
 
 @dataclass
 class Case:
