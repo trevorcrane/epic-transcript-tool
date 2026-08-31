@@ -1,5 +1,6 @@
 import json
 import subprocess
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -429,3 +430,22 @@ def test_local_whisper_passes_threads_when_configured(monkeypatch, tmp_path):
     segs, lang = app.transcribe_with_local_whisper(audio)
     assert lang == "en"
     assert segs[0]["text"] == "Hello"
+
+
+def test_transcribe_url_job_returns_accepted_and_can_complete(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    def fake_record(url, owner_token, started=None):
+        return {"id":"rec1", "title":"French", "language":"fr", "provider_attempts":[{"provider":"local-whisper", "ok": True}]}
+    monkeypatch.setattr(app, "transcribe_youtube_url_to_record", fake_record)
+    client = TestClient(app.app)
+    res = client.post("/api/transcribe-url-job", data={"url":"https://youtu.be/vgIle-XrvQI", "owner":"owner-token-job-abcdefghijkl"})
+    assert res.status_code == 202
+    job_id = res.json()["job"]["id"]
+    for _ in range(20):
+        got = client.get(f"/api/jobs/{job_id}").json()["job"]
+        if got["status"] == "done":
+            break
+        time.sleep(0.01)
+    assert got["status"] == "done"
+    assert got["record"]["language"] == "fr"

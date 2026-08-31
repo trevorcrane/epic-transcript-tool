@@ -16,6 +16,7 @@ import smtplib
 import sqlite3
 import subprocess
 import tempfile
+import threading
 import time
 import secrets
 import uuid
@@ -34,6 +35,8 @@ ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 STATIC_DIR = ROOT / "static"
 DB_PATH = DATA_DIR / "transcripts.db"
+URL_JOBS: dict[str, dict] = {}
+URL_JOBS_LOCK = threading.Lock()
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -714,6 +717,72 @@ def api_setup() -> dict:
     return setup_status()
 
 
+def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Optional[float] = None) -> dict:
+    started = started or time.monotonic()
+    video_id = normalize_youtube_video_id(url)
+    if not video_id:
+        raise HTTPException(400, "URL is not a supported YouTube link")
+    meta_probe = {}
+    expected_language = None
+    try:
+        meta_probe = yt_dlp_metadata(url)
+        expected_language = infer_expected_language(meta_probe)
+    except Exception:
+        meta_probe = {}
+    cached = get_cached_transcript(video_id, expected_language=expected_language)
+    if cached:
+        return record_for_owner(cached, owner_token)
+    if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
+        raise HTTPException(422, LONG_VIDEO_MESSAGE)
+    work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
+    try:
+        return transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)
+    except RuntimeError as e:
+        raise HTTPException(422, str(e))
+    finally:
+        shutil.rmtree(work_dir, ignore_errors=True)
+
+
+def run_url_job(job_id: str, url: str, owner_token: str) -> None:
+    with URL_JOBS_LOCK:
+        URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
+    try:
+        rec = transcribe_youtube_url_to_record(url, owner_token, started=time.monotonic())
+        with URL_JOBS_LOCK:
+            URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time()})
+    except HTTPException as e:
+        with URL_JOBS_LOCK:
+            URL_JOBS[job_id].update({"status": "error", "error": e.detail, "status_code": e.status_code, "finished_at": time.time()})
+    except Exception as e:
+        with URL_JOBS_LOCK:
+            URL_JOBS[job_id].update({"status": "error", "error": str(e), "status_code": 500, "finished_at": time.time()})
+
+
+@app.post("/api/transcribe-url-job")
+def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None)) -> JSONResponse:
+    url = (url or "").strip()
+    owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
+    if not re.match(r"^https?://", url, re.IGNORECASE):
+        raise HTTPException(400, "URL must start with http:// or https://")
+    if not normalize_youtube_video_id(url):
+        raise HTTPException(400, "Async URL jobs currently support YouTube links only")
+    job_id = uuid.uuid4().hex[:12]
+    with URL_JOBS_LOCK:
+        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
+    thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token), daemon=True)
+    thread.start()
+    return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
+
+
+@app.get("/api/jobs/{job_id}")
+def api_get_job(job_id: str) -> JSONResponse:
+    with URL_JOBS_LOCK:
+        job = dict(URL_JOBS.get(job_id) or {})
+    if not job:
+        raise HTTPException(404, "Job not found")
+    return JSONResponse({"ok": True, "job": job})
+
+
 @app.post("/api/transcribe-url")
 def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) -> JSONResponse:
     url = (url or "").strip()
@@ -725,25 +794,7 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
     started = time.monotonic()
     video_id = normalize_youtube_video_id(url)
     if video_id:
-        meta_probe = {}
-        expected_language = None
-        try:
-            meta_probe = yt_dlp_metadata(url)
-            expected_language = infer_expected_language(meta_probe)
-        except Exception:
-            meta_probe = {}
-        cached = get_cached_transcript(video_id, expected_language=expected_language)
-        if cached:
-            return JSONResponse({"ok": True, "record": record_for_owner(cached, owner_token)})
-        if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
-            raise HTTPException(422, LONG_VIDEO_MESSAGE)
-        work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
-        try:
-            return JSONResponse({"ok": True, "record": transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)})
-        except RuntimeError as e:
-            raise HTTPException(422, str(e))
-        finally:
-            shutil.rmtree(work_dir, ignore_errors=True)
+        return JSONResponse({"ok": True, "record": transcribe_youtube_url_to_record(url, owner_token, started=started)})
 
     # Phase 2-compatible non-YouTube route. Free only: captions first, then local Whisper if installed.
     work_dir = Path(tempfile.mkdtemp(prefix="epic-url-"))
