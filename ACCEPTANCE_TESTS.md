@@ -190,8 +190,30 @@ Failure behavior:
 - If a provider fails, continue to the next provider.
 - If the complete pipeline fails, produce a clear alert and retain enough diagnostic information to reproduce it without exposing secrets.
 
-| Two-hour / long video | CS50 long fixture | OPEN / FAIL | Returns bounded helpful HTTP 422 instead of hanging. This is not release-valid long-video transcription support. |
+| Two-hour / long video | Fresh 2-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s` | PASS | Public async job returned HTTP 202 in 0.08s, then completed `done` after 2,049.43s using `queued-chunked-local-whisper`; duration 7,244s, 13 chunks, 1,446 timestamped segments, 19,298 words, language `en`, cache miss. |
 
 | Exact French YouTube async fallback | `https://www.youtube.com/watch?v=vgIle-XrvQI` | PASS | Fresh uncached public async job. HTTP 202 start in 0.08s, final done after polling, `language=fr`, `local-whisper`, `cache_hit=false`, 31 segments, 228 words. Provider attempts recorded through metadata, subtitle failures/skips, Gemini unavailable, and local Whisper success. |
 | Genuine Shorts URL | `https://www.youtube.com/shorts/1WW76Rz4nqM` | PASS, cached evidence | HTTP 200 in 3.57s, `local-whisper`, `language=en`, `cache_hit=true`, 13 segments, 151 words. Needs periodic fresh-cache-miss recheck, but the exact genuine Shorts fixture now returns a transcript. |
-| Long-video transcription | CS50 two-hour fixture | OPEN / FAIL | Bounded helpful 422 prevents hangs. Not release-valid until a long video returns a transcript. |
+| Long-video transcription | Fresh 2-hour fixture `rwfk91ya81s` | PASS | Caption providers failed/blocked, but queued chunked Whisper recovered and saved record `002b65bba5bb`; transcript has credible start and ending around `[02:00:42]`. |
+
+
+### True two-hour public proof
+Run time: 2026-08-31.
+
+- URL: `https://www.youtube.com/watch?v=rwfk91ya81s`.
+- Title: `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`.
+- Public async start: HTTP 202 in 0.08s.
+- Job ID: `4985137fae62`.
+- Final job status: `done` after 2,049.43s.
+- Record ID: `002b65bba5bb`.
+- Duration: 7,244s.
+- Method: `queued-chunked-local-whisper`.
+- Language: `en`.
+- Chunks: 13.
+- Segments: 1,446.
+- Words: 19,298.
+- Cache: fresh miss, `cache_hit=false`.
+- Failure recovery: native captions failed, YouTube Transcript API was blocked, yt-dlp subtitles found no captions, then chunked local Whisper succeeded.
+- Progress proof: polling showed download stage, chunked transcription progress from chunk 1 through chunk 12, then saving with 13 / 13 chunks.
+- Credible transcript start: `[00:00] Imagine you're sitting on your couch, munching on popcorn...`.
+- Credible transcript end: `[02:00:42] together.`

@@ -104,3 +104,12 @@ Poll background process `proc_1967339b6d9d` for the two-hour public async job `1
 - Provider evidence for the exact fixture: metadata passed; native caption extractor skipped after timedtext 429s to protect the proxy; YouTube Transcript API skipped for original-language non-English route; yt-dlp subtitle-only failed with no captions; Gemini unavailable; local Whisper passed.
 - Genuine Shorts fixture `1WW76Rz4nqM` now returns a transcript from cache via local Whisper: HTTP 200, 13 segments, 151 words, language `en`.
 - Long-video transcription remains open. Current CS50 source has YouTube caption access blocked from this origin and audio fallback is too long for the public synchronous path. Do not mark long-video support passed until a long source returns a transcript, not only a bounded helpful 422.
+
+
+### 2026-08-31 true long-video gate update
+- PASS: Fresh public async long-video job completed for `https://www.youtube.com/watch?v=rwfk91ya81s`, title `2 Hours of the Craziest Philosophical Theories to Fall Asleep to`.
+- Public async start returned HTTP 202 in 0.08s. Job `4985137fae62` completed with status `done` after 2,049.43s elapsed.
+- Duration: 7,244s. Saved record `002b65bba5bb` with method `queued-chunked-local-whisper`, language `en`, 13 audio chunks, 1,446 timestamped segments, 19,298 words, `cache_hit=false`, processing time 2,039.96s.
+- Failure-recovery evidence: native caption extractor failed with no usable caption track; YouTube Transcript API was blocked by YouTube/IP; yt-dlp subtitles found no captions; queued chunked local Whisper recovered and passed.
+- Progress evidence: public job reported download stage, then chunk progress from 1 of 13 through 12 of 13, then saving with chunks_done 13 / chunks_total 13.
+- Transcript proof includes credible beginning at `[00:00] Imagine you're sitting on your couch...` and credible ending through `[02:00:42] together.`
