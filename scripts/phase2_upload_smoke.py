@@ -3,19 +3,24 @@
 
 This verifies that the deployed API can process uploaded media through the
 free local Whisper path. It intentionally avoids paid providers and secrets.
+It also proves upload cache reuse and signed transcript downloads for one
+public upload record, which are Phase 2 release-gate requirements.
 """
 from __future__ import annotations
 
 import json
+import secrets
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import urljoin
 
 BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "http://localhost:8090"
 TEXT = "Epic transcript machine phase two public upload test. Local whisper should transcribe this audio without a paid provider."
 EXPECTED_WORDS = {"epic", "transcript", "machine", "phase", "upload", "test", "whisper", "transcribe"}
+OWNER = "phase2-smoke-" + secrets.token_urlsafe(24).replace("-", "_")
 
 
 def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
@@ -52,17 +57,18 @@ def make_fixtures(work: Path) -> list[Path]:
     return [wav, mp3, m4a, mp4, mov, webm]
 
 
-def upload(path: Path) -> dict:
+def upload(path: Path, label: str | None = None) -> dict:
     cmd = [
         "curl", "-sS", "-L", "-X", "POST", f"{BASE}/api/transcribe-upload",
-        "-F", f"file=@{path}", "-w", "\n%{http_code} %{time_total}\n",
+        "-F", f"owner={OWNER}", "-F", f"file=@{path}", "-w", "\n%{http_code} %{time_total}\n",
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=240)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     output = proc.stdout.strip().splitlines()
     body = "\n".join(output[:-1]) if len(output) > 1 else proc.stdout
     status_line = output[-1] if output else "0 0"
     status = int(status_line.split()[0]) if status_line.split() else 0
-    row = {"file": path.name, "http_status": status, "ok": False}
+    elapsed = float(status_line.split()[1]) if len(status_line.split()) > 1 else None
+    row = {"file": path.name, "label": label or "first", "http_status": status, "elapsed_seconds": elapsed, "ok": False}
     try:
         data = json.loads(body)
         rec = data.get("record", {})
@@ -71,8 +77,9 @@ def upload(path: Path) -> dict:
         words = set(first.lower().replace(",", "").replace(".", "").split())
         credible = len(EXPECTED_WORDS & words) >= 5
         row.update(
-            api_ok=data.get("ok"), method=rec.get("method"), source_kind=rec.get("source_kind"),
-            segment_count=len(segs), word_count=rec.get("word_count"), first=first[:160],
+            api_ok=data.get("ok"), id=rec.get("id"), method=rec.get("method"), source_kind=rec.get("source_kind"),
+            segment_count=len(segs), word_count=rec.get("word_count"), language=rec.get("language"),
+            cache_hit=rec.get("cache_hit"), first=first[:160],
         )
         row["ok"] = status == 200 and data.get("ok") is True and rec.get("method") == "local-whisper" and credible and (rec.get("word_count") or 0) >= 8
     except Exception as exc:
@@ -80,11 +87,54 @@ def upload(path: Path) -> dict:
     return row
 
 
+def verify_downloads(record_id: str) -> list[dict]:
+    checks: list[dict] = []
+    for fmt, marker in [("txt", "Epic transcript"), ("md", "# phase2"), ("srt", "00:00:")]:
+        link_cmd = [
+            "curl", "-sS", "-L", "-X", "POST", f"{BASE}/api/transcripts/{record_id}/download-link?format={fmt}",
+            "-H", f"X-Transcript-Owner: {OWNER}", "-w", "\n%{http_code}\n",
+        ]
+        link_proc = subprocess.run(link_cmd, capture_output=True, text=True, timeout=60)
+        lines = link_proc.stdout.strip().splitlines()
+        body = "\n".join(lines[:-1]) if len(lines) > 1 else link_proc.stdout
+        status = int(lines[-1]) if lines and lines[-1].isdigit() else 0
+        check = {"format": fmt, "link_status": status, "ok": False}
+        try:
+            data = json.loads(body)
+            url = data.get("url") or ""
+            if url.startswith("/"):
+                url = urljoin(BASE + "/", url.lstrip("/"))
+            get_cmd = ["curl", "-sS", "-L", url, "-w", "\n%{http_code} %{size_download}\n"]
+            get_proc = subprocess.run(get_cmd, capture_output=True, text=True, timeout=60)
+            get_lines = get_proc.stdout.splitlines()
+            status_line = get_lines[-1] if get_lines else "0 0"
+            content = "\n".join(get_lines[:-1])
+            parts = status_line.split()
+            get_status = int(parts[0]) if parts else 0
+            size = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else len(content)
+            check.update(download_status=get_status, bytes=size, marker_present=marker.lower() in content.lower())
+            check["ok"] = status == 200 and get_status == 200 and size > 20 and check["marker_present"]
+        except Exception as exc:
+            check.update(error=str(exc), body=body[:300], stderr=link_proc.stderr[:300])
+        checks.append(check)
+    return checks
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="epic-phase2-upload-") as tmp:
         fixtures = make_fixtures(Path(tmp))
         results = [upload(path) for path in fixtures]
-    payload = {"base_url": BASE, "results": results, "all_ok": all(r["ok"] for r in results)}
+        repeat = upload(fixtures[0], label="repeat-cache-check")
+    downloads = verify_downloads(results[0]["id"]) if results and results[0].get("id") else []
+    cache_ok = repeat.get("ok") and repeat.get("cache_hit") is True and repeat.get("word_count") == results[0].get("word_count")
+    payload = {
+        "base_url": BASE,
+        "owner_header_used": True,
+        "results": results,
+        "repeat_cache_check": repeat,
+        "downloads": downloads,
+        "all_ok": all(r["ok"] for r in results) and bool(cache_ok) and bool(downloads) and all(d["ok"] for d in downloads),
+    }
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0 if payload["all_ok"] else 1
 

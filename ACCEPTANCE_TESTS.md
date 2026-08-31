@@ -97,6 +97,15 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 03:30 EDT: reran expanded `scripts/phase2_upload_smoke.py` against the public no-login API with owner-scoped upload, cache, and download checks.
+- Public generated WAV upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`, cache hit on this run because the fixture had already been processed.
+- Public generated MP3 upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`, cache hit.
+- Public generated M4A upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`, cache hit.
+- Public generated MP4 upload: PASS, HTTP 200, method `local-whisper`, 1 segment, 12 words, credible text begins `Epic transcript machine phase 2 public upload test...`, cache hit.
+- Public generated MOV upload: PASS, HTTP 200, method `local-whisper`, 1 segment, 12 words, credible text begins `Epic transcript machine phase 2 public upload test...`, cache hit.
+- Public generated WebM upload: PASS, HTTP 200, method `local-whisper`, 1 segment, 12 words, credible text begins `Epic transcript machine phase two public upload test...`, cache miss.
+- Repeat generated WAV upload: PASS, HTTP 200, `cache_hit=true`, same 18-word transcript evidence.
+- Upload downloads: PASS. Signed TXT, Markdown, and SRT links for upload record `6a047551b093` returned HTTP 200 with expected markers. Sizes: TXT 136 bytes, Markdown 239 bytes, SRT 186 bytes.
 - 2026-08-31 02:16 EDT: reran expanded `scripts/phase2_upload_smoke.py` against the public no-login API.
 - Public generated WAV upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
 - Public generated MP3 upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
