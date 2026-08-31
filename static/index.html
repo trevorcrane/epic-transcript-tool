@@ -318,7 +318,11 @@
     }
     const p = window.location.pathname || '/';
     const m = p.match(/^(\/epic-transcript)(?:\/|$)/);
-    return m ? m[1] : '';
+    if (m) return m[1];
+    if (window.location.hostname && window.location.hostname.includes('netlify.app')) {
+      return 'https://epic-transcript.robyncrane.com';
+    }
+    return '';
   }
   const API = detectBase();
 
@@ -361,6 +365,38 @@
       throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }
     return data;
+  }
+
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  async function transcribeUrlWithJob(url) {
+    const fd = new FormData();
+    fd.append('url', url);
+    fd.append('owner', ownerToken());
+    setStatus('Preparing transcript job...');
+    const started = await jfetch('/api/transcribe-url-job', { method: 'POST', body: fd });
+    const jobId = started && started.job && started.job.id;
+    if (!jobId) throw new Error('Transcript job did not return an ID.');
+
+    const stages = [
+      'Preparing transcript job...',
+      'Checking captions first...',
+      'Downloading audio fallback...',
+      'Transcribing with Whisper...',
+      'Finishing transcript...'
+    ];
+    const startedAt = Date.now();
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      const elapsed = Math.round((Date.now() - startedAt) / 1000);
+      const stage = stages[Math.min(Math.floor(elapsed / 12), stages.length - 1)];
+      setStatus(`${stage} ${elapsed}s`);
+      await sleep(attempt < 6 ? 1000 : 2000);
+      const data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      const job = data.job || {};
+      if (job.status === 'done' && job.record) return job.record;
+      if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');
+    }
+    throw new Error('Transcript job is still running. Please try Recent in a minute.');
   }
 
   function setStatus(text, mode) {
@@ -431,22 +467,12 @@
     const url = els.url.value.trim();
     if (!url) { els.url.focus(); return; }
     lockUI(true);
-    els.result.classList.remove('show');
-    setStatus('Grabbing captions...');
+    // Keep the previous transcript visible while a new URL runs, so failures never wipe useful output.
+    setStatus('Preparing transcript job...');
     try {
-      const stages = ['Grabbing captions...', 'Extracting audio...', 'Transcribing...'];
-      let i = 0;
-      const stageTimer = setInterval(() => {
-        i = Math.min(i + 1, stages.length - 1);
-        setStatus(stages[i]);
-      }, 6000);
-      const fd = new FormData();
-      fd.append('url', url);
-      fd.append('owner', ownerToken());
-      const data = await jfetch('/api/transcribe-url', { method: 'POST', body: fd });
-      clearInterval(stageTimer);
+      const record = await transcribeUrlWithJob(url);
       setStatus('Done', 'done');
-      renderResult(data.record);
+      renderResult(record);
       loadRecent();
       setTimeout(clearStatus, 1200);
     } catch (e) {
