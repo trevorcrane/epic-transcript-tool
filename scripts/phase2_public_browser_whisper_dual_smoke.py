@@ -33,7 +33,7 @@ function increasing(segments){
   return Array.isArray(segments) && segments.length > 0 && segments.every((s,i)=>Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start && (i === 0 || s.start >= segments[i-1].start));
 }
 async function clickDownload(page, format, outPath, mode){
-  const ids = {txt:'#downloadTxtBtn', md:'#downloadMdBtn', srt:'#downloadSrtBtn', vtt:'#downloadVttBtn'};
+  const ids = {txt:'#downloadBtn', md:'#downloadMdBtn', srt:'#downloadSrtBtn', vtt:'#downloadVttBtn'};
   const p = page.waitForEvent('download', {timeout:15000});
   await page.click(ids[format]);
   const d = await p;
