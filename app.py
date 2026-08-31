@@ -1026,7 +1026,7 @@ def _asset_takeaway(text: str, index: int) -> str:
             return takeaway
     fallbacks = [
         "Package one clear insight into one repeatable action. The asset should make the viewer know what to do next.",
-        "Turn the moment into a simple operating principle. The strongest content makes the process easier to remember and apply.",
+        "Shape the source moment into a simple operating principle. The strongest content makes the process easier to remember and apply.",
         "Connect the lesson to a measurable business result. Useful content should move from idea to action quickly.",
         "Make the invisible system visible. The content should show the mechanism behind the result, not just the outcome.",
         "Use the moment to clarify the buyer's next decision. The asset should reduce confusion and point toward action.",
