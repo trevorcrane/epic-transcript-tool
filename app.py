@@ -873,7 +873,17 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
 def _segment_lines(rec: dict, limit: int = 8) -> list[str]:
     segs = rec.get("segments") or []
     lines = []
-    for seg in segs[:limit]:
+    if len(segs) > limit:
+        # Long recordings need evidence from the beginning, middle, and end so
+        # Phase 3 outputs prove they did not only inspect the opening minutes.
+        first_count = max(1, limit // 3)
+        middle_count = max(1, limit // 3)
+        last_count = max(1, limit - first_count - middle_count)
+        middle_start = max(first_count, (len(segs) // 2) - (middle_count // 2))
+        selected = segs[:first_count] + segs[middle_start:middle_start + middle_count] + segs[-last_count:]
+    else:
+        selected = segs[:limit]
+    for seg in selected:
         text = clean_whitespace(seg.get("text", ""))
         if text:
             lines.append(f"[{seconds_to_timestamp(seg.get('start', 0))}] {text}")
@@ -902,7 +912,7 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
         "## Transcript evidence",
     ]
     if evidence:
-        header.extend(f"- {line}" for line in evidence[:5])
+        header.extend(f"- {line}" for line in evidence)
     else:
         header.append("- No timestamped evidence was available.")
 

@@ -82,6 +82,39 @@ def test_phase3_combined_outputs_can_be_saved_copied_and_downloaded(monkeypatch,
     assert "# Create 100 content assets" in res.text
 
 
+def test_phase3_long_transcripts_use_beginning_middle_and_end_evidence(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    segments = [
+        {"start": i * 60, "end": i * 60 + 20, "text": f"Long transcript evidence segment {i}"}
+        for i in range(90)
+    ]
+    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+    rec = app.save_transcript(
+        source="Two Hour Strategy Session",
+        source_kind="youtube",
+        method="queued-chunked-local-whisper",
+        transcript=transcript,
+        duration_seconds=5400,
+        processing_seconds=0,
+        media_id="long-analysis-123",
+        source_url="https://youtu.be/longproof123",
+        title="Two Hour Strategy Session",
+        creator="Tester",
+        language="en",
+        segments=segments,
+        provider_attempts=[],
+        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+    )
+    client = TestClient(app.app)
+    res = client.post(f"/api/analyze/{rec['id']}", data={"output_type":"executive_summary"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+    assert res.status_code == 200
+    text = res.json()["analysis"]
+    assert "Long transcript evidence segment 0" in text
+    assert "Long transcript evidence segment 44" in text or "Long transcript evidence segment 45" in text
+    assert "Long transcript evidence segment 89" in text
+
+
 def test_phase3_analysis_schema_migrates_existing_partial_table(monkeypatch, tmp_path):
     import sqlite3
     db_path = tmp_path / "transcripts.db"
