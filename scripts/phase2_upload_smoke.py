@@ -31,15 +31,25 @@ def make_fixtures(work: Path) -> list[Path]:
     run(["say", "-o", str(aiff), TEXT])
     wav = work / "phase2.wav"
     mp3 = work / "phase2.mp3"
+    m4a = work / "phase2.m4a"
     mp4 = work / "phase2.mp4"
+    mov = work / "phase2.mov"
+    webm = work / "phase2.webm"
     run(["ffmpeg", "-y", "-i", str(aiff), "-ar", "16000", "-ac", "1", str(wav)])
     run(["ffmpeg", "-y", "-i", str(aiff), "-ar", "16000", "-ac", "1", str(mp3)])
+    run(["ffmpeg", "-y", "-i", str(aiff), "-ar", "16000", "-ac", "1", "-c:a", "aac", str(m4a)])
+    for target in (mp4, mov):
+        run([
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=640x360:d=5",
+            "-i", str(aiff), "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-c:a", "aac", str(target)
+        ])
     run([
         "ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=black:s=640x360:d=5",
-        "-i", str(aiff), "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", str(mp4)
+        "-i", str(aiff), "-shortest", "-c:v", "libvpx-vp9", "-pix_fmt", "yuv420p",
+        "-c:a", "libopus", str(webm)
     ])
-    return [wav, mp3, mp4]
+    return [wav, mp3, m4a, mp4, mov, webm]
 
 
 def upload(path: Path) -> dict:

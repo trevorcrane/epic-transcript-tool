@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 01:34 EDT
+Updated: 2026-08-31 02:16 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -17,11 +17,11 @@ Status: Near release-clear. Non-English and genuine Shorts evidence are now pass
 - New non-English production evidence: `https://youtu.be/kv92eqcZVxs`, title `✅ 10 phrases simples en français à apprendre en 1 minute !`, HTTP 200, method `local-whisper`, language `fr`, 2 segments, 37 words, credible French text. First uncached run passed at 2026-08-31 01:34 EDT and repeated matrix run confirmed cache hit.
 
 ### Version 2 / Phase 2: Any video or audio
-Status: Started, not release-complete.
+Status: Advanced, not release-complete.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
-- Full upload/media release matrix still needs completion, but the public API now has first production upload proof for generated WAV, MP3, and MP4 fixtures.
-- Advanced public verification: added `scripts/phase2_upload_smoke.py`, which generates a spoken fixture with macOS `say`, converts it with `ffmpeg`, uploads WAV/MP3/MP4 to the public no-login API, and verifies credible nonempty local-Whisper transcripts.
-- Fresh public upload proof from 2026-08-31 00:02 EDT: WAV returned HTTP 200 through `local-whisper`, 2 segments, 18 words; MP3 returned HTTP 200 through `local-whisper`, 2 segments, 18 words; MP4 returned HTTP 200 through `local-whisper`, 1 segment, 12 words.
+- Full upload/media release matrix still needs completion, but the public API now has production upload proof for generated WAV, MP3, M4A, MP4, MOV, and WebM fixtures.
+- Advanced public verification: expanded `scripts/phase2_upload_smoke.py`, which generates a spoken fixture with macOS `say`, converts it with `ffmpeg`, uploads WAV/MP3/M4A/MP4/MOV/WebM to the public no-login API, and verifies credible nonempty local-Whisper transcripts.
+- Fresh public upload proof from 2026-08-31 02:16 EDT: WAV returned HTTP 200 through `local-whisper`, 2 segments, 18 words; MP3 returned HTTP 200 through `local-whisper`, 2 segments, 18 words; M4A returned HTTP 200 through `local-whisper`, 2 segments, 18 words; MP4 returned HTTP 200 through `local-whisper`, 1 segment, 12 words; MOV returned HTTP 200 through `local-whisper`, 1 segment, 12 words; WebM returned HTTP 200 through `local-whisper`, 1 segment, 12 words.
 
 ### Version 3 / Phase 3: Video intelligence
 Status: Started in queued backend tests, not public-release complete.
@@ -46,6 +46,7 @@ Status: Started in queued backend tests, not public-release complete.
 - Updated Phase 1 public test scripts so Cloudflare does not reject Python's default urllib user agent with 1010 during release checks.
 - Cleared stale orphan Whisper workers from an old duplicate API process, restoring public Phase 2 upload smoke from Cloudflare 524s to HTTP 200 passes.
 - Cleared a duplicate foreground API process that was holding port 8090 outside launchd, then kickstarted `com.epic.transcript-api`. Public `/health` recovered from Cloudflare 502 to HTTP 200 and launchd now owns the running API process.
+- Expanded Phase 2 generated-media release smoke coverage from WAV/MP3/MP4 to WAV/MP3/M4A/MP4/MOV/WebM and verified all six against the public no-login API.
 
 ## Latest production regression evidence
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
@@ -70,14 +71,15 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
-- `./.venv/bin/python -m pytest -q`: passed, 28 tests on 2026-08-31 01:34 EDT.
+- `./.venv/bin/python -m pytest -q`: passed, 32 tests on 2026-08-31 02:16 EDT.
 - Public root: HTTP 200, expected app markers present.
 - Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public Phase 1 health script now correctly accepts a CLI base URL and passed against `https://epic-transcript.robyncrane.com` for regression and manual-caption control.
-- Public Phase 1 matrix from 2026-08-31 01:34 EDT: all 9 bounded scripted cases passed against `https://epic-transcript.robyncrane.com`, including the new French non-English fixture, genuine Shorts URL, moderate long-video cached transcript, and helpful 422 failures for private/unavailable plus invalid URL. The separate two-hour/long-video release gate remains open.
-- Public Phase 2 upload smoke from 2026-08-31 01:34 EDT: generated WAV, MP3, and MP4 fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
+- Public Phase 1 matrix from 2026-08-31 02:16 EDT: all 9 bounded scripted cases passed against `https://epic-transcript.robyncrane.com`, including the new French non-English fixture, genuine Shorts URL, moderate long-video cached transcript, and helpful 422 failures for private/unavailable plus invalid URL. The separate two-hour/long-video release gate remains open.
+- Public Phase 2 upload smoke from 2026-08-31 02:16 EDT: generated WAV, MP3, M4A, MP4, MOV, and WebM fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
+- Long-video async proof run started at 2026-08-31 02:17 EDT using `scripts/public_long_video_proof.py` against two-hour fixture `https://www.youtube.com/watch?v=rwfk91ya81s`. Public API returned HTTP 202 and job `115c983594bd`; background process `proc_1967339b6d9d` is polling for completion.
 - Backend restore verification from 2026-08-31 01:34 EDT: local `/health` HTTP 200, public `/health` HTTP 200, `com.epic.transcript-api` state `running`, PID 99082.
-- New reusable public Phase 2 upload smoke script added at `scripts/phase2_upload_smoke.py`.
+- Reusable public Phase 2 upload smoke script expanded at `scripts/phase2_upload_smoke.py`.
 - New targeted regression tests for launchd/minimal-PATH binary resolution passed.
 - Local generated MP3 upload through FastAPI TestClient passed via `local-whisper` after absolute Whisper binary resolution.
 - Design regression tests: passed for Call IQ tokens, hero control placement, dark presentation surface, and light results workspace.
@@ -92,10 +94,10 @@ Prior full regression evidence:
 - Public API has reloaded the helpful invalid-link behavior. Invalid non-YouTube URL now returns HTTP 422 instead of HTTP 500.
 
 ## Blockers
-None requiring Trevor right now.
+- Browser-based copy/touch-flow evidence is blocked by macOS Chrome's `Allow remote debugging?` permission prompt for the browser harness. API and scripted public checks are not blocked.
 
 ## Exact next action
-Continue Phase 1 release closure by proving or fixing the two-hour/long-video path through the public async route, then run browser copy-flow and mobile touch-flow verification. After that, expand Phase 2 release matrix beyond generated WAV/MP3/MP4 fixtures to MOV, WebM, M4A, longer recordings, and public non-YouTube media URLs.
+Poll background process `proc_1967339b6d9d` for the two-hour public async job `115c983594bd`, record pass/fail evidence, then run browser copy-flow and mobile touch-flow verification once Chrome remote-debug permission is available. After that, expand Phase 2 release matrix to longer recordings, non-English recordings, and public non-YouTube media URLs.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
