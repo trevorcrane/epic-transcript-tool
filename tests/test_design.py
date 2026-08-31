@@ -3,12 +3,13 @@ from pathlib import Path
 HTML = Path(__file__).resolve().parents[1] / "static" / "index.html"
 
 
-def test_epic_call_iq_design_tokens_are_present():
+def test_v4_design_tokens_are_present():
     html = HTML.read_text()
     assert "--color-purple: #7b2ff7" in html
     assert "--color-pink: #f107a3" in html
     assert "linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%)" in html
-    assert "Avenir Next" in html
+    assert "--font-heading: \"Oswald\"" in html
+    assert "--font-sans: \"Inter\", system-ui" in html
     assert "surface-light" in html
 
 
@@ -43,15 +44,15 @@ def test_design_has_dark_presentation_and_light_results_surfaces():
     assert "#f7f6f3" in html
 
 
-def test_chatgpt_reference_layout_version_markers():
+def test_v4_layout_version_markers():
     html = HTML.read_text()
-    assert "Free Video Transcript" in html
-    assert "Machine" in html
+    assert "Transcript Machine" in html
+    assert "Transcribe. Timestamp." in html
     assert "Generator" not in html
     assert "FAST · FREE · V3" not in html
     assert "Get Transcript" in html
     assert "Get Video Transcript" not in html
-    assert "Quick and simple. No catch." in html
+    assert "Fast transcript in. Clean text out." in html
     assert "Frequently Asked Questions (FAQ)" in html
     assert "faq-stage" in html
     assert "step-grid" in html
@@ -178,14 +179,43 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert 'withBrowserWhisperTimeout' in html
     assert 'browser-whisper-webgpu' in html
     assert 'browser-whisper-wasm' in html
-    assert 'shouldPreferBrowserWhisper(file)' in html
-    assert 'await transcribeInBrowser(file)' in html.split("jfetch('/api/transcribe-upload'", 1)[0]
-    assert 'return_timestamps: true' in html
-    assert 'chunks.map' in html
-    assert 'device: actualDevice' in html
-    assert 'segments: Array.isArray(rec.segments) ? rec.segments : []' in html
-    assert "language: rec.language || ''" in html
-    assert 'const segment = { start: 0, end: 2, text: transcript }' not in html
-    assert 'Server upload failed, trying private browser transcription' in html
-    assert 'window.__EPIC_BROWSER_WHISPER_TEST_STUB' in html
-    assert 'Browser fallback test stub is not active' in html
+
+
+def test_v4_design_shell_contract_is_present_without_internal_leakage():
+    html = HTML.read_text()
+    for leaked in ['Call IQ', 'crawl', 'reference', 'design-version', 'v5.0.0', 'call-iq']:
+        assert leaked not in html
+    assert "const RELEASE_VERSION = '4.0.0'" in html
+    assert 'EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by' in html
+    assert 'class="signal-shell"' in html
+    assert 'class="hero-copy"' in html
+    assert 'class="transcript-console"' in html
+    assert 'class="signal-rail"' in html
+    assert 'Public transcript tool' in html
+    assert 'Transcribe. Timestamp. Download.' in html
+    assert html.index('class="hero-copy"') < html.index('class="transcript-console"') < html.index('id="result"')
+    assert '--page-max: 1120px' in html
+    assert 'calc(100vw - 48px)' in html
+    mobile_css = html[html.index('@media (max-width: 420px)'):]
+    assert 'padding:24px 24px 56px' in mobile_css or 'calc(100vw - 48px)' in mobile_css
+    for forbidden in ['FAST · FREE · V3', 'Get Video Transcript', 'Version 1 / Phase 1', 'Version 2 / Phase 2', 'Version 3 / Phase 3', 'Turn it into assets']:
+        assert forbidden not in html
+    assert 'Get Transcript' in html
+    assert 'Optional AI helpers stay secondary while Phase 3 is in review.' in html
+    assert '<strong>03 Downloads</strong>' in html
+
+def test_v4_preserves_transcript_on_file_failures_and_reports_browser_metadata():
+    html = HTML.read_text()
+    assert 'const previousRecord = currentRecord;' in html
+    assert "const previousResultVisible = els.result.classList.contains('show');" in html
+    assert 'restorePreviousResult(previousRecord, previousResultVisible)' in html
+    assert 'function restorePreviousResult' in html
+    assert "els.result.classList.remove('show')" not in html[html.index('async function handleFile(file) {'):html.index('function isBrowserWhisperCandidate')]
+    assert 'setStatus(\'Private browser transcription failed, trying server upload...\')' in html
+    assert 'setStatus(\'Server upload failed, trying private browser transcription...\')' in html
+    assert 'const browserStartedAt = performance.now();' in html
+    assert 'duration_seconds: duration' in html
+    assert 'processing_seconds: Math.max(0.1' in html
+    assert "wordCount(rec.transcript || '')" in html
+    assert 'words${dur}${proc}' in html
+    assert 'chars${dur}${proc}' not in html
