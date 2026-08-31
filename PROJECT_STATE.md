@@ -94,3 +94,9 @@ None requiring Trevor right now.
 
 ## Exact next action
 Continue closing Phase 1 YouTube gaps with public evidence: one uncached credible non-English YouTube transcript with correct language metadata, genuine Shorts transcript support, and the long-video path. Do not mark Shorts or long-video as passed when they only return bounded helpful 422 responses.
+
+### 2026-08-31 non-English YouTube gate update
+- PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
+- Provider evidence for the exact fixture: metadata passed; native caption extractor skipped after timedtext 429s to protect the proxy; YouTube Transcript API skipped for original-language non-English route; yt-dlp subtitle-only failed with no captions; Gemini unavailable; local Whisper passed.
+- Genuine Shorts fixture `1WW76Rz4nqM` now returns a transcript from cache via local Whisper: HTTP 200, 13 segments, 151 words, language `en`.
+- Long-video transcription remains open. Current CS50 source has YouTube caption access blocked from this origin and audio fallback is too long for the public synchronous path. Do not mark long-video support passed until a long source returns a transcript, not only a bounded helpful 422.
