@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
 OUT = ROOT / "evidence" / "phase2-browser-real-whisper-attempt.json"
 PUBLIC_BASE = (sys.argv[1] if len(sys.argv) > 1 else "https://epic-transcript.robyncrane.com").rstrip("/")
-MODEL_MARKER = "Xenova/whisper-tiny.en"
+MODEL_MARKER = "Xenova/whisper-small"
 
 
 def require(condition: bool, message: str) -> None:
@@ -36,12 +36,16 @@ def fetch_public_root() -> dict[str, object]:
         "status": response.status,
         "bytes": len(html),
         "has_model_marker": MODEL_MARKER in html,
+        "has_preferred_browser_route": "shouldPreferBrowserWhisper(file)" in html,
         "has_fallback_wiring": "Server upload failed, trying private browser transcription" in html,
+        "has_timestamps": "return_timestamps: true" in html and "chunks.map" in html,
         "has_subtitle_formatter": "formatSubtitleDuration" in html,
     }
     require(report["status"] == 200, f"public root returned {report['status']}")
     require(bool(report["has_model_marker"]), "public root missing browser Whisper model marker")
+    require(bool(report["has_preferred_browser_route"]), "public root missing preferred browser route wiring")
     require(bool(report["has_fallback_wiring"]), "public root missing browser fallback wiring")
+    require(bool(report["has_timestamps"]), "public root missing real timestamp chunk wiring")
     return report
 
 
