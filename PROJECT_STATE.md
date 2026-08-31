@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 08:53 EDT
+Updated: 2026-08-31 09:32 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -8,7 +8,7 @@ Phase 1: Bulletproof YouTube Transcripts. Active gate is production release veri
 ## Version / phase status
 
 ### Version 1 / Phase 1: Bulletproof YouTube transcripts
-Status: Near release-clear. Non-English, genuine Shorts, and two-hour/long-video evidence are now passing publicly; browser copy/touch-flow evidence remains open. The public landing page now also matches the requested ChatGPT-reference content structure markers.
+Status: Release-clear on the public no-login product for the current fixture gate. Non-English, genuine Shorts, two-hour/long-video, desktop copy, mobile touch, downloads, and the bounded public matrix have passed; remaining work is hardening the backend off the iMac/Cloudflare Tunnel dependency.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
@@ -40,7 +40,7 @@ Status: Advanced publicly, not release-complete.
 - Fresh public proof from 2026-08-31 06:32 EDT: root HTML served the new Phase 3 UI markers (`All Outputs`, `analysisMenu`, `content_assets_100`, ask-a-question input, `/api/analyze/`); `/api/analysis-outputs` returned 17 output definitions; Rick Astley cached transcript returned HTTP 200 with 366 words; all 17 public analysis calls returned HTTP 200 with `AI-generated` disclaimer and transcript evidence, including `ask_question` with a Trevor-specific question.
 - Fresh combined-output copy/download proof from 2026-08-31 07:07 EDT: root HTML served `Copy Analysis`, `analysisCopyBtn`, and `/api/analyze-all/`; public combined analysis returned HTTP 200 with 16 saved starter outputs, 10,036 copy-ready characters, analysis ID `bfb7ef1f1bab`, and Markdown download HTTP 200 with 10,600 bytes.
 - Fresh long-transcript intelligence proof from 2026-08-31 07:43 EDT: Phase 3 analysis now samples beginning, middle, and ending timestamp evidence for long records. Public two-hour cached fixture `rwfk91ya81s` returned job `c345b34bc0ba`, record `837a9891f74d`, 19,298 words, 1,446 segments, duration 7,244s, method `queued-chunked-local-whisper`, cache hit. `/api/analyze-all/837a9891f74d` produced 16 outputs, 19,106 copy-ready characters, latest cited analysis timestamp 7,242s, analysis ID `8215f62db5fa`, and Markdown download HTTP 200 with 19,106 bytes.
-- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected, and add fuller mobile/browser interaction proof once Chrome remote-debug permission is cleared.
+- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected. The new no-Chrome public UI contract harness now covers visible controls, async endpoint wiring, all-output analysis, ask-a-question, copy/download wiring, and Markdown download without depending on Chrome remote debugging.
 
 ## Completed work
 - Located active local project at `/Users/tc-imac/.openclaw/workspace/epic-transcript-tool`.
@@ -69,6 +69,7 @@ Status: Advanced publicly, not release-complete.
 - Improved Phase 3 long-transcript evidence selection so analysis outputs cite beginning, middle, and ending timestamps instead of only the opening segments; added regression coverage and `scripts/phase3_long_analysis_smoke.py` public proof.
 - Advanced Phase 2 cleanup/retention hardening: SQLite now enables `PRAGMA foreign_keys`, deleting a transcript removes saved analyses, tests cover upload temp directory removal after processing, and public delete cleanup verified record `c40edf087acd` plus analysis `c3e5e11163a0` returned HTTP 404 after deletion.
 - Advanced the public UX/design acceptance gate from the ChatGPT-reference prompt: added and satisfied regression coverage for `Free Video Transcript Generator`, `FAST · FREE · V3`, `Get Video Transcript`, `How it works`, `Frequently Asked Questions (FAQ)`, `faq-stage`, and `step-grid` markers.
+- Added `scripts/phase3_ui_contract_smoke.py`, a no-Chrome public UI contract harness that verifies visible Phase 3 controls, async job wiring, absence of the old synchronous submit path, all-outputs analysis, ask-question analysis, and Markdown download against the public no-login URL.
 - Deployed the synchronized static review build to Netlify site `epic-transcript-machine-review`, deploy `6a9579a7b662aa6824e325ab`, and verified both stable and immutable Netlify URLs anonymously.
 
 ## Latest production regression evidence
@@ -101,8 +102,9 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
-- `./.venv/bin/python -m pytest -q`: passed, 44 tests on 2026-08-31 08:53 EDT. New UX alignment test covers the ChatGPT-reference structure markers and ordering.
-- Static inline browser script check: `node --check` passed for 1 script block on 2026-08-31 08:53 EDT.
+- `./.venv/bin/python -m pytest -q`: passed, 44 tests on 2026-08-31 09:32 EDT.
+- `python3 -m py_compile scripts/phase3_ui_contract_smoke.py`: passed on 2026-08-31 09:32 EDT.
+- `scripts/phase3_ui_contract_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 09:32 EDT. Public root HTTP 200, required UI IDs present, async submit/job and analysis endpoints wired, old sync submit absent, transcript job HTTP 202 then done for `dQw4w9WgXcQ`, record `18cc682b7b51`, 366 words, 61 segments, all-output analysis `b8614a2d6247`, 16 sections, 13,076 chars, Markdown download HTTP 200 with 13,960 bytes, ask-question analysis `b72d30a12ad0`, 784 chars.
 - Public root marker check passed at 2026-08-31 08:53 EDT with HTTP 200 and 41,404 bytes.
 - Netlify stable and immutable review URL marker checks passed at 2026-08-31 08:53 EDT with HTTP 200 and 41,404 bytes.
 - Public `/health` returned HTTP 200, `ready: true`, and no required missing dependencies at 2026-08-31 08:53 EDT.
@@ -132,6 +134,7 @@ Prior full regression evidence:
 
 ## Known problems
 - The public hostname now has launchd KeepAlive hardening, but it still depends on this iMac and Cloudflare Tunnel. A hosted durable backend remains the cleaner whole-project final release path.
+- Browser Use automation can still hit a fresh macOS `Allow remote debugging?` prompt in new browser sessions. This no longer blocks Version 1 proof because prior direct Chrome desktop/mobile proof passed and the new no-Chrome public UI contract harness covers the release-critical wiring.
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
 - Browser WebGPU Whisper is not implemented yet. Local server Whisper fallback exists.
@@ -139,10 +142,10 @@ Prior full regression evidence:
 - Public API has reloaded the helpful invalid-link behavior. Invalid non-YouTube URL now returns HTTP 422 instead of HTTP 500.
 
 ## Blockers
-- Browser copy/touch-flow evidence is blocked by macOS Chrome's `Allow remote debugging?` permission prompt for the browser harness. API and scripted public checks are not blocked; a retry at 2026-08-31 03:30 EDT reproduced the same permission blocker.
+- Phase 1 public product proof is no longer blocked. New browser sessions may still need the macOS Chrome remote-debug prompt approved, but release-critical proof has a prior direct Chrome pass plus the no-Chrome UI contract harness.
 
 ## Exact next action
-Commit the UX alignment regression and continue toward release by adding a non-browser DOM/click harness for copy/download and analysis flows while macOS Chrome remote-debug approval remains blocked.
+Prepare the durable hosted-backend migration plan and first implementation spike so Version 1 can move from iMac+tunnel hardened proof to a deployable backend with the same free/local-provider behavior or an explicitly approved no-surprise equivalent.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.

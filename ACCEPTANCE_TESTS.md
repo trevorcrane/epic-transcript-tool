@@ -62,6 +62,12 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 09:32 EDT.
+
+- Public Phase 3 no-Chrome UI contract: PASS. `scripts/phase3_ui_contract_smoke.py https://epic-transcript.robyncrane.com` verified public root HTTP 200, all required transcript and analysis control IDs present, button labels intact, async submit/job wiring present, old synchronous submit absent, `/api/analyze-all/` and `/api/analyze/` wiring present, analysis copy/download wiring present, transcript job HTTP 202 then done for `dQw4w9WgXcQ`, record `18cc682b7b51`, 366 words, 61 segments, cache hit, combined analysis `b8614a2d6247` with 16 sections and 13,076 chars, Markdown download HTTP 200 with 13,960 bytes, and ask-question analysis `b72d30a12ad0` with 784 chars.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 44 passed.
+- Script syntax: PASS. `python3 -m py_compile scripts/phase3_ui_contract_smoke.py` returned 0.
+
 Run time: 2026-08-31 08:53 EDT.
 
 - Public app root: PASS, HTTP 200, 41,404 bytes, no visitor login.
@@ -197,6 +203,9 @@ Pass criteria:
 - Verbatim quotes are not fabricated.
 
 Current evidence:
+- 2026-08-31 09:32 EDT: added and ran a public no-Chrome UI contract harness for the Phase 3 user flow.
+- Public UI contract: PASS. Required analysis controls and labels are present, async transcript job wiring is present, old synchronous submit wiring is absent, all-outputs and ask-question analysis endpoints are wired, and copy/download wiring is present.
+- Public API proof from the contract harness: PASS. Rick Astley cached transcript returned record `18cc682b7b51`, 366 words, 61 segments. `/api/analyze-all/{id}` returned analysis `b8614a2d6247`, 16 sections, 13,076 chars, `AI-generated` disclaimer, and timestamp evidence. Markdown download returned HTTP 200, 13,960 bytes. Ask-question returned analysis `b72d30a12ad0`, 784 chars.
 - 2026-08-31 08:53 EDT: public root still contains Phase 3 analysis markers after the UX alignment pass, including `/api/analyze-all/`, `analysisMenu`, `analysisCopyBtn`, and the ask-a-question controls.
 - 2026-08-31 06:32 EDT: Phase 3 starter backend and expanded full-menu UI are live on `https://epic-transcript.robyncrane.com/`.
 - 2026-08-31 07:43 EDT: long-transcript Phase 3 public proof passed on the two-hour cached fixture. The backend now samples beginning, middle, and ending timestamp evidence for long records instead of only the opening segments.
