@@ -152,6 +152,12 @@
   .actions { display:flex; gap:10px; flex-wrap:wrap; padding:18px 24px 24px; background:#fff; }
   .btn { height:40px; padding:0 14px; border:1px solid rgba(0,0,0,.1); border-radius:12px; background:#fff; color:var(--color-text-dark); font-weight:700; cursor:pointer; }
   .btn:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.1); }
+  .btn.ai { color:#fff; border-color:transparent; background:linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+  .analysis-panel { display:none; margin:0 24px 24px; border:1px solid rgba(123,47,247,.14); border-radius:20px; overflow:hidden; background:#fff; }
+  .analysis-panel.show { display:block; }
+  .analysis-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; color:var(--color-purple); background:rgba(123,47,247,.06); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+  .analysis-box { margin:0; padding:18px; white-space:pre-wrap; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.75; max-height:420px; overflow:auto; }
   .support-grid { max-width:var(--page-max); margin:72px auto 0; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
   .mini-card { background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:22px; padding:22px; box-shadow:var(--shadow-card); }
   .mini-card b { display:block; margin-bottom:8px; }
@@ -281,7 +287,14 @@
           <button class="btn" id="downloadBtn" type="button">TXT</button>
           <button class="btn" id="downloadMdBtn" type="button">Markdown</button>
           <button class="btn" id="downloadSrtBtn" type="button">SRT</button>
+          <button class="btn ai" id="summaryBtn" type="button">AI Summary</button>
+          <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
+          <button class="btn" id="analysisDownloadBtn" type="button" disabled>Download Analysis</button>
           <button class="btn" id="emailBtn" type="button">Email to Me</button>
+        </div>
+        <div class="analysis-panel" id="analysisPanel" aria-live="polite">
+          <div class="analysis-head"><span id="analysisTitle">Video intelligence</span></div>
+          <pre class="analysis-box" id="analysisBox"></pre>
         </div>
       </div>
     </div>
@@ -331,11 +344,13 @@
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
     copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), emailBtn: $('emailBtn'),
+    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisBox: $('analysisBox'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'),
     banner: $('banner'),
   };
   let currentRecord = null;
+  let currentAnalysis = null;
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   function ownerToken() {
     let token = localStorage.getItem(OWNER_KEY);
@@ -398,6 +413,10 @@
     const proc = rec.processing_seconds ? ` · ${rec.processing_seconds.toFixed(1)}s` : '';
     els.method.textContent = `${methodLabel} · ${len.toLocaleString()} chars${dur}${proc}`;
     els.transcript.textContent = rec.transcript || '';
+    currentAnalysis = null;
+    els.analysisPanel.classList.remove('show');
+    els.analysisBox.textContent = '';
+    els.analysisDownloadBtn.disabled = true;
     els.result.classList.add('show');
     autoCopy(rec.transcript || '');
   }
@@ -520,6 +539,36 @@
   els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'));
   els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
   els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'));
+
+  async function analyzeCurrent(outputType, label) {
+    if (!currentRecord) return;
+    const btns = [els.summaryBtn, els.actionsBtn];
+    btns.forEach(btn => btn.disabled = true);
+    setStatus('Creating ' + label.toLowerCase() + '...', '');
+    try {
+      const fd = new URLSearchParams();
+      fd.append('output_type', outputType);
+      const data = await jfetch('/api/analyze/' + currentRecord.id, { method: 'POST', headers: ownerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), body: fd });
+      currentAnalysis = data;
+      els.analysisTitle.textContent = label;
+      els.analysisBox.textContent = data.analysis || '';
+      els.analysisPanel.classList.add('show');
+      els.analysisDownloadBtn.disabled = !data.analysis_id;
+      setStatus(label + ' ready', 'done');
+      setTimeout(clearStatus, 1200);
+    } catch (e) {
+      setStatus('Analysis error: ' + e.message, 'error');
+    } finally {
+      btns.forEach(btn => btn.disabled = false);
+    }
+  }
+  els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'AI Summary'));
+  els.actionsBtn.addEventListener('click', () => analyzeCurrent('action_items', 'Action Items'));
+  els.analysisDownloadBtn.addEventListener('click', () => {
+    if (currentAnalysis && currentAnalysis.analysis_id) {
+      window.location.href = apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download');
+    }
+  });
   els.emailBtn.addEventListener('click', async () => {
     if (!currentRecord) return;
     els.emailBtn.disabled = true;

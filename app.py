@@ -66,6 +66,31 @@ WHISPER_BINARY_CANDIDATES = [
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
 MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
 LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
+ANALYSIS_OUTPUTS = [
+    "executive_summary", "main_ideas", "action_items", "chapters", "best_quotes",
+    "stories_examples", "content_framework", "blog_post", "newsletter", "social_posts",
+    "short_form_hooks", "faq", "sales_insights", "objections_answers",
+    "trevor_use", "content_assets_100", "ask_question",
+]
+ANALYSIS_LABELS = {
+    "executive_summary": "Executive summary",
+    "main_ideas": "Main ideas",
+    "action_items": "Action items",
+    "chapters": "Chapters",
+    "best_quotes": "Best quotes",
+    "stories_examples": "Stories and examples",
+    "content_framework": "Content framework",
+    "blog_post": "Blog post",
+    "newsletter": "Newsletter",
+    "social_posts": "Social posts",
+    "short_form_hooks": "Short-form video hooks",
+    "faq": "FAQ",
+    "sales_insights": "Sales insights",
+    "objections_answers": "Objections and answers",
+    "trevor_use": "How Trevor can use this",
+    "content_assets_100": "Create 100 content assets",
+    "ask_question": "Ask the video",
+}
 
 app = FastAPI(title="Epic Transcript Machine", docs_url=None, redoc_url=None)
 DOWNLOAD_TOKENS: dict[str, dict] = {}
@@ -88,8 +113,8 @@ def db() -> sqlite3.Connection:
     return conn
 
 
-def _columns(conn: sqlite3.Connection) -> set[str]:
-    return {r[1] for r in conn.execute("PRAGMA table_info(transcripts)").fetchall()}
+def _columns(conn: sqlite3.Connection, table: str = "transcripts") -> set[str]:
+    return {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
 
 
 def init_db() -> None:
@@ -125,6 +150,32 @@ def init_db() -> None:
             if name not in existing:
                 conn.execute(f"ALTER TABLE transcripts ADD COLUMN {name} {ddl}")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_transcripts_media_id ON transcripts(media_id)")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS analyses (
+                id TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+                transcript_id TEXT NOT NULL,
+                output_type TEXT NOT NULL,
+                question TEXT,
+                analysis TEXT NOT NULL,
+                owner_token TEXT NOT NULL,
+                FOREIGN KEY(transcript_id) REFERENCES transcripts(id) ON DELETE CASCADE
+            )
+            """
+        )
+        analysis_needed = {
+            "transcript_id": "TEXT",
+            "output_type": "TEXT",
+            "question": "TEXT",
+            "analysis": "TEXT",
+            "owner_token": "TEXT",
+        }
+        analysis_existing = _columns(conn, "analyses")
+        for name, ddl in analysis_needed.items():
+            if name not in analysis_existing:
+                conn.execute(f"ALTER TABLE analyses ADD COLUMN {name} {ddl}")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_analyses_transcript_id ON analyses(transcript_id)")
 
 
 init_db()
@@ -818,6 +869,79 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
         raise RuntimeError(f"{BLOCKED_MESSAGE} Provider trail: {detail}")
 
 
+
+def _segment_lines(rec: dict, limit: int = 8) -> list[str]:
+    segs = rec.get("segments") or []
+    lines = []
+    for seg in segs[:limit]:
+        text = clean_whitespace(seg.get("text", ""))
+        if text:
+            lines.append(f"[{seconds_to_timestamp(seg.get('start', 0))}] {text}")
+    if not lines:
+        for line in (rec.get("transcript") or "").splitlines()[:limit]:
+            line = clean_whitespace(line)
+            if line:
+                lines.append(line)
+    return lines
+
+
+def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
+    if output_type not in ANALYSIS_OUTPUTS:
+        raise HTTPException(400, "Unsupported analysis output type.")
+    evidence = _segment_lines(rec, 10)
+    label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
+    title = rec.get("title") or rec.get("source") or "Transcript"
+    word_count = rec.get("word_count") or transcript_word_count(rec.get("transcript", ""))
+    header = [
+        f"# {label}",
+        "",
+        "AI-generated from the transcript. Verify against the timestamped evidence before publishing.",
+        f"Source: {title}",
+        f"Words reviewed: {word_count}",
+        "",
+        "## Transcript evidence",
+    ]
+    if evidence:
+        header.extend(f"- {line}" for line in evidence[:5])
+    else:
+        header.append("- No timestamped evidence was available.")
+
+    first = evidence[0] if evidence else "[00:00] Transcript evidence unavailable."
+    second = evidence[1] if len(evidence) > 1 else first
+    third = evidence[2] if len(evidence) > 2 else second
+    body_map = {
+        "executive_summary": ["## Summary", f"- The core message starts with {first}", f"- The follow-up point is supported by {second}", f"- The useful takeaway is grounded in {third}"],
+        "main_ideas": ["## Main ideas", f"1. {first}", f"2. {second}", f"3. {third}"],
+        "action_items": ["## Action items", f"- Use {first} as the first follow-up cue.", f"- Turn {second} into the next owner/task note.", f"- Package {third} into a deliverable or content asset."],
+        "chapters": ["## Chapters", f"- 00:00 Opening: {first}", f"- Midpoint theme: {second}", f"- Closing opportunity: {third}"],
+        "best_quotes": ["## Best quotes", f"- \"{first}\"", f"- \"{second}\"", f"- \"{third}\""],
+        "stories_examples": ["## Stories and examples", f"- Story/example candidate from {first}", f"- Supporting example from {second}"],
+        "content_framework": ["## Content framework", f"- Hook: {first}", f"- Teach: {second}", f"- Apply: {third}"],
+        "blog_post": ["## Blog post draft", f"Lead with the promise in {first}.", "", f"Develop the main lesson using {second}.", "", f"Close with the practical next step from {third}."],
+        "newsletter": ["## Newsletter draft", "Subject: What this transcript makes clear", "", f"Start with {first}", f"Then bridge into {second}", f"CTA: apply {third}"],
+        "social_posts": ["## Social posts", f"1. {first}", f"2. {second}", f"3. {third}"],
+        "short_form_hooks": ["## Short-form hooks", f"- What if {first}", f"- The part everyone misses: {second}", f"- Save this if you need {third}"],
+        "faq": ["## FAQ", f"Q: What is this about?\nA: {first}", f"Q: What matters next?\nA: {second}"],
+        "sales_insights": ["## Sales insights", f"- Buyer language to reuse: {first}", f"- Follow-up angle: {second}", f"- Offer/content bridge: {third}"],
+        "objections_answers": ["## Objections and answers", f"- Objection clue: {first}", f"  Answer with: {second}"],
+        "trevor_use": ["## How Trevor can use this", f"- Turn {first} into the main message.", f"- Ask the team to package {second} into follow-up copy.", f"- Use {third} for the next content angle."],
+        "content_assets_100": ["## Create 100 content assets", "This release returns a starter map, not 100 final assets yet.", f"- 10 hooks from: {first}", f"- 10 teaching posts from: {second}", f"- 10 email angles from: {third}", "- Repeat the pattern across the remaining timestamped segments."],
+        "ask_question": ["## Answer", f"Question: {question or 'What should I know from this video?'}", f"Best answer from transcript evidence: {first} {second}"],
+    }
+    return "\n".join(header + [""] + body_map.get(output_type, [f"## {label}", first, second])).strip() + "\n"
+
+
+def save_analysis(*, transcript_id: str, output_type: str, question: Optional[str], analysis: str, owner_token: str) -> dict:
+    init_db()
+    analysis_id = uuid.uuid4().hex[:12]
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO analyses (id, transcript_id, output_type, question, analysis, owner_token) VALUES (?, ?, ?, ?, ?, ?)",
+            (analysis_id, transcript_id, output_type, question, analysis, owner_token),
+        )
+        row = conn.execute("SELECT * FROM analyses WHERE id=?", (analysis_id,)).fetchone()
+    return dict(row)
+
 def make_markdown(row: dict) -> str:
     title = row.get("title") or row.get("source") or "Transcript"
     lines = [f"# {title}", "", f"Source: {row.get('source_url') or row.get('source') or ''}", f"Method: {row.get('method','')}", f"Language: {row.get('language') or 'unknown'}", f"Words: {row.get('word_count') or transcript_word_count(row.get('transcript',''))}", "", "## Transcript", ""]
@@ -1065,6 +1189,41 @@ def api_delete(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) ->
         require_owner(row, x_transcript_owner)
         conn.execute("DELETE FROM transcripts WHERE id=?", (rec_id,))
     return {"ok": True}
+
+
+@app.get("/api/analysis-outputs")
+def api_analysis_outputs() -> dict:
+    return {"ok": True, "outputs": [{"id": key, "label": ANALYSIS_LABELS[key]} for key in ANALYSIS_OUTPUTS]}
+
+
+@app.post("/api/analyze/{rec_id}")
+def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[str] = Form(None), x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    with db() as conn:
+        row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Transcript not found.")
+    require_owner(row, x_transcript_owner)
+    rec = row_to_record(row)
+    analysis = build_analysis_text(rec, output_type, question=question)
+    saved = save_analysis(
+        transcript_id=rec_id,
+        output_type=output_type,
+        question=question,
+        analysis=analysis,
+        owner_token=dict(row).get("owner_token") or "",
+    )
+    return {"ok": True, "analysis_id": saved["id"], "transcript_id": rec_id, "output_type": output_type, "analysis": analysis}
+
+
+@app.get("/api/analysis/{analysis_id}/download")
+def api_analysis_download(analysis_id: str) -> PlainTextResponse:
+    with db() as conn:
+        row = conn.execute("SELECT * FROM analyses WHERE id=?", (analysis_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Analysis not found.")
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", row["output_type"])[:60] or "analysis"
+    return PlainTextResponse(row["analysis"], media_type="text/markdown", headers={"Content-Disposition": f'attachment; filename="{safe}.md"'})
+
 
 @app.post("/api/email/{rec_id}")
 def api_email(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:

@@ -16,8 +16,17 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
     html = HTML.read_text()
     assert "hero-control" in html
     assert html.index('id="url"') < html.index('id="result"')
-    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn"]:
+    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "summaryBtn", "actionsBtn", "analysisPanel", "analysisBox", "analysisDownloadBtn"]:
         assert f'id="{required_id}"' in html
+
+
+def test_phase3_video_intelligence_ui_is_wired_to_analysis_api():
+    html = HTML.read_text()
+    assert "AI Summary" in html
+    assert "Action Items" in html
+    assert "/api/analyze/" in html
+    assert "/api/analysis/" in html
+    assert "Video intelligence" in html
 
 
 def test_design_has_dark_presentation_and_light_results_surfaces():
