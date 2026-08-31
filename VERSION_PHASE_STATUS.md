@@ -1,6 +1,6 @@
 # EPIC Transcript Machine Version / Phase Status
 
-Updated: 2026-08-31 00:02 EDT
+Updated: 2026-08-31 00:38 EDT
 
 ## Version 1 / Phase 1: Bulletproof YouTube Transcripts
 Status: In release verification.
@@ -13,11 +13,11 @@ Current evidence:
 - Manual-caption control passed publicly with 61 segments and 366 words.
 - TXT, Markdown, and SRT downloads passed for the regression record.
 - Public no-login access passed after launchd API and tunnel hardening.
-- Public Phase 1 matrix is 8 of 9 release-valid. Invalid URL now returns the intended helpful HTTP 422 upload guidance.
+- Public Phase 1 matrix is 8 of 9 release-valid. Latest run completed without Cloudflare 524s after stale Whisper workers were cleared; invalid and unavailable URLs return helpful HTTP 422 guidance.
 - Epic Call IQ-inspired UI redesign is live.
 
 Remaining:
-- Replace or prove a release-valid original-language non-English matrix source. Current Despacito public run returns helpful upload guidance, and earlier cache evidence could return `en-US`, which is not valid non-English evidence.
+- Replace or prove a release-valid original-language non-English matrix source. Current Despacito public run returns helpful long-video/upload guidance, and earlier cache evidence could return `en-US`, which is not valid non-English evidence.
 - Complete browser copy-flow, mobile touch-flow, and fuller accessibility evidence.
 - Move from iMac plus Cloudflare Tunnel to a hosted durable backend when ready for whole-project final release.
 
@@ -31,7 +31,7 @@ Current evidence:
 - Uploaded M4A passed through local Whisper in prior local evidence.
 - Uploaded MP4 passed through local Whisper in prior local evidence.
 - Direct public-media-style URL passed through local Whisper in prior local evidence.
-- Public upload smoke now passes for generated WAV, MP3, and MP4 through `local-whisper` with credible nonempty transcripts.
+- Public upload smoke passed again for generated WAV, MP3, and MP4 through `local-whisper` with credible nonempty transcripts after clearing stale orphan Whisper workers.
 - Added reusable public upload gate script: `scripts/phase2_upload_smoke.py`.
 - Hardening added so `yt-dlp`, `ffmpeg`, and local Whisper can be found from launchd's minimal environment using configured env vars or absolute known paths.
 

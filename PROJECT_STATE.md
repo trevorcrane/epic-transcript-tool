@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 00:02 EDT
+Updated: 2026-08-31 00:38 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -12,7 +12,7 @@ Status: In release verification.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
-- Release matrix is 8 of 9 passing publicly after the API reload: invalid URL now returns the intended helpful HTTP 422 upload guidance instead of HTTP 500.
+- Release matrix remains 8 of 9 passing publicly. A fresh public run after clearing stale Whisper workers completed without Cloudflare 524s; the only non-passing item is still the selected non-English source, which now returns the intended helpful long-video/upload guidance instead of timing out.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents.
 - Remaining Phase 1 release-gap is non-English YouTube evidence. The current Despacito candidate is not release-valid because public YouTube access is blocked/helpful-failure, and earlier cache evidence could return English subtitles.
 
@@ -44,6 +44,7 @@ Status: Started in queued backend tests, not public-release complete.
   - `com.epic.transcript-api` runs `.venv/bin/python app.py` from the repo on port 8090.
   - `com.epic.transcript-tunnel` runs `cloudflared tunnel --config cloudflared.yml --no-autoupdate run`.
 - Updated Phase 1 public test scripts so Cloudflare does not reject Python's default urllib user agent with 1010 during release checks.
+- Cleared stale orphan Whisper workers from an old duplicate API process, restoring public Phase 2 upload smoke from Cloudflare 524s to HTTP 200 passes.
 
 ## Latest production regression evidence
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
@@ -72,8 +73,8 @@ Prior full regression evidence:
 - Public root: HTTP 200, expected app markers present.
 - Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public Phase 1 health script now correctly accepts a CLI base URL and passed against `https://epic-transcript.robyncrane.com` for regression and manual-caption control.
-- Public Phase 1 matrix run: 8 of 9 cases are release-valid. Regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable, and invalid_url passed. Non-English returned helpful HTTP 422 upload guidance and remains the only release-gap.
-- Public Phase 2 upload smoke: generated WAV, MP3, and MP4 fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
+- Public Phase 1 matrix run from 2026-08-31 00:38 EDT: 8 of 9 cases are release-valid. Regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable, and invalid_url passed. Non-English returned helpful HTTP 422 long-video/upload guidance and remains the only release-gap.
+- Public Phase 2 upload smoke from 2026-08-31 00:38 EDT: after clearing stale orphan Whisper workers, generated WAV, MP3, and MP4 fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
 - New reusable public Phase 2 upload smoke script added at `scripts/phase2_upload_smoke.py`.
 - New targeted regression tests for launchd/minimal-PATH binary resolution passed.
 - Local generated MP3 upload through FastAPI TestClient passed via `local-whisper` after absolute Whisper binary resolution.
@@ -85,11 +86,11 @@ Prior full regression evidence:
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
 - Browser WebGPU Whisper is not implemented yet. Local server Whisper fallback exists.
-- Full Phase 1 matrix is not complete because current non-English YouTube candidates are returning upload-guidance failures under YouTube blocking/rate limiting, and previously cached Despacito evidence could return English subtitles.
+- Full Phase 1 matrix is not complete because current non-English YouTube candidates are either over the synchronous public-duration gate or return upload-guidance failures under YouTube blocking/rate limiting, and previously cached Despacito evidence could return English subtitles.
 - Public API has reloaded the helpful invalid-link behavior. Invalid non-YouTube URL now returns HTTP 422 instead of HTTP 500.
 
 ## Blockers
 None requiring Trevor right now.
 
 ## Exact next action
-Commit and push the public Phase 2 upload smoke script and updated release evidence, then continue closing the final Phase 1 non-English YouTube evidence gap. If YouTube continues blocking non-English public candidates, switch to documenting that case as a helpful-failure gate and move Phase 2 toward the full upload/media matrix.
+Continue closing the final Phase 1 non-English YouTube evidence gap with a known-accessible under-2-minute captioned source. If public YouTube continues blocking candidates, document non-English YouTube as a helpful-failure gate for v1 and move the release gate to Phase 2 non-English upload evidence plus the full upload/media matrix.

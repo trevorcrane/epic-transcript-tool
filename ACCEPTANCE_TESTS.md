@@ -62,14 +62,14 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
-Run time: 2026-08-31 00:02 EDT.
+Run time: 2026-08-31 00:38 EDT.
 
 - Public app root: PASS, HTTP 200.
 - Public setup endpoint: PASS, HTTP 200, `ready: true`, required `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public release checker scripts now send a normal browser-style user agent so Cloudflare does not reject Python urllib checks with 1010.
 - Backend durability step: `com.epic.transcript-api` and `com.epic.transcript-tunnel` are loaded under launchd with KeepAlive.
 - Public Phase 1 health script now accepts a CLI base URL, and the public run passed regression plus manual-caption control.
-- Public Phase 1 matrix is now 8 of 9 release-valid. Invalid URL now returns the intended helpful HTTP 422 upload guidance. The only remaining Phase 1 release gap is non-English YouTube evidence under current YouTube blocking/rate-limiting.
+- Public Phase 1 matrix is 8 of 9 release-valid in the latest run. Regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable, and invalid_url pass. The selected non-English YouTube source now returns fast helpful HTTP 422 long-video/upload guidance instead of Cloudflare 524 after stale workers were cleared, but it is still not release-valid transcript evidence.
 
 ### Additional Phase 1 cases
 Status: partially verified in production.
@@ -79,7 +79,7 @@ Status: partially verified in production.
 | Control video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words, language `en`. |
 | Manual-caption video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words. |
 | Automatic-caption video | `https://youtu.be/v34Eg12mhDM` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words. |
-| Non-English video | `https://youtu.be/kJQP7kiw5Fk` | FAIL, helpful failure but not release-valid transcript evidence | Public run returned HTTP 422 with upload guidance: `That video is blocking automatic transcription... upload it here...`. Earlier public cache could return English subtitles, so this source is not valid non-English evidence. Needs a known-accessible original-language source or fallback coverage. |
+| Non-English video | `https://youtu.be/kJQP7kiw5Fk` | FAIL, helpful failure but not release-valid transcript evidence | Latest public run returned fast HTTP 422 long-video/upload guidance instead of Cloudflare 524. Earlier public cache could return English subtitles, so this source is not valid non-English evidence. Needs a known-accessible under-2-minute original-language source or fallback coverage. |
 | Shorts URL | `https://www.youtube.com/shorts/SXHMnicI6Pg` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 2 segments, 3 words. Low word count but accepted for URL-shape handling only. |
 | Private/unavailable video | `https://www.youtube.com/watch?v=aaaaaaaaaaa` | PASS helpful failure | HTTP 422 with upload guidance. |
 | Invalid URL | `https://not-a-real.example/video` | PASS helpful failure | Public matrix returned HTTP 422 with upload guidance after API reload. |
@@ -95,7 +95,7 @@ Status: partially verified in production.
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
-- 2026-08-31 00:02 EDT: added and ran `scripts/phase2_upload_smoke.py` against the public no-login API.
+- 2026-08-31 00:38 EDT: reran `scripts/phase2_upload_smoke.py` against the public no-login API after clearing stale orphan Whisper workers from an old duplicate API process.
 - Public generated WAV upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
 - Public generated MP3 upload: PASS, HTTP 200, method `local-whisper`, 2 segments, 18 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
 - Public generated MP4 upload: PASS, HTTP 200, method `local-whisper`, 1 segment, 12 words, credible text begins `Epic transcript machine phase 2 public upload test...`.
