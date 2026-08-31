@@ -5,6 +5,7 @@ timestamped segments, and downloadable transcript formats.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import mimetypes
@@ -60,6 +61,8 @@ WHISPER_BINARY_CANDIDATES = [
 ]
 
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
+MAX_SYNC_YOUTUBE_DURATION_SECONDS = 60 * 60
+LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
 
 app = FastAPI(title="Epic Transcript Machine", docs_url=None, redoc_url=None)
 DOWNLOAD_TOKENS: dict[str, dict] = {}
@@ -670,7 +673,11 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
         expected_language = None
         try:
             meta_probe = yt_dlp_metadata(url)
+            if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
+                raise HTTPException(422, LONG_VIDEO_MESSAGE)
             expected_language = infer_expected_language(meta_probe)
+        except HTTPException:
+            raise
         except Exception:
             meta_probe = {}
         cached = get_cached_transcript(video_id, expected_language=expected_language)
@@ -724,13 +731,17 @@ def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = F
     try:
         with saved.open("wb") as out:
             shutil.copyfileobj(file.file, out)
+        file_hash = "upload:" + hashlib.sha256(saved.read_bytes()).hexdigest()
+        cached_upload = get_cached_transcript(file_hash)
+        if cached_upload:
+            return JSONResponse({"ok": True, "record": record_for_owner(cached_upload, owner_token)})
         if ext in TEXT_EXTS:
-            transcript = clean_whitespace(saved.read_text(errors="ignore")); method = "passthrough"; segments = []
+            transcript = clean_whitespace(saved.read_text(errors="ignore")); method = "passthrough"; segments = []; lang = None
         elif ext in SUBTITLE_EXTS:
             raw = saved.read_text(errors="ignore")
             segments = parse_vtt_segments(raw) if ext == ".vtt" else parse_srt_segments(raw)
             transcript = segments_to_transcript(segments) if segments else strip_vtt_srt(raw)
-            method = "captions"
+            method = "captions"; lang = None
         else:
             segments, lang = transcribe_with_local_whisper(saved)
             transcript = segments_to_transcript(segments); method = "local-whisper"
@@ -738,8 +749,8 @@ def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = F
             raise RuntimeError("Transcript came back empty.")
         rec = save_transcript(source=name, source_kind="upload", method=method, transcript=transcript,
                               duration_seconds=None, processing_seconds=time.monotonic() - started,
-                              media_id=None, source_url=None, title=name, creator=None,
-                              language=locals().get("lang"), segments=segments, owner_token=owner_token)
+                              media_id=file_hash, source_url=None, title=name, creator=None,
+                              language=lang, segments=segments, owner_token=owner_token)
         return JSONResponse({"ok": True, "record": rec})
     except RuntimeError as e:
         raise HTTPException(422, str(e))

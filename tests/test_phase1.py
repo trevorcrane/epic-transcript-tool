@@ -289,3 +289,38 @@ def test_setup_status_uses_absolute_tool_fallbacks_when_launchd_path_is_minimal(
     assert status["ready"] is True
     assert status["missing"] == []
     assert status["local_whisper"] is True
+
+
+def test_long_youtube_video_returns_bounded_helpful_failure(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    calls = {"transcribe": 0}
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"id":"longvid1234", "title":"Two Hour Fixture", "duration": 7200, "webpage_url": url})
+    monkeypatch.setattr(app, "transcribe_youtube_uncached", lambda *a, **k: calls.__setitem__("transcribe", calls["transcribe"] + 1))
+    client = TestClient(app.app)
+    res = client.post("/api/transcribe-url", data={"url":"https://youtu.be/longvid1234", "owner":"owner-token-longvideo-abcdefghijklmnop"})
+    assert res.status_code == 422
+    assert "too long" in res.json()["detail"].lower() or "upload" in res.json()["detail"].lower()
+    assert calls["transcribe"] == 0
+
+
+def test_upload_reuses_file_hash_cache_for_identical_media(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    calls = {"whisper": 0}
+    def fake_whisper(path, language=None):
+        calls["whisper"] += 1
+        return ([{"start":0,"end":2,"text":"bonjour tout le monde"}], "fr")
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", fake_whisper)
+    client = TestClient(app.app)
+    owner = "owner-token-uploadcache-abcdefghijklmnop"
+    payload = b"fake wav bytes that represent the same media"
+    first = client.post("/api/transcribe-upload", data={"owner": owner}, files={"file": ("same.wav", payload, "audio/wav")})
+    second = client.post("/api/transcribe-upload", data={"owner": owner}, files={"file": ("same.wav", payload, "audio/wav")})
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert calls["whisper"] == 1
+    assert first.json()["record"]["cache_hit"] is False
+    assert second.json()["record"]["cache_hit"] is True
+    assert second.json()["record"]["media_id"] == first.json()["record"]["media_id"]
+    assert second.json()["record"]["language"] == "fr"
