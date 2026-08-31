@@ -4,7 +4,7 @@ HTML = Path(__file__).resolve().parents[1] / "static" / "index.html"
 BASELINE = Path(__file__).resolve().parents[1] / "static" / "versions" / "v4-before-call-iq-crawl-20260831-190857.html"
 
 
-def test_v4_restores_pre_redesign_visible_copy_and_order():
+def test_v5_restores_pre_redesign_visible_copy_and_order():
     html = HTML.read_text()
     baseline = BASELINE.read_text()
     # Baseline DOM/copy/section order stays intact.
@@ -38,11 +38,11 @@ def test_v4_restores_pre_redesign_visible_copy_and_order():
         assert forbidden not in html
 
 
-def test_v4_allows_only_color_font_version_and_functional_deltas_from_baseline():
+def test_v5_allows_only_color_font_version_and_functional_deltas_from_baseline():
     html = HTML.read_text()
     baseline = BASELINE.read_text()
-    assert "const RELEASE_VERSION = '4.0.0'" in html
-    assert "const RELEASE_VERSION = '5.0.0'" not in html
+    assert "const RELEASE_VERSION = '5.0.0'" in html
+    assert "const RELEASE_VERSION = '4.0.0'" not in html
     assert "const RELEASE_VERSION = '3.2.1'" not in html
     assert 'EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by' in html
     assert "@import url('https://fonts.googleapis.com/css2?family=Oswald" in html
@@ -54,6 +54,9 @@ def test_v4_allows_only_color_font_version_and_functional_deltas_from_baseline()
     assert "linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%)" in html
     assert "--color-purple: #7b2ff7" in html
     assert "--color-pink: #f107a3" in html
+    assert ".machine-band { padding:34px 20px 18px; background:#f7f6f3; color:#171719; }" in html
+    assert ".machine-band h2 { font-family:var(--font-heading); color:#171719; }" in html
+    assert "body[data-theme='light'] .footer a { color:#7b2ff7; }" in html
     assert 'calc(100vw - 36px)' in html
     assert 'padding:16px 12px 56px' in html
     assert 'calc(100vw - 48px)' in html
@@ -99,7 +102,7 @@ def test_upload_history_footer_contracts_remain():
     assert html.count("Coming Soon") >= 6
 
 
-def test_v4_progress_faq_and_upload_preservation_accessibility():
+def test_v5_progress_faq_and_upload_preservation_accessibility():
     html = HTML.read_text()
     assert 'id="status" class="status" role="status" aria-live="polite" aria-atomic="true"' in html
     for faq_id in ['faq-youtube-text', 'faq-download', 'faq-free', 'faq-transcript', 'faq-subtitles', 'faq-captions', 'faq-direct-download']:

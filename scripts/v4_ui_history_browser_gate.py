@@ -4,7 +4,7 @@ import json, os, subprocess, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'evidence' / 'v4-ui-history-browser-gate.json'
+OUT = ROOT / 'evidence' / 'v5-ui-history-browser-gate.json'
 BASE = os.environ.get('EPIC_TRANSCRIPT_URL', 'https://epic-transcript.robyncrane.com').rstrip('/')
 IMMUTABLE = os.environ.get('EPIC_TRANSCRIPT_IMMUTABLE', '')
 REGRESSION_URL = os.environ.get('EPIC_REGRESSION_URL', 'https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD')
@@ -47,14 +47,14 @@ async function main(){
   const ctx=await browser.newContext({viewport:{width:1440,height:1100}, acceptDownloads:true, permissions:['clipboard-read','clipboard-write']});
   const page=await ctx.newPage();
   page.on('request', req => { if(req.url().includes('/api/')) report.network.push(req.method()+' '+req.url()); });
-  await page.goto(base+'/?v4-ui-proof='+Date.now(), {waitUntil:'domcontentloaded', timeout:60000});
+  await page.goto(base+'/?v5-ui-proof='+Date.now(), {waitUntil:'domcontentloaded', timeout:60000});
   await page.evaluate(() => { localStorage.removeItem('epicTranscriptHistory'); localStorage.setItem('epicTranscriptTheme','dark'); document.body.dataset.theme='dark'; });
   report.checks.noLeakage = await page.evaluate(() => !/Call IQ|crawl|reference|design-version|call-iq/.test(document.documentElement.outerHTML));
   report.checks.footer = await page.locator('footer').innerText();
-  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v4.0.0 · Powered by epic.media';
-  report.screenshots.desktopDark = await screenshot(page,'v4-desktop-dark.png');
+  report.checks.footerOk = report.checks.footer === 'EPIC Transcript Machine · v5.0.0 · Powered by epic.media';
+  report.screenshots.desktopDark = await screenshot(page,'v5-desktop-dark.png');
   await page.click('#themeToggle');
-  report.screenshots.desktopLight = await screenshot(page,'v4-desktop-light.png');
+  report.screenshots.desktopLight = await screenshot(page,'v5-desktop-light.png');
   report.checks.lightTextColors = await page.evaluate(() => {
     const ids=['url','transcript','resultMethod'];
     return ids.map(id => { const el=document.getElementById(id); const cs=el?getComputedStyle(el):null; return {id, color:cs&&cs.color, background:cs&&cs.backgroundColor}; });
@@ -69,12 +69,12 @@ async function main(){
   await page.evaluate(() => { document.body.dataset.theme='dark'; });
   report.checks.mobileDarkMetrics = await page.evaluate(() => ({scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScrollWidth: document.body.scrollWidth}));
   report.checks.mobileOverflowDark = report.checks.mobileDarkMetrics.scrollWidth > report.checks.mobileDarkMetrics.clientWidth + 1;
-  report.screenshots.mobileDark = await screenshot(page,'v4-mobile-390-dark.png');
+  report.screenshots.mobileDark = await screenshot(page,'v5-mobile-390-dark.png');
   await page.click('#themeToggle');
   await page.waitForTimeout(250);
   report.checks.mobileLightMetrics = await page.evaluate(() => ({scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScrollWidth: document.body.scrollWidth}));
   report.checks.mobileOverflowLight = report.checks.mobileLightMetrics.scrollWidth > report.checks.mobileLightMetrics.clientWidth + 1;
-  report.screenshots.mobileLight = await screenshot(page,'v4-mobile-390-light.png');
+  report.screenshots.mobileLight = await screenshot(page,'v5-mobile-390-light.png');
   await page.setViewportSize({width:1440,height:1100});
   await page.fill('#url', regressionUrl);
   await page.click('#grab');
@@ -83,10 +83,10 @@ async function main(){
   await page.click('#copyBtn');
   const clip = await page.evaluate(async () => await navigator.clipboard.readText().catch(() => ''));
   report.checks.copyOk = clip && clip.slice(0,80) === transcriptState.transcript.slice(0,80);
-  report.downloads.push(await download(page,'#downloadBtn','v4-regression.txt'));
-  report.downloads.push(await download(page,'#downloadMdBtn','v4-regression.md'));
-  report.downloads.push(await download(page,'#downloadSrtBtn','v4-regression.srt'));
-  report.downloads.push(await download(page,'#downloadVttBtn','v4-regression.vtt'));
+  report.downloads.push(await download(page,'#downloadBtn','v5-regression.txt'));
+  report.downloads.push(await download(page,'#downloadMdBtn','v5-regression.md'));
+  report.downloads.push(await download(page,'#downloadSrtBtn','v5-regression.srt'));
+  report.downloads.push(await download(page,'#downloadVttBtn','v5-regression.vtt'));
   await page.click('#drawerHead');
   const histBefore=await page.evaluate(() => ({count:JSON.parse(localStorage.getItem('epicTranscriptHistory')||'[]').length, open:document.querySelector('#drawer').classList.contains('open')}));
   await page.reload({waitUntil:'domcontentloaded'});
@@ -104,7 +104,7 @@ async function main(){
   await page.click('.recent-item');
   await page.route('**/api/transcribe-upload', route => route.fulfill({status:503, contentType:'application/json', body:JSON.stringify({detail:'forced upload failure for preserve proof'})}));
   await page.evaluate(() => { const cb=document.querySelector('#browserLocal'); if(cb) cb.checked=false; });
-  const txt=path.join(evidenceDir,'v4-upload-failure.txt'); fs.writeFileSync(txt,'This upload intentionally fails to prove the prior transcript stays visible.');
+  const txt=path.join(evidenceDir,'v5-upload-failure.txt'); fs.writeFileSync(txt,'This upload intentionally fails to prove the prior transcript stays visible.');
   await page.setInputFiles('#file', txt);
   await page.waitForTimeout(2500);
   report.failurePreserve = await page.evaluate(() => ({visible:document.querySelector('#result')?.classList.contains('show')||false, transcript:document.querySelector('#transcript')?.textContent||'', status:document.querySelector('#statusText')?.textContent||''}));
@@ -122,7 +122,7 @@ main().catch(e=>{ console.error(e); process.exit(1); });
 '''
 
 def main():
-    js=Path(tempfile.gettempdir())/'v4_ui_history_browser_gate.js'
+    js=Path(tempfile.gettempdir())/'v5_ui_history_browser_gate.js'
     js.write_text(NODE)
     env=dict(os.environ); env['NODE_PATH']=str(ROOT/'node_modules')
     proc=subprocess.run(['node',str(js),BASE,IMMUTABLE,str(OUT),REGRESSION_URL],cwd=ROOT,env=env,text=True,capture_output=True,timeout=420)
