@@ -69,7 +69,7 @@ Run time: 2026-08-31 00:38 EDT.
 - Public release checker scripts now send a normal browser-style user agent so Cloudflare does not reject Python urllib checks with 1010.
 - Backend durability step: `com.epic.transcript-api` and `com.epic.transcript-tunnel` are loaded under launchd with KeepAlive.
 - Public Phase 1 health script now accepts a CLI base URL, and the public run passed regression plus manual-caption control.
-- Public Phase 1 matrix is 8 of 9 release-valid in the latest run. Regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable, and invalid_url pass. The selected non-English YouTube source now returns fast helpful HTTP 422 long-video/upload guidance instead of Cloudflare 524 after stale workers were cleared, but it is still not release-valid transcript evidence.
+- Public Phase 1 matrix is not release-clear. Regression, manual-caption control, invalid URL, privacy/history, service health, and public WAV upload pass. Genuine Shorts and two-hour/long-video currently return bounded helpful failures, which prevent hangs but are not release-valid passes. Non-English YouTube remains open until an uncached credible original-language transcript returns with correct language metadata.
 
 ### Additional Phase 1 cases
 Status: partially verified in production.
@@ -79,8 +79,8 @@ Status: partially verified in production.
 | Control video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words, language `en`. |
 | Manual-caption video | `https://youtu.be/dQw4w9WgXcQ` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 61 segments, 366 words. |
 | Automatic-caption video | `https://youtu.be/v34Eg12mhDM` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words. |
-| Non-English video | `https://youtu.be/kJQP7kiw5Fk` | FAIL, helpful failure but not release-valid transcript evidence | Latest public run returned fast HTTP 422 long-video/upload guidance instead of Cloudflare 524. Earlier public cache could return English subtitles, so this source is not valid non-English evidence. Needs a known-accessible under-2-minute original-language source or fallback coverage. |
-| Shorts URL | `https://www.youtube.com/shorts/SXHMnicI6Pg` | PASS | HTTP 200, `native-caption-automatic_captions`, cache hit, 2 segments, 3 words. Low word count but accepted for URL-shape handling only. |
+| Non-English video | `https://youtu.be/kJQP7kiw5Fk` and fresh French/Spanish candidates | OPEN / FAIL | Public candidates still return upload guidance, timeout, or YouTube blocking. Must prove at least one uncached credible non-English YouTube transcript with correct language metadata. |
+| Genuine Shorts URL | `https://www.youtube.com/shorts/1WW76Rz4nqM` | OPEN / FAIL | Bounded helpful HTTP 422 is better than a silent hang, but genuine Shorts transcript support is still required. Regression-ID-in-Shorts-form only proves URL normalization, not genuine Shorts support. |
 | Private/unavailable video | `https://www.youtube.com/watch?v=aaaaaaaaaaa` | PASS helpful failure | HTTP 422 with upload guidance. |
 | Invalid URL | `https://not-a-real.example/video` | PASS helpful failure | Public matrix returned HTTP 422 with upload guidance after API reload. |
 | Long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. |
@@ -186,3 +186,5 @@ Record for each run:
 Failure behavior:
 - If a provider fails, continue to the next provider.
 - If the complete pipeline fails, produce a clear alert and retain enough diagnostic information to reproduce it without exposing secrets.
+
+| Two-hour / long video | CS50 long fixture | OPEN / FAIL | Returns bounded helpful HTTP 422 instead of hanging. This is not release-valid long-video transcription support. |

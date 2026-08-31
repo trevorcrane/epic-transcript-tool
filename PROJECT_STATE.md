@@ -12,7 +12,7 @@ Status: In release verification.
 - Public no-login app: https://epic-transcript.robyncrane.com/
 - Core regression remains passing publicly with 1,460 segments and 15,744 words for `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
-- Release matrix remains 8 of 9 passing publicly. A fresh public run after clearing stale Whisper workers completed without Cloudflare 524s; the only non-passing item is still the selected non-English source, which now returns the intended helpful long-video/upload guidance instead of timing out.
+- Release matrix is not release-clear. Regression, invalid URL, privacy, service health, and public WAV upload now pass. Genuine Shorts support, two-hour/long-video transcription, and uncached non-English YouTube transcription remain open. Bounded helpful 422 responses prevent silent hangs, but they are not release-valid passes for supported Shorts/long-video requirements.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents.
 - Remaining Phase 1 release-gap is non-English YouTube evidence. The current Despacito candidate is not release-valid because public YouTube access is blocked/helpful-failure, and earlier cache evidence could return English subtitles.
 
@@ -73,7 +73,7 @@ Prior full regression evidence:
 - Public root: HTTP 200, expected app markers present.
 - Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Public Phase 1 health script now correctly accepts a CLI base URL and passed against `https://epic-transcript.robyncrane.com` for regression and manual-caption control.
-- Public Phase 1 matrix run from 2026-08-31 00:38 EDT: 8 of 9 cases are release-valid. Regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable, and invalid_url passed. Non-English returned helpful HTTP 422 long-video/upload guidance and remains the only release-gap.
+- Public Phase 1 matrix correction from 2026-08-31: regression, manual-caption control, invalid URL, privacy/history, service health, and public WAV upload pass. Genuine Shorts and two-hour/long-video are bounded helpful failures, not release-valid passes. Non-English YouTube remains a required open gate until one uncached credible original-language transcript returns with correct language metadata.
 - Public Phase 2 upload smoke from 2026-08-31 00:38 EDT: after clearing stale orphan Whisper workers, generated WAV, MP3, and MP4 fixtures all returned HTTP 200 through `local-whisper` with credible nonempty transcript text.
 - New reusable public Phase 2 upload smoke script added at `scripts/phase2_upload_smoke.py`.
 - New targeted regression tests for launchd/minimal-PATH binary resolution passed.
@@ -93,4 +93,4 @@ Prior full regression evidence:
 None requiring Trevor right now.
 
 ## Exact next action
-Continue closing the final Phase 1 non-English YouTube evidence gap with a known-accessible under-2-minute captioned source. If public YouTube continues blocking candidates, document non-English YouTube as a helpful-failure gate for v1 and move the release gate to Phase 2 non-English upload evidence plus the full upload/media matrix.
+Continue closing Phase 1 YouTube gaps with public evidence: one uncached credible non-English YouTube transcript with correct language metadata, genuine Shorts transcript support, and the long-video path. Do not mark Shorts or long-video as passed when they only return bounded helpful 422 responses.
