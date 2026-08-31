@@ -612,7 +612,10 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
         segs = parse_whisper_stdout_segments(proc.stdout)
     shutil.rmtree(out_dir, ignore_errors=True)
     if not segs:
-        raise RuntimeError("Local Whisper transcript came back empty")
+        file_info = ", ".join(f"{f.name}:{f.stat().st_size}" for f in files[:3]) if files else "no transcript files"
+        stdout_hint = (proc.stdout or "").strip().replace("\n", " ")[:180]
+        stderr_hint = (proc.stderr or "").strip().replace("\n", " ")[:180]
+        raise RuntimeError(f"Local Whisper transcript came back empty ({file_info}; stdout={stdout_hint!r}; stderr={stderr_hint!r})")
     detected_lang = detected_whisper_language(proc.stdout, proc.stderr)
     return segs, language or detected_lang or "unknown"
 
