@@ -374,7 +374,7 @@
     fd.append('url', url);
     fd.append('owner', ownerToken());
     setStatus('Preparing transcript job...');
-    const started = await jfetch('/api/transcribe-url-job', { method: 'POST', body: fd });
+    const started = await jfetch('/api/transcribe-url-job', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd });
     const jobId = started && started.job && started.job.id;
     if (!jobId) throw new Error('Transcript job did not return an ID.');
 
