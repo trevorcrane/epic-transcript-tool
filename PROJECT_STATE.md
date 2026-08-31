@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 05:56 EDT
+Updated: 2026-08-31 06:32 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -29,12 +29,12 @@ Status: Advanced, not release-complete.
 - Fresh 30+ minute public upload proof from 2026-08-31 04:42 EDT: generated 31-minute MP3, 7,448,625 bytes, returned HTTP 200 in 54.50s through `local-whisper`, language `en`, cache miss, duration `1862.0` seconds, 3 segments, 34 words. Credible transcript begins `Epic transcript machine long upload proof...` and includes text at `[31:00]`.
 
 ### Version 3 / Phase 3: Video intelligence
-Status: Started publicly, not release-complete.
+Status: Advanced publicly, not release-complete.
 - Added the first provider-safe Phase 3 backend: `/api/analyze/{transcript_id}` now produces timestamp-cited executive summary, action items, chapters, quotes, FAQ, sales insights, Trevor-use, starter content-asset maps, and question-answer outputs without paid providers or hiding the original transcript.
 - Added `/api/analysis/{analysis_id}/download` so generated analysis can be downloaded as Markdown.
-- Wired the public UI with `AI Summary`, `Action Items`, and `Download Analysis` controls in the transcript workspace.
-- Fresh public proof from 2026-08-31 05:56 EDT: root HTML served the AI controls, Rick Astley cached transcript returned HTTP 200 with 366 words, `/api/analyze/{id}` returned HTTP 200 with 661 characters, `AI-generated` disclaimer, and timestamp evidence, and the analysis Markdown download returned HTTP 200 with 661 bytes.
-- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected, add all output buttons to the UI, add ask-a-question UI, and run mobile/browser interaction proof.
+- Expanded the public UI from two starter buttons to the full starter intelligence menu: `All Outputs`, 16 individual output choices, ask-a-question input, `Ask`, and `Download Analysis` controls in the transcript workspace.
+- Fresh public proof from 2026-08-31 06:32 EDT: root HTML served the new Phase 3 UI markers (`All Outputs`, `analysisMenu`, `content_assets_100`, ask-a-question input, `/api/analyze/`); `/api/analysis-outputs` returned 17 output definitions; Rick Astley cached transcript returned HTTP 200 with 366 words; all 17 public analysis calls returned HTTP 200 with `AI-generated` disclaimer and transcript evidence, including `ask_question` with a Trevor-specific question.
+- Remaining Phase 3 work: turn the deterministic starter into fuller AI/provider-backed long-transcript intelligence once a free/no-surprise provider path is selected, add copy/download proof for combined outputs, and run mobile/browser interaction proof once Chrome remote-debug permission is cleared.
 
 ## Completed work
 - Located active local project at `/Users/tc-imac/.openclaw/workspace/epic-transcript-tool`.
@@ -59,7 +59,7 @@ Status: Started publicly, not release-complete.
 - Added and publicly verified `scripts/phase2_non_english_upload_smoke.py` for non-English uploaded recording release evidence.
 - Added upload media-duration detection with `ffprobe`, covered by `test_upload_records_media_duration_for_long_recordings`, then publicly verified `scripts/phase2_long_upload_smoke.py` against a generated 31-minute MP3 recording.
 - Added `test_non_youtube_media_url_falls_back_to_local_whisper` and reusable `scripts/phase2_public_url_smoke.py`; public proof now covers a no-login hosted MP3 URL at `/static/phase2-public-url.mp3` through `/api/transcribe-url` with local Whisper and no paid provider.
-- Added Phase 3 starter implementation: `ANALYSIS_OUTPUTS`, `/api/analyze/{transcript_id}`, `/api/analysis/{analysis_id}/download`, active `tests/test_phase3.py`, and public UI buttons for AI Summary, Action Items, and Download Analysis.
+- Added Phase 3 starter implementation: `ANALYSIS_OUTPUTS`, `/api/analyze/{transcript_id}`, `/api/analysis/{analysis_id}/download`, active `tests/test_phase3.py`, and public UI buttons for AI Summary, Action Items, All Outputs, the full output menu, ask-a-question, and Download Analysis.
 
 ## Latest production regression evidence
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
@@ -85,11 +85,12 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
-- `./.venv/bin/python -m pytest -q`: passed, 39 tests on 2026-08-31 05:56 EDT.
-- Static inline browser script check: `node --check` passed for 1 script block on 2026-08-31 05:56 EDT.
-- Public root: HTTP 200, expected app markers present, including new Phase 3 `AI Summary` and `/api/analyze/` markers.
+- `./.venv/bin/python -m pytest -q`: passed, 39 tests on 2026-08-31 06:32 EDT.
+- Static inline browser script check: `node --check` passed for 1 script block on 2026-08-31 06:32 EDT.
+- Public root: HTTP 200, expected app markers present, including new Phase 3 `All Outputs`, `analysisMenu`, `content_assets_100`, ask-a-question, and `/api/analyze/` markers.
 - Public health: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
-- Public Phase 3 starter proof from 2026-08-31 05:56 EDT: cached control transcript `dQw4w9WgXcQ` returned HTTP 200, method `native-caption-subtitles`, 366 words, then `/api/analyze/{id}` returned HTTP 200 for `executive_summary` with 661 characters, an `AI-generated` disclaimer, timestamp evidence, and Markdown download HTTP 200 with 661 bytes.
+- Public Phase 3 full starter menu proof from 2026-08-31 06:32 EDT: cached control transcript `dQw4w9WgXcQ` returned HTTP 200, record `2f2b61d2ccf6`, method `native-caption-subtitles`, 366 words, cache hit. `/api/analysis-outputs` returned 17 outputs. All 17 `/api/analyze/{id}` calls returned HTTP 200 with useful nonempty text, `AI-generated` disclaimer, and transcript evidence; `ask_question` passed with question `What should Trevor do with this video?`.
+- Browser visual/DOM check remains blocked by macOS Chrome's `Allow remote debugging?` permission prompt; browser harness retry at 2026-08-31 06:32 EDT reproduced the same permission blocker.
 - Public Phase 2 supported URL smoke from 2026-08-31 05:17 EDT: public fixture `https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3` returned HTTP 206 byte-range, `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 8.93s, method `local-whisper`, source_kind `url`, cache miss, language `en`, 2 segments, 18 words, credible transcript beginning `Epic transcript machine phase 2 public URL test...`, and provider trail showed captions failed then local Whisper succeeded.
 - Public Phase 1 health script now correctly accepts a CLI base URL and passed against `https://epic-transcript.robyncrane.com` for regression and manual-caption control.
 - Public Phase 1 matrix from 2026-08-31 02:16 EDT: all 9 bounded scripted cases passed against `https://epic-transcript.robyncrane.com`, including the new French non-English fixture, genuine Shorts URL, moderate long-video cached transcript, and helpful 422 failures for private/unavailable plus invalid URL.
@@ -117,7 +118,7 @@ Prior full regression evidence:
 - Browser copy/touch-flow evidence is blocked by macOS Chrome's `Allow remote debugging?` permission prompt for the browser harness. API and scripted public checks are not blocked; a retry at 2026-08-31 03:30 EDT reproduced the same permission blocker.
 
 ## Exact next action
-Expand the Phase 3 public UI from two starter buttons to the full output menu plus ask-a-question input, then add a public scripted browser/DOM interaction proof once Chrome remote-debug permission is available. Keep Phase 2 cleanup/retention evidence next in queue.
+Add copy/download proof for the expanded Phase 3 outputs and continue Phase 2 cleanup/retention evidence. Retry browser DOM/touch-flow proof only after the macOS Chrome `Allow remote debugging?` prompt is approved.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.

@@ -157,6 +157,13 @@
   .analysis-panel { display:none; margin:0 24px 24px; border:1px solid rgba(123,47,247,.14); border-radius:20px; overflow:hidden; background:#fff; }
   .analysis-panel.show { display:block; }
   .analysis-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; color:var(--color-purple); background:rgba(123,47,247,.06); font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+  .analysis-tools { display:grid; gap:12px; padding:16px; border-bottom:1px solid rgba(123,47,247,.10); background:#fff; }
+  .analysis-menu { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
+  .analysis-choice { min-height:38px; padding:8px 10px; border:1px solid rgba(0,0,0,.09); border-radius:11px; background:#fbfaf8; color:var(--color-text-dark); font-size:12px; font-weight:800; cursor:pointer; text-align:left; }
+  .analysis-choice:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.09); }
+  .analysis-choice:disabled { opacity:.55; cursor:not-allowed; }
+  .question-row { display:flex; gap:8px; }
+  .question-row input { flex:1; min-width:0; height:42px; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:0 12px; color:var(--color-text-dark); }
   .analysis-box { margin:0; padding:18px; white-space:pre-wrap; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.75; max-height:420px; overflow:auto; }
   .support-grid { max-width:var(--page-max); margin:72px auto 0; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
   .mini-card { background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:22px; padding:22px; box-shadow:var(--shadow-card); }
@@ -197,6 +204,8 @@
     .result-head { flex-direction:column; }
     .result-meta .source { max-width:100%; white-space:normal; font-size:20px; }
     .support-grid { grid-template-columns:1fr; margin-top:40px; }
+    .analysis-menu { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .question-row { flex-direction:column; }
     .drawer { width:calc(100vw - 24px); right:12px; bottom:12px; }
   }
   @media (max-width: 420px) {
@@ -289,11 +298,19 @@
           <button class="btn" id="downloadSrtBtn" type="button">SRT</button>
           <button class="btn ai" id="summaryBtn" type="button">AI Summary</button>
           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
+          <button class="btn ai" id="allAnalysisBtn" type="button">All Outputs</button>
           <button class="btn" id="analysisDownloadBtn" type="button" disabled>Download Analysis</button>
           <button class="btn" id="emailBtn" type="button">Email to Me</button>
         </div>
         <div class="analysis-panel" id="analysisPanel" aria-live="polite">
           <div class="analysis-head"><span id="analysisTitle">Video intelligence</span></div>
+          <div class="analysis-tools">
+            <div class="analysis-menu" id="analysisMenu" aria-label="Video intelligence outputs"></div>
+            <div class="question-row">
+              <input id="questionInput" type="text" placeholder="Ask a question about this transcript" />
+              <button class="btn ai" id="askBtn" type="button">Ask</button>
+            </div>
+          </div>
           <pre class="analysis-box" id="analysisBox"></pre>
         </div>
       </div>
@@ -347,13 +364,20 @@
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
     copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), emailBtn: $('emailBtn'),
-    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisBox: $('analysisBox'),
+    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'),
     banner: $('banner'),
   };
   let currentRecord = null;
   let currentAnalysis = null;
+  const analysisOutputs = [
+    ['executive_summary', 'Executive summary'], ['main_ideas', 'Main ideas'], ['action_items', 'Action items'], ['chapters', 'Chapters'],
+    ['best_quotes', 'Best quotes'], ['stories_examples', 'Stories and examples'], ['content_framework', 'Content framework'], ['blog_post', 'Blog post'],
+    ['newsletter', 'Newsletter'], ['social_posts', 'Social posts'], ['short_form_hooks', 'Short-form hooks'], ['faq', 'FAQ'],
+    ['sales_insights', 'Sales insights'], ['objections_answers', 'Objections and answers'], ['trevor_use', 'How Trevor can use this'],
+    ['content_assets_100', 'Create 100 content assets']
+  ];
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   function ownerToken() {
     let token = localStorage.getItem(OWNER_KEY);
@@ -569,14 +593,20 @@
   els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
   els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'));
 
-  async function analyzeCurrent(outputType, label) {
+  function setAnalysisControlsDisabled(disabled) {
+    [els.summaryBtn, els.actionsBtn, els.allAnalysisBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });
+    els.analysisMenu.querySelectorAll('button').forEach(btn => { btn.disabled = disabled; });
+  }
+
+  async function analyzeCurrent(outputType, label, question) {
     if (!currentRecord) return;
-    const btns = [els.summaryBtn, els.actionsBtn];
-    btns.forEach(btn => btn.disabled = true);
+    setAnalysisControlsDisabled(true);
+    els.analysisPanel.classList.add('show');
     setStatus('Creating ' + label.toLowerCase() + '...', '');
     try {
       const fd = new URLSearchParams();
       fd.append('output_type', outputType);
+      if (question) fd.append('question', question);
       const data = await jfetch('/api/analyze/' + currentRecord.id, { method: 'POST', headers: ownerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), body: fd });
       currentAnalysis = data;
       els.analysisTitle.textContent = label;
@@ -588,11 +618,57 @@
     } catch (e) {
       setStatus('Analysis error: ' + e.message, 'error');
     } finally {
-      btns.forEach(btn => btn.disabled = false);
+      setAnalysisControlsDisabled(false);
+    }
+  }
+  function renderAnalysisMenu() {
+    els.analysisMenu.innerHTML = '';
+    analysisOutputs.forEach(([id, label]) => {
+      const btn = document.createElement('button');
+      btn.className = 'analysis-choice';
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.addEventListener('click', () => analyzeCurrent(id, label));
+      els.analysisMenu.appendChild(btn);
+    });
+  }
+  async function runAllStarterOutputs() {
+    if (!currentRecord) return;
+    setAnalysisControlsDisabled(true);
+    els.analysisPanel.classList.add('show');
+    els.analysisTitle.textContent = 'All video intelligence outputs';
+    els.analysisBox.textContent = 'Creating all outputs...';
+    const parts = [];
+    try {
+      for (const [id, label] of analysisOutputs) {
+        setStatus('Creating ' + label.toLowerCase() + '...', '');
+        const fd = new URLSearchParams();
+        fd.append('output_type', id);
+        const data = await jfetch('/api/analyze/' + currentRecord.id, { method: 'POST', headers: ownerHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }), body: fd });
+        parts.push(data.analysis || '');
+        currentAnalysis = data;
+        els.analysisBox.textContent = parts.join('\n\n---\n\n');
+        els.analysisDownloadBtn.disabled = !data.analysis_id;
+      }
+      setStatus('All outputs ready', 'done');
+      setTimeout(clearStatus, 1200);
+    } catch (e) {
+      setStatus('Analysis error: ' + e.message, 'error');
+    } finally {
+      setAnalysisControlsDisabled(false);
     }
   }
   els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'AI Summary'));
   els.actionsBtn.addEventListener('click', () => analyzeCurrent('action_items', 'Action Items'));
+  els.allAnalysisBtn.addEventListener('click', runAllStarterOutputs);
+  els.askBtn.addEventListener('click', () => {
+    const q = els.questionInput.value.trim();
+    if (!q) { els.questionInput.focus(); return; }
+    analyzeCurrent('ask_question', 'Ask the video', q);
+  });
+  els.questionInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); els.askBtn.click(); }
+  });
   els.analysisDownloadBtn.addEventListener('click', () => {
     if (currentAnalysis && currentAnalysis.analysis_id) {
       window.location.href = apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download');
@@ -685,6 +761,7 @@
     } catch (e) { /* ignore */ }
   }
 
+  renderAnalysisMenu();
   loadSetup();
   loadRecent();
 })();
