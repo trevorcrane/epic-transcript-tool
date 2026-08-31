@@ -133,17 +133,17 @@ require("login" not in root.url.lower(), f"root redirected to {root.url}")
 
 parser = PublicHtmlParser()
 parser.feed(root.text)
-required_ids = ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "toast", "status", "statusText"]
+required_ids = ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "toast", "status", "statusText"]
 missing_ids = [item for item in required_ids if item not in parser.ids]
 report["dom"] = {
     "missing_ids": missing_ids,
-    "button_text": {k: parser.buttons.get(k) for k in ["grab", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn"]},
+    "button_text": {k: parser.buttons.get(k) for k in ["grab", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn"]},
     "url_input": parser.inputs.get("url"),
     "file_input_accept": (parser.inputs.get("file") or {}).get("accept"),
     "drop_label_text": parser.labels.get("drop"),
 }
 require(not missing_ids, f"missing DOM IDs: {missing_ids}")
-require(parser.buttons.get("grab") == "Get Video Transcript", "primary button text changed")
+require(parser.buttons.get("grab") == "Get Transcript", "primary button text changed")
 require(parser.inputs.get("url", {}).get("type") == "url", "URL input is not type=url")
 require(parser.inputs.get("url", {}).get("inputmode") == "url", "URL input lacks mobile url inputmode")
 for fmt in [".mp4", ".mov", ".webm", ".mp3", ".m4a", ".wav", ".txt", ".md", ".srt", ".vtt"]:
@@ -158,6 +158,7 @@ script_contracts = {
     "txt_download_click": "els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'))" in root.text,
     "md_download_click": "els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'))" in root.text,
     "srt_download_click": "els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'))" in root.text,
+    "vtt_download_click": "els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'))" in root.text,
     "download_link_api": "/api/transcripts/' + currentRecord.id + '/download-link?format=" in root.text,
     "touch_drop_click": "els.drop.addEventListener('click'" in root.text and "els.file.click()" in root.text,
 }
@@ -225,7 +226,7 @@ report["copy_contract"] = {
 }
 
 report["downloads"] = {}
-for fmt, min_bytes in {"txt": 500, "md": 600, "srt": 500}.items():
+for fmt, min_bytes in {"txt": 500, "md": 600, "srt": 500, "vtt": 500}.items():
     dl_start = request_post(
         f"/api/transcripts/{record['id']}/download-link?format={fmt}",
         owner=effective_owner,

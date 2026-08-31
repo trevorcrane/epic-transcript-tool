@@ -2,8 +2,8 @@
 """Phase 2 public release-gate smoke checks.
 
 Covers the pieces that are easy to regress outside the generated-media smoke:
-exact supported upload formats in public UX copy, helpful unsupported file/URL
-failures, no paid-provider requirement, and public delete/readback cleanup.
+supported upload formats in the public file accept contract, helpful unsupported
+file/URL failures, no paid-provider requirement, and public delete/readback cleanup.
 """
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "http://localhost:8090"
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "evidence" / "phase2-release-gate-report.json"
 SUPPORTED_EXTS = [".aac", ".avi", ".flac", ".m4a", ".md", ".mkv", ".mov", ".mp3", ".mp4", ".ogg", ".opus", ".srt", ".txt", ".vtt", ".wav", ".webm"]
-SUPPORTED_LABELS = ["AAC", "AVI", "FLAC", "M4A", "MD", "MKV", "MOV", "MP3", "MP4", "OGG", "OPUS", "SRT", "TXT", "VTT", "WAV", "WebM"]
 OWNER = "phase2-gate-" + secrets.token_urlsafe(24).replace("-", "_")
 UA = "Mozilla/5.0 EpicTranscriptPhase2Gate/1.0"
 
@@ -39,16 +38,14 @@ def check_root() -> dict:
     proc = curl([BASE + "/", "-w", "\n%{http_code}\n"])
     body, status = split_body_status(proc.stdout)
     missing_exts = [ext for ext in SUPPORTED_EXTS if ext not in body]
-    missing_labels = [label for label in SUPPORTED_LABELS if label not in body]
     markers = ["public media URL", "upload", "TXT", "Markdown", "SRT", "VTT"]
     missing_markers = [m for m in markers if m not in body]
     return {
         "http_status": status,
         "bytes": len(body.encode()),
         "missing_exts": missing_exts,
-        "missing_labels": missing_labels,
         "missing_markers": missing_markers,
-        "ok": status == 200 and not missing_exts and not missing_labels and not missing_markers,
+        "ok": status == 200 and not missing_exts and not missing_markers,
     }
 
 

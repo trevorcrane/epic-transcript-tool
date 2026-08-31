@@ -93,7 +93,7 @@ report["missing_ids"] = missing_ids
 require(not missing_ids, f"missing public UI ids: {missing_ids}")
 
 expected_button_text = {
-    "grab": "Get Video Transcript",
+    "grab": "Get Transcript",
     "allAnalysisBtn": "All Outputs",
     "analysisCopyBtn": "Copy Analysis",
     "analysisDownloadBtn": "Download Analysis",

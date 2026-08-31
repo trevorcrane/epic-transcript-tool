@@ -6,7 +6,7 @@
       "w": 1440,
       "h": 950,
       "bodyW": 1440,
-      "bodyH": 2517,
+      "bodyH": 2343,
       "hasAsync": true,
       "hasJobPoll": true,
       "oldSync": false
@@ -35,49 +35,49 @@
         "url": {
           "visible": true,
           "left": 281,
-          "top": 409.359375,
-          "width": 660.1796875,
+          "top": 415.359375,
+          "width": 706.1015625,
           "height": 58
         },
         "grab": {
           "visible": true,
-          "left": 951.1796875,
-          "top": 409.359375,
-          "width": 207.8203125,
+          "left": 997.1015625,
+          "top": 415.359375,
+          "width": 161.8984375,
           "height": 58
         },
         "drop": {
           "visible": true,
           "left": 281,
-          "top": 518.359375,
+          "top": 524.359375,
           "width": 878,
-          "height": 78.5
+          "height": 62
         },
         "copyBtn": {
           "visible": true,
           "left": 185,
-          "top": 2135.046875,
+          "top": 1960.859375,
           "width": 72.8828125,
           "height": 40
         },
         "downloadBtn": {
           "visible": true,
           "left": 267.8828125,
-          "top": 2135.046875,
+          "top": 1960.859375,
           "width": 62,
           "height": 40
         },
         "downloadMdBtn": {
           "visible": true,
           "left": 339.8828125,
-          "top": 2135.046875,
+          "top": 1960.859375,
           "width": 121.3828125,
           "height": 40
         },
         "downloadSrtBtn": {
           "visible": true,
           "left": 471.265625,
-          "top": 2135.046875,
+          "top": 1960.859375,
           "width": 60.7109375,
           "height": 40
         }
@@ -87,7 +87,7 @@
       "https://epic-transcript.robyncrane.com/api/setup",
       "https://epic-transcript.robyncrane.com/api/recent?limit=20",
       "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
-      "https://epic-transcript.robyncrane.com/api/jobs/759507de1f74"
+      "https://epic-transcript.robyncrane.com/api/jobs/30b55e784e79"
     ],
     "screenshots": {
       "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/desktop-initial.png",
@@ -101,7 +101,7 @@
       "w": 390,
       "h": 844,
       "bodyW": 390,
-      "bodyH": 3308,
+      "bodyH": 2829,
       "hasAsync": true,
       "hasJobPoll": true,
       "oldSync": false
@@ -146,33 +146,33 @@
           "left": 23,
           "top": 531.953125,
           "width": 344,
-          "height": 115
+          "height": 60
         },
         "copyBtn": {
           "visible": true,
           "left": 37,
-          "top": 2901.5703125,
+          "top": 2422.3515625,
           "width": 72.8828125,
           "height": 40
         },
         "downloadBtn": {
           "visible": true,
           "left": 119.8828125,
-          "top": 2901.5703125,
+          "top": 2422.3515625,
           "width": 62,
           "height": 40
         },
         "downloadMdBtn": {
           "visible": true,
           "left": 191.8828125,
-          "top": 2901.5703125,
+          "top": 2422.3515625,
           "width": 121.3828125,
           "height": 40
         },
         "downloadSrtBtn": {
           "visible": true,
           "left": 37,
-          "top": 2951.5703125,
+          "top": 2472.3515625,
           "width": 60.7109375,
           "height": 40
         }
@@ -182,12 +182,12 @@
       "https://epic-transcript.robyncrane.com/api/setup",
       "https://epic-transcript.robyncrane.com/api/recent?limit=20",
       "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
-      "https://epic-transcript.robyncrane.com/api/jobs/050cf827718e"
+      "https://epic-transcript.robyncrane.com/api/jobs/2637c312544d"
     ],
     "screenshots": {
       "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-initial.png",
       "result": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-result.png"
     }
   },
-  "generatedAt": "2026-08-31T16:00:56.732Z"
+  "generatedAt": "2026-08-31T16:23:13.325Z"
 }

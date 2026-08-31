@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 11:58 EDT
+Updated: 2026-08-31 12:19 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -198,7 +198,7 @@ Prior full regression evidence:
 - Phase 1 public product proof is no longer blocked. New browser sessions may still need the macOS Chrome remote-debug prompt approved, but release-critical proof has a prior direct Chrome pass plus the no-Chrome UI contract harness.
 
 ## Exact next action
-Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover. In parallel, run a real-browser execution proof for the new browser-only Whisper fallback so Phase 2 has both server-upload and on-device fallback evidence.
+Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover. In parallel, run independent browser/local-file UX QC if the browser-only Whisper fallback is reintroduced; the current corrected public UI intentionally removed the browser-only fallback clutter and relies on the proven server upload route.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
@@ -246,3 +246,11 @@ Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk pe
 - Lane 3 moved: deterministic analysis outputs are no longer thin repeated templates. `content_assets_100` now returns 100 numbered timestamp-grounded assets across hooks, short posts, email subjects, newsletters, reel scripts, carousel slides, quote cards, CTAs, objection replies, and repurpose prompts. The old `starter map` release-fail language is removed.
 - Lane 3 public proof: `scripts/phase3_all_outputs_smoke.py` returned OK with 17/17 outputs; `content_assets_100` returned 14,709 chars, timestamp evidence, disclaimer, copy-ready output. Direct public check returned exactly 100 numbered assets and `starter_map_present=false`. Long transcript analysis smoke passed on the two-hour record with 46,253 combined chars, 16 outputs, latest timestamp 7,242 seconds, Markdown download HTTP 200.
 - Current limitation: browser-local Whisper fallback is implemented and disclosed with WebGPU/WASM code markers. Full real browser-local model transcription still needs independent QC on a local file because the Chrome permission sheet still remains visible to Browser Use, although direct CDP proof is working on port 18800.
+
+### 2026-08-31 12:19 EDT VTT/download and visual correction sprint
+- PASS: VTT transcript downloads are now covered in public proof. Phase 1 DOM/click/mobile/a11y smoke verified the public root HTTP 200, `Get Transcript`, `Choose file`, `downloadVttBtn`, VTT click wiring, and signed VTT download HTTP 200 / 1,194 bytes for Shorts record `68a1105cf6d5`.
+- PASS: Phase 2 upload smoke now verifies VTT in addition to TXT, Markdown, and SRT. Public WAV/MP3/M4A/MP4/MOV/WebM uploads all returned HTTP 200 through `local-whisper`; repeat WAV returned `cache_hit=true`; VTT download returned HTTP 200 / 190 bytes with `WEBVTT` marker.
+- PASS: Phase 2 release-gate smoke was updated for the corrected minimal upload UI. Public root returned HTTP 200 with all supported extensions in the file accept contract, TXT/Markdown/SRT/VTT markers present, `/health` ready true with required `missing: []`, unsupported `.exe` helpful HTTP 400, unsupported URL helpful HTTP 422, and delete cleanup readback returned transcript/analysis HTTP 404 for record `46a97a716a50` / analysis `b2372631aed6`.
+- PASS: Phase 3 UI contract smoke was updated for the new `Get Transcript` button label and passed publicly. Rick Astley cached transcript returned 366 words / 61 segments; combined analysis returned 16 outputs / 31,087 chars; Markdown download returned HTTP 200 / 33,103 bytes; ask-question returned 958 chars.
+- PASS: Public production root, stable Netlify review, and immutable Netlify deploy `https://6a95aa18ce55f098dbd49568--epic-transcript-machine-review.netlify.app/` returned HTTP 200 with `Free Video Transcript`, `Machine`, `Get Transcript`, `Choose file`, `downloadVttBtn`, `TXT / MD / SRT / VTT`, theme icons, async job wiring, and analysis wiring. Old `Get Video Transcript`, `FAST · FREE · V3`, and hero phase cards are absent per the corrected visual gate.
+- PASS: Automated suite returned `53 passed in 6.64s`; inline static JavaScript syntax check returned exit 0.

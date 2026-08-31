@@ -89,7 +89,7 @@ def upload(path: Path, label: str | None = None) -> dict:
 
 def verify_downloads(record_id: str) -> list[dict]:
     checks: list[dict] = []
-    for fmt, marker in [("txt", "Epic transcript"), ("md", "# phase2"), ("srt", "00:00:")]:
+    for fmt, marker in [("txt", "Epic transcript"), ("md", "# phase2"), ("srt", "00:00:"), ("vtt", "WEBVTT")]:
         link_cmd = [
             "curl", "-sS", "-L", "-X", "POST", f"{BASE}/api/transcripts/{record_id}/download-link?format={fmt}",
             "-H", f"X-Transcript-Owner: {OWNER}", "-w", "\n%{http_code}\n",

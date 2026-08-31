@@ -62,6 +62,15 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 12:19 EDT.
+
+- VTT download support: PASS. Public Phase 1 DOM/click/mobile/a11y smoke verified `downloadVttBtn`, VTT click wiring, and signed VTT download HTTP 200 / 1,194 bytes for Shorts record `68a1105cf6d5`.
+- Phase 2 upload/download smoke: PASS. Public WAV/MP3/M4A/MP4/MOV/WebM uploads returned HTTP 200 through `local-whisper`; repeat WAV returned `cache_hit=true`; TXT/Markdown/SRT/VTT downloads returned HTTP 200, with VTT 190 bytes and `WEBVTT` marker.
+- Phase 2 release smoke: PASS. Public root returned HTTP 200 with all supported extensions in the file accept contract and TXT/Markdown/SRT/VTT markers; `/health` returned ready true with required `missing: []`; unsupported `.exe` returned helpful HTTP 400; unsupported URL returned helpful HTTP 422; delete cleanup readback returned transcript/analysis HTTP 404 for record `46a97a716a50` / analysis `b2372631aed6`.
+- Phase 3 UI contract: PASS. Public root returned HTTP 200 with `Get Transcript`; Rick Astley cached transcript returned 366 words / 61 segments; combined analysis returned 16 outputs / 31,087 chars; Markdown download returned HTTP 200 / 33,103 bytes; ask-question returned 958 chars.
+- Visual correction deploy: PASS. Public production root, stable Netlify review URL, and immutable Netlify deploy `https://6a95aa18ce55f098dbd49568--epic-transcript-machine-review.netlify.app/` returned HTTP 200 with `Free Video Transcript`, `Machine`, `Get Transcript`, `Choose file`, `downloadVttBtn`, `TXT / MD / SRT / VTT`, theme icons, async job wiring, and analysis wiring. Old `Get Video Transcript`, `FAST · FREE · V3`, and hero phase cards are absent.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 53 passed. Inline JavaScript syntax check returned exit 0.
+
 Run time: 2026-08-31 11:58 EDT.
 
 - Phase 2 browser-only fallback: PASS deployed and disclosed. Public production root, stable Netlify review, and immutable Netlify deploy `6a95a49d4bcd595e06c116e6` returned HTTP 200 / 51,917 bytes with `browserLocal`, `Browser-only fallback`, `File stays on this device`, `WebGPU when available`, `WASM when WebGPU is not available`, `browser-whisper-webgpu`, `browser-whisper-wasm`, and `Xenova/whisper-tiny.en` markers.
