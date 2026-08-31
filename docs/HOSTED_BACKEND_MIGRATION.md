@@ -49,6 +49,30 @@ PY
 
 - On Docker Desktop, avoid using `/tmp/...` as the seed path for bind-mount proof. A repo-local or real host volume path exposed the expected SQLite file reliably.
 
+## Seed package for first staging host
+
+Build the cache seed package before any no-DNS-cutover hosted staging attempt:
+
+```bash
+./.venv/bin/python scripts/hosted_staging_pack.py --out evidence/hosted-staging-seed.tar.gz
+```
+
+The command writes `evidence/hosted-staging-seed.tar.gz` with:
+
+- `transcripts.db` copied from the current production cache.
+- `manifest.json` containing database size, SHA-256 checksum, transcript count, and counts for the required Phase 1 cached media IDs.
+- verification commands for the hosted container plus Phase 1, Phase 2, and Phase 3 smoke tests.
+
+Current package evidence from 2026-08-31 13:06 EDT:
+
+- Package: `evidence/hosted-staging-seed.tar.gz`.
+- Source DB: `data/transcripts.db`.
+- DB size: 25,718,784 bytes.
+- Package size: 4,412,918 bytes.
+- SHA-256: `d04607cef60c26f79eb2b52a5c076b51b476269d56ebe3cba5e9df8f7ceb5915`.
+- Transcript rows: 339.
+- Required cached media present: `v34Eg12mhDM` 87 rows, `dQw4w9WgXcQ` 72 rows, `SXHMnicI6Pg` 15 rows, `aircAruvnKk` 15 rows.
+
 ## Cutover checklist
 
 1. Build container locally: `docker build -t epic-transcript-machine .`
@@ -67,3 +91,4 @@ PY
 - `Dockerfile` is present as the first hosted-backend spike. It installs ffmpeg, Python dependencies, and local Whisper, exposes port 8090, and defines `/data` as the persistent volume.
 - Automated coverage includes `test_hosted_backend_can_move_runtime_data_dir_without_code_changes` to prove the hosted data path contract initializes SQLite outside the repo.
 - Seeded local Docker validation passed on 2026-08-31: `/health`, Phase 1 async matrix, Phase 2 upload/download smoke, and Phase 3 UI contract all passed against `127.0.0.1:8091` when `/data` was seeded from the current SQLite cache.
+- Staging cache packaging passed on 2026-08-31 13:06 EDT. `scripts/hosted_staging_pack.py` created the seed tarball and automated manifest, and `tests/test_hosted_staging_pack.py` covers the copy/manifest contract.

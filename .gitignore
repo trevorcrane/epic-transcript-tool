@@ -9,3 +9,6 @@ data/*.db-*
 
 # Local Netlify folder
 .netlify
+
+# Local staging seed packages may include transcript owner tokens/cache data.
+evidence/hosted-staging-seed.tar.gz

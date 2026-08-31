@@ -1,9 +1,9 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 12:51 EDT
+Updated: 2026-08-31 13:06 EDT
 
 ## Current phase
-Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
+Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening. Latest sprint prepared the cache seed package required for first no-DNS-cutover hosted staging.
 
 ## Version / phase status
 
@@ -14,6 +14,7 @@ Status: Release-clear on the public no-login product for the current fixture gat
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
 - Public Phase 1 scripted matrix is now passing against the durable no-login URL for the bounded fixture set: regression, manual-caption control, automatic captions, short French non-English fixture, genuine Shorts, moderate long cached transcript, private/unavailable helpful failure, invalid URL helpful failure, privacy/history, service health, and public upload smoke.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents. Hosted-backend migration spike now adds env-configurable runtime paths, Docker container packaging, and a migration checklist in `docs/HOSTED_BACKEND_MIGRATION.md`.
+- Hosted staging handoff prep advanced on 2026-08-31 13:06 EDT: added `scripts/hosted_staging_pack.py` and `tests/test_hosted_staging_pack.py`, then created `evidence/hosted-staging-seed.tar.gz` for the first persistent host. Manifest proof: source DB `data/transcripts.db`, DB size 25,718,784 bytes, package size 4,412,918 bytes, SHA-256 `d04607cef60c26f79eb2b52a5c076b51b476269d56ebe3cba5e9df8f7ceb5915`, 339 transcript rows, required cached media present (`v34Eg12mhDM` 87, `dQw4w9WgXcQ` 72, `SXHMnicI6Pg` 15, `aircAruvnKk` 15).
 - Hosted backend validation advanced: a Docker container on `127.0.0.1:8091` with a repo-local bind-mounted `/data` volume seeded from `data/transcripts.db` passed the updated async Phase 1 matrix. The same container also passed Phase 2 upload smoke and Phase 3 UI contract smoke. A cold empty `/data` container exposed the expected staging risk: current YouTube/IP conditions can block some uncached YouTube fixtures, so first staging needs the existing transcript cache migrated before DNS cutover.
 - UX alignment advanced: the live public root now shows `Free Video Transcript Machine`, `FAST · FREE · V3`, `Get Video Transcript`, `How it works`, and `Frequently Asked Questions (FAQ)` markers in the expected first-control then support-section order.
 - Netlify review URL was updated to the same public UX build. Stable review URL `https://epic-transcript-machine-review.netlify.app` and latest immutable deploy `https://6a95a0c3cf34d705f2de4c9d--epic-transcript-machine-review.netlify.app` both returned HTTP 200 with the new UX markers, visible phase cards, theme toggle, FAQ markers, and the production API base marker.
@@ -90,6 +91,7 @@ Status: Advanced publicly, not release-complete. Hosted-container UI/API contrac
 - Added and deployed the Phase 2 browser-only Whisper fallback UI to production/review: `browserLocal` checkbox, clear on-device disclosure, WebGPU/WASM transformer path, browser-only record rendering, and local TXT/Markdown/SRT downloads. Netlify deploy `6a95a49d4bcd595e06c116e6` was verified at stable and immutable URLs with expected markers.
 - Updated `scripts/phase1_matrix.py` to test YouTube links through the public UI's async job path (`/api/transcribe-url-job` plus `/api/jobs/{id}`) instead of relying on the older synchronous URL endpoint for long YouTube sources.
 - Advanced the owner-facing public UI on 2026-08-31 12:51 EDT: URL placeholder now says `Enter URL...`, upload is a compact accessible icon beside the URL bar, the recent drawer now says `Your Transcript History`, local transcript history is stored under `epicTranscriptHistory` with clear/delete controls, the footer shows a release version plus `epic.media`, and an `Unlock All EPIC Machines` expansion strip previews the next machine family without changing transcript/API behavior. Netlify deploy `6a95b112692fe0f07390daf5` verified stable and immutable.
+- Advanced hosted staging package readiness on 2026-08-31 13:06 EDT: created a repeatable cache seed tarball with manifest/checksum/counts so Orgo or another persistent Docker host can be seeded before public release smokes. Updated `docs/HOSTED_BACKEND_MIGRATION.md` with the seed-package command and current package evidence.
 
 - UX phase visibility advanced on 2026-08-31 11:39 EDT: the public root and Netlify review root now show visible `Version 1 / Phase 1`, `Version 2 / Phase 2`, and `Version 3 / Phase 3` cards directly under the hero proof strip. The public root, stable Netlify review URL, and immutable Netlify deploy `6a95a0c3cf34d705f2de4c9d` returned HTTP 200 and contained the phase cards, theme toggle, expanded FAQ markers, and production API base marker.
 - Public unsupported-upload guidance was hardened and reloaded: `.exe` upload attempts now return HTTP 400 with `Unsupported file type: .exe. Upload one of: .aac, .avi, .flac, .m4a, .md, .mkv, .mov, .mp3, .mp4, .ogg, .opus, .srt, .txt, .vtt, .wav, .webm.`
@@ -125,6 +127,11 @@ Prior full regression evidence:
 
 ## Test results
 
+- `./.venv/bin/python -m pytest tests/test_hosted_staging_pack.py -q`: failed first on 2026-08-31 13:06 EDT because `scripts/hosted_staging_pack.py` did not exist, then passed after implementation. This covers hosted seed-package copy and manifest generation.
+- `./.venv/bin/python scripts/hosted_staging_pack.py --out evidence/hosted-staging-seed.tar.gz`: passed on 2026-08-31 13:06 EDT. Package `evidence/hosted-staging-seed.tar.gz` created with DB SHA-256 `d04607cef60c26f79eb2b52a5c076b51b476269d56ebe3cba5e9df8f7ceb5915`, 339 transcript rows, and required Phase 1 cache media present.
+- `./.venv/bin/python -m py_compile scripts/hosted_staging_pack.py && ./.venv/bin/python -m pytest -q`: passed, 57 tests on 2026-08-31 13:06 EDT.
+- `./.venv/bin/python scripts/phase1_health.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 13:06 EDT. Regression returned HTTP 200, cache hit, 1,460 segments / 15,744 words; manual-caption control returned HTTP 200, cache hit, 61 segments / 366 words.
+- `curl https://epic-transcript.robyncrane.com/api/setup`: returned HTTP 200 on 2026-08-31 13:06 EDT with `ready=true`, required `missing=[]`, optional missing only SMTP config and `GEMINI_API_KEY`, and `local_whisper=true`.
 - `./.venv/bin/python -m pytest -q`: passed, 56 tests on 2026-08-31 12:51 EDT after fixing the design contract to match the new compact upload control.
 - Inline static JavaScript syntax check: passed on 2026-08-31 12:51 EDT with one script block and `node --check` exit 0.
 - Netlify review deploy: passed on 2026-08-31 12:51 EDT. `netlify deploy --dir static --prod --json` deployed site `epic-transcript-machine-review`, deploy `6a95b112692fe0f07390daf5`; stable `https://epic-transcript-machine-review.netlify.app/` and immutable `https://6a95b112692fe0f07390daf5--epic-transcript-machine-review.netlify.app/` both returned HTTP 200 with `Your Transcript History`, `Unlock All EPIC Machines`, `placeholder="Enter URL..."`, `uploadBtn`, no `drop-zone`, release version, `https://epic.media`, and production API base marker.
@@ -217,7 +224,7 @@ Prior full regression evidence:
 - Phase 3 full provider-backed intelligence is blocked on a free/no-surprise LLM/provider decision. Owner: Trevor or Len. Fallback path remains deterministic timestamp-grounded outputs, now improved and publicly quality-smoked.
 
 ## Exact next action
-Prepare the first no-DNS-cutover hosted staging deployment on the lowest-risk persistent Docker host, with Orgo/persistent Linux VM as the preferred path, mount `/data`, seed it from the current `data/transcripts.db`, then run Phase 1, Phase 2, and Phase 3 smoke tests against that public staging URL before any DNS cutover. In parallel, run independent browser/local-file UX QC if the browser-only Whisper fallback is reintroduced; the current corrected public UI intentionally removed the browser-only fallback clutter and relies on the proven server upload route.
+Transfer `evidence/hosted-staging-seed.tar.gz` to the selected persistent Docker host, extract `transcripts.db` into the mounted `/data` volume, verify the manifest checksum/counts, then run Phase 1, Phase 2, and Phase 3 smoke tests against the public staging URL before any DNS cutover. In parallel, keep the iMac launchd/tunnel path live as rollback and continue public health/watchdog checks.
 
 ### 2026-08-31 non-English YouTube gate update
 - PASS: Fresh uncached exact fixture `https://www.youtube.com/watch?v=vgIle-XrvQI` completed through the new bounded async public route. Start request returned HTTP 202 in 0.08s, polling stayed under 0.1s per request, and final record returned French metadata `language=fr`, `method=local-whisper`, `cache_hit=false`, 31 segments, 228 words, duration 95s.
