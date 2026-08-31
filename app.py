@@ -44,6 +44,20 @@ VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi"}
 TEXT_EXTS = {".txt", ".md"}
 SUBTITLE_EXTS = {".srt", ".vtt"}
 ALLOWED_EXTS = AUDIO_EXTS | VIDEO_EXTS | TEXT_EXTS | SUBTITLE_EXTS
+YT_DLP_BINARY_CANDIDATES = [
+    Path("/usr/local/bin/yt-dlp"),
+    Path("/opt/homebrew/bin/yt-dlp"),
+    Path.home() / ".local/bin/yt-dlp",
+]
+FFMPEG_BINARY_CANDIDATES = [
+    Path("/usr/local/bin/ffmpeg"),
+    Path("/opt/homebrew/bin/ffmpeg"),
+]
+WHISPER_BINARY_CANDIDATES = [
+    Path("/usr/local/bin/whisper"),
+    Path("/opt/homebrew/bin/whisper"),
+    Path.home() / ".local/bin/whisper",
+]
 
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
 
@@ -110,12 +124,33 @@ def init_db() -> None:
 init_db()
 
 
+def resolve_binary(name: str, env_name: str, candidates: list[Path]) -> str:
+    configured = os.getenv(env_name)
+    if configured and Path(configured).exists():
+        return configured
+    found = shutil.which(name)
+    if found:
+        return found
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    raise RuntimeError(f"{name} is not installed on this server/browser path")
+
+
+def has_binary(name: str, env_name: str, candidates: list[Path]) -> bool:
+    try:
+        resolve_binary(name, env_name, candidates)
+        return True
+    except RuntimeError:
+        return False
+
+
 def setup_status() -> dict:
     missing = []
     optional_missing = []
-    if not shutil.which("yt-dlp"):
+    if not has_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES):
         missing.append("yt-dlp")
-    if not shutil.which("ffmpeg"):
+    if not has_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES):
         missing.append("ffmpeg")
     # Gemini, SMTP, and local Whisper are optional fallbacks. Missing keys do not block public caption flow.
     smtp_keys = ("OWNER_EMAIL", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS")
@@ -128,7 +163,7 @@ def setup_status() -> dict:
         "missing": missing,
         "optional_missing": optional_missing,
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
-        "local_whisper": bool(shutil.which("whisper")),
+        "local_whisper": has_binary("whisper", "WHISPER_BIN", WHISPER_BINARY_CANDIDATES),
         "owner_email": os.getenv("OWNER_EMAIL", ""),
     }
 
@@ -379,7 +414,7 @@ def save_transcript(*, source: str, source_kind: str, method: str, transcript: s
 
 
 def yt_dlp_metadata(url: str) -> dict:
-    proc = subprocess.run(["yt-dlp", "--dump-single-json", "--no-warnings", url], capture_output=True, text=True, timeout=90)
+    proc = subprocess.run([resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--dump-single-json", "--no-warnings", url], capture_output=True, text=True, timeout=90)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr else "yt-dlp failed")
     return json.loads(proc.stdout)
@@ -467,7 +502,7 @@ def youtube_transcript_api_segments(video_id: str) -> tuple[list[dict], str]:
 
 def yt_dlp_grab_caption_segments(url: str, work_dir: Path) -> tuple[list[dict], str]:
     out_template = str(work_dir / "captions.%(ext)s")
-    cmd = ["yt-dlp", "--no-warnings", "--skip-download", "--write-sub", "--write-auto-sub", "--sub-format", "vtt/srt/best", "--sub-langs", "all", "-o", out_template, url]
+    cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--no-warnings", "--skip-download", "--write-sub", "--write-auto-sub", "--sub-format", "vtt/srt/best", "--sub-langs", "all", "-o", out_template, url]
     try:
         subprocess.run(cmd, capture_output=True, text=True, timeout=180)
     except subprocess.TimeoutExpired:
@@ -496,7 +531,7 @@ def transcribe_with_gemini_youtube(url: str) -> tuple[list[dict], str]:
 
 def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
     out_template = str(work_dir / "audio.%(ext)s")
-    cmd = ["yt-dlp", "--no-warnings", "-f", "bestaudio/best", "-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", out_template, url]
+    cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--ffmpeg-location", str(Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)).parent), "--no-warnings", "-f", "bestaudio/best", "-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", out_template, url]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr else "Audio download failed.")
@@ -506,11 +541,14 @@ def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
     return matches[0]
 
 
+def resolve_whisper_binary() -> str:
+    return resolve_binary("whisper", "WHISPER_BIN", WHISPER_BINARY_CANDIDATES)
+
+
 def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = None) -> tuple[list[dict], str]:
-    if not shutil.which("whisper"):
-        raise RuntimeError("Local Whisper is not installed on this server/browser path")
+    whisper_bin = resolve_whisper_binary()
     out_dir = Path(tempfile.mkdtemp(prefix="epic-whisper-out-"))
-    cmd = ["whisper", str(input_path), "--model", os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
+    cmd = [whisper_bin, str(input_path), "--model", os.getenv("LOCAL_WHISPER_MODEL", "base"), "--task", "transcribe", "--output_format", "vtt", "--output_dir", str(out_dir), "--fp16", "False"]
     if language:
         cmd += ["--language", language]
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)

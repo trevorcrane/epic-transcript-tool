@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-30 22:40 EDT
+Updated: 2026-08-30 23:24 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening.
@@ -14,11 +14,14 @@ Status: In release verification.
 - Manual-caption control now has fresh public evidence: `dQw4w9WgXcQ`, 61 segments, 366 words, method `native-caption-subtitles`, cache hit.
 - Release matrix is partially passing. Non-English test case needs a better known-accessible source video or fallback work because the previous Despacito case is blocked by YouTube.
 - Backend hardening advanced: the FastAPI API and Cloudflare named tunnel are loaded under launchd KeepAlive agents.
+- Public matrix re-run now exposes two release-gate issues instead of one: the previously cached Despacito record can return an English subtitle track, so it is not valid non-English evidence, and the invalid-URL public case returned HTTP 500 from the currently running API process.
 
 ### Version 2 / Phase 2: Any video or audio
 Status: Started, not release-complete.
 - Local Whisper upload path exists and previous local evidence covered MP3, M4A, MP4, and direct public-media-style URL.
 - Full upload/media release matrix still needs production evidence.
+- Advanced backend hardening: local code now resolves `yt-dlp`, `ffmpeg`, and Whisper by configured or absolute binary path when launchd starts with a minimal PATH. The launchd API plist now sets `YT_DLP_BIN=/usr/local/bin/yt-dlp`, `FFMPEG_BIN=/usr/local/bin/ffmpeg`, `WHISPER_BIN=/usr/local/bin/whisper`, plus a known PATH for the next API restart.
+- Fresh local upload proof after the fix: generated MP3 upload returned HTTP 200 through `local-whisper`, 2 segments, 18 words, first text `Epic transcript machine phase 2 audio upload test.`
 
 ### Version 3 / Phase 3: Video intelligence
 Status: Started in queued backend tests, not public-release complete.
@@ -46,7 +49,7 @@ Status: Started in queued backend tests, not public-release complete.
 URL tested: `https://epic-transcript.robyncrane.com/api/transcribe-url`
 Regression video: `https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD`
 
-Fresh health run from 2026-08-30 22:40 EDT:
+Fresh health run from 2026-08-30 23:24 EDT:
 - Public root: HTTP 200.
 - Public setup: HTTP 200, `ready: true`, `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
 - Regression video: HTTP 200, method `native-caption-automatic_captions`, cache hit, 1,460 segments, 15,744 words, language `en`, title `Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)`.
@@ -68,7 +71,11 @@ Prior full regression evidence:
 - `./.venv/bin/python -m pytest -q`: passed, 15 tests on 2026-08-30 22:40 EDT.
 - Public root/setup after launchd hardening: HTTP 200 / HTTP 200.
 - Public Phase 1 health script after launchd hardening: passed regression and manual-caption control.
-- Public Phase 1 matrix run: 8 of 9 cases passed. Passing cases were regression, control, manual_caption, automatic_caption, shorts, long_video, private_unavailable helpful failure, and invalid_url helpful failure. Failing case was non_english because the selected public video returned the helpful upload-guidance 422 rather than a transcript.
+- Public Phase 1 health script: passed regression and manual-caption control.
+- Public Phase 1 matrix run: 7 of 9 cases are release-valid. Regression, control, manual_caption, automatic_caption, shorts, long_video, and private_unavailable passed. The non_english row returned HTTP 200 from cache but with language `en-US`, so it is not valid non-English evidence. The invalid_url row returned HTTP 500 from the currently running public process and needs the API restart/code reload to pick up the local helpful 422 behavior.
+- `./.venv/bin/python -m pytest -q`: passed, 17 tests on 2026-08-30 23:24 EDT.
+- New targeted regression tests for launchd/minimal-PATH binary resolution passed.
+- Local generated MP3 upload through FastAPI TestClient passed via `local-whisper` after absolute Whisper binary resolution.
 - Design regression tests: passed for Call IQ tokens, hero control placement, dark presentation surface, and light results workspace.
 - Public TXT/Markdown/SRT downloads for regression record: passed in prior release-gate evidence.
 
@@ -77,10 +84,11 @@ Prior full regression evidence:
 - SMTP config is missing, so Email to Me is not ready.
 - Gemini YouTube hook is intentionally present but not enabled because no key is configured and the free caption/local path is primary.
 - Browser WebGPU Whisper is not implemented yet. Local server Whisper fallback exists.
-- Full Phase 1 matrix is not complete because the current non-English source video is blocked by YouTube and needs replacement or fallback coverage.
+- Full Phase 1 matrix is not complete because the current non-English evidence is not release-valid and fresh non-English YouTube candidates are currently returning upload-guidance failures under YouTube blocking/rate limiting.
+- Public API process has not yet reloaded the local binary-path hardening. Launchd plist is updated for the next restart, but the restart attempt was held by the automation approval guard.
 
 ## Blockers
 None requiring Trevor right now.
 
 ## Exact next action
-Replace the Phase 1 non-English matrix source with a known-accessible captioned non-English video, re-run the public matrix, then commit and push the verified launchd/test-script/docs hardening once the matrix evidence is clean.
+Commit and push the binary-path hardening and release evidence updates, then reload the public API as soon as the automation guard allows it. After reload, verify public setup, public upload audio, invalid-URL helpful failure, and continue searching for release-valid non-English YouTube evidence.

@@ -1,6 +1,6 @@
 # EPIC Transcript Machine Version / Phase Status
 
-Updated: 2026-08-30 22:40 EDT
+Updated: 2026-08-30 23:24 EDT
 
 ## Version 1 / Phase 1: Bulletproof YouTube Transcripts
 Status: In release verification.
@@ -16,7 +16,8 @@ Current evidence:
 - Epic Call IQ-inspired UI redesign is live.
 
 Remaining:
-- Replace the blocked non-English matrix source and re-run the full production matrix.
+- Replace or prove a release-valid original-language non-English matrix source. Current Despacito cache can return `en-US`, which is not valid non-English evidence.
+- Reload the public API process so the current invalid-URL helpful failure and binary-path hardening are active in production.
 - Complete browser copy-flow, mobile touch-flow, and fuller accessibility evidence.
 - Move from iMac plus Cloudflare Tunnel to a hosted durable backend when ready for whole-project final release.
 
@@ -30,6 +31,8 @@ Current evidence:
 - Uploaded M4A passed through local Whisper in prior local evidence.
 - Uploaded MP4 passed through local Whisper in prior local evidence.
 - Direct public-media-style URL passed through local Whisper in prior local evidence.
+- New hardening added so `yt-dlp`, `ffmpeg`, and local Whisper can be found from launchd's minimal environment using configured env vars or absolute known paths.
+- Fresh generated MP3 upload passed locally through FastAPI TestClient with HTTP 200, `local-whisper`, 2 segments, and 18 words.
 
 Remaining:
 - MP4, MOV, WebM, MP3, M4A, WAV full release matrix.

@@ -262,3 +262,30 @@ def test_caption_candidates_prefer_clean_non_english_manual_when_source_unknown(
     tracks = app._caption_candidates(meta)
     assert tracks[0]["lang"] == "es"
     assert app.infer_expected_language(meta) == "es"
+
+
+def test_resolve_binary_uses_known_absolute_paths_when_launchd_path_is_minimal(monkeypatch, tmp_path):
+    fallback = tmp_path / "whisper"
+    fallback.write_text("#!/bin/sh\n")
+    monkeypatch.setattr(app.shutil, "which", lambda name: None)
+    monkeypatch.setattr(app, "WHISPER_BINARY_CANDIDATES", [fallback])
+
+    assert app.resolve_whisper_binary() == str(fallback)
+
+
+def test_setup_status_uses_absolute_tool_fallbacks_when_launchd_path_is_minimal(monkeypatch, tmp_path):
+    yt_dlp = tmp_path / "yt-dlp"
+    ffmpeg = tmp_path / "ffmpeg"
+    whisper = tmp_path / "whisper"
+    for binary in (yt_dlp, ffmpeg, whisper):
+        binary.write_text("#!/bin/sh\n")
+    monkeypatch.setattr(app.shutil, "which", lambda name: None)
+    monkeypatch.setattr(app, "YT_DLP_BINARY_CANDIDATES", [yt_dlp])
+    monkeypatch.setattr(app, "FFMPEG_BINARY_CANDIDATES", [ffmpeg])
+    monkeypatch.setattr(app, "WHISPER_BINARY_CANDIDATES", [whisper])
+
+    status = app.setup_status()
+
+    assert status["ready"] is True
+    assert status["missing"] == []
+    assert status["local_whisper"] is True
