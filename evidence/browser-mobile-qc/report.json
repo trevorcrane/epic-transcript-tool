@@ -1,0 +1,193 @@
+{
+  "desktop": {
+    "mode": "desktop",
+    "before": {
+      "title": "EPIC Transcript Machine",
+      "w": 1440,
+      "h": 950,
+      "bodyW": 1440,
+      "bodyH": 2050,
+      "hasAsync": true,
+      "hasJobPoll": true,
+      "oldSync": false
+    },
+    "testUrl": "https://www.youtube.com/watch?v=vgIle-XrvQI",
+    "record": {
+      "status": "Done",
+      "source": "Avoir d'la broue dans l'toupèt!",
+      "method": "local-whisper · 1,578 chars · 1:35",
+      "transcriptHead": "[00:00] J'adore cette expression, un balladot qui me l'a francophonie à l'honneur.\n[00:06] Proposé par Hiddilot et la plus allorée.\n[00:10] Québec, avoir de l'abrou dans le tout pète.\n[00:15] Un matin, on me rendant en c",
+      "transcriptLength": 1578
+    },
+    "copyState": {
+      "toast": "Copied to clipboard ✓",
+      "clipboardHead": "[00:00] J'adore cette expression, un balladot qui me l'a francophonie à l'honneur.\n[00:06] Proposé par Hiddilot et la plus allorée.\n[00:10] Québec, avoir de l'abrou dans le tout pète.\n[00:15] Un matin, on me rendant en c",
+      "clipboardMatches": true,
+      "clipboardError": ""
+    },
+    "layout": {
+      "viewport": {
+        "w": 1440,
+        "h": 950
+      },
+      "overflowX": false,
+      "controls": {
+        "url": {
+          "visible": true,
+          "left": 281,
+          "top": 409.359375,
+          "width": 660.1796875,
+          "height": 58
+        },
+        "grab": {
+          "visible": true,
+          "left": 951.1796875,
+          "top": 409.359375,
+          "width": 207.8203125,
+          "height": 58
+        },
+        "drop": {
+          "visible": true,
+          "left": 281,
+          "top": 518.359375,
+          "width": 878,
+          "height": 78.5
+        },
+        "copyBtn": {
+          "visible": true,
+          "left": 185,
+          "top": 1971.359375,
+          "width": 72.8828125,
+          "height": 40
+        },
+        "downloadBtn": {
+          "visible": true,
+          "left": 267.8828125,
+          "top": 1971.359375,
+          "width": 62,
+          "height": 40
+        },
+        "downloadMdBtn": {
+          "visible": true,
+          "left": 339.8828125,
+          "top": 1971.359375,
+          "width": 121.3828125,
+          "height": 40
+        },
+        "downloadSrtBtn": {
+          "visible": true,
+          "left": 471.265625,
+          "top": 1971.359375,
+          "width": 60.7109375,
+          "height": 40
+        }
+      }
+    },
+    "calls": [
+      "https://epic-transcript.robyncrane.com/api/setup",
+      "https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
+      "https://epic-transcript.robyncrane.com/api/jobs/bcc089250265"
+    ],
+    "screenshots": {
+      "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/desktop-initial.png",
+      "result": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/desktop-result.png"
+    }
+  },
+  "mobile": {
+    "mode": "mobile",
+    "before": {
+      "title": "EPIC Transcript Machine",
+      "w": 390,
+      "h": 844,
+      "bodyW": 390,
+      "bodyH": 2506,
+      "hasAsync": true,
+      "hasJobPoll": true,
+      "oldSync": false
+    },
+    "testUrl": "https://www.youtube.com/shorts/1WW76Rz4nqM",
+    "record": {
+      "status": "Done",
+      "source": "HOW TO: Edit with AI in YouTube Shorts",
+      "method": "local-whisper · 887 chars · 0:47",
+      "transcriptHead": "[00:00] You can now edit videos with AI when creating a short in the YouTube app.\n[00:04] Edit with AI transforms your raw footage into a compelling first draft.\n[00:08] It finds the best moments from your clips and arra",
+      "transcriptLength": 887
+    },
+    "copyState": {
+      "toast": "Copied to clipboard ✓",
+      "clipboardHead": "[00:00] You can now edit videos with AI when creating a short in the YouTube app.\n[00:04] Edit with AI transforms your raw footage into a compelling first draft.\n[00:08] It finds the best moments from your clips and arra",
+      "clipboardMatches": true,
+      "clipboardError": ""
+    },
+    "layout": {
+      "viewport": {
+        "w": 390,
+        "h": 844
+      },
+      "overflowX": false,
+      "controls": {
+        "url": {
+          "visible": true,
+          "left": 23,
+          "top": 327.0546875,
+          "width": 344,
+          "height": 54
+        },
+        "grab": {
+          "visible": true,
+          "left": 23,
+          "top": 391.0546875,
+          "width": 344,
+          "height": 56
+        },
+        "drop": {
+          "visible": true,
+          "left": 23,
+          "top": 498.0546875,
+          "width": 344,
+          "height": 98.5
+        },
+        "copyBtn": {
+          "visible": true,
+          "left": 37,
+          "top": 2426.953125,
+          "width": 72.8828125,
+          "height": 40
+        },
+        "downloadBtn": {
+          "visible": true,
+          "left": 119.8828125,
+          "top": 2426.953125,
+          "width": 62,
+          "height": 40
+        },
+        "downloadMdBtn": {
+          "visible": true,
+          "left": 191.8828125,
+          "top": 2426.953125,
+          "width": 121.3828125,
+          "height": 40
+        },
+        "downloadSrtBtn": {
+          "visible": true,
+          "left": 37,
+          "top": 2476.953125,
+          "width": 60.7109375,
+          "height": 40
+        }
+      }
+    },
+    "calls": [
+      "https://epic-transcript.robyncrane.com/api/setup",
+      "https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "https://epic-transcript.robyncrane.com/api/transcribe-url-job",
+      "https://epic-transcript.robyncrane.com/api/jobs/65af1e61f36a"
+    ],
+    "screenshots": {
+      "initial": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-initial.png",
+      "result": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/browser-mobile-qc/mobile-result.png"
+    }
+  },
+  "generatedAt": "2026-08-31T13:09:08.138Z"
+}

@@ -158,3 +158,12 @@ Commit the UX alignment regression and continue toward release by adding a non-b
 - Failure-recovery evidence: native caption extractor failed with no usable caption track; YouTube Transcript API was blocked by YouTube/IP; yt-dlp subtitles found no captions; queued chunked local Whisper recovered and passed.
 - Progress evidence: public job reported download stage, then chunk progress from 1 of 13 through 12 of 13, then saving with chunks_done 13 / chunks_total 13.
 - Transcript proof includes credible beginning at `[00:00] Imagine you're sitting on your couch...` and credible ending through `[02:00:42] together.`
+
+
+### 2026-08-31 browser and mobile UX gate update
+- PASS: Chrome remote-debugging permission was cleared and direct Chrome CDP browser verification ran against `https://epic-transcript.robyncrane.com/`.
+- Desktop copy-flow PASS: public page loaded with async markers present and old sync call absent; submitted French YouTube fixture `vgIle-XrvQI`; result displayed title `Avoir d'la broue dans l'toupèt!`, method `local-whisper`, 1,578 transcript chars; Copy button produced `Copied to clipboard ✓` and clipboard text matched the full transcript.
+- Mobile touch-flow PASS: emulated 390x844 mobile viewport; no horizontal overflow; URL field, Transcribe button, upload drop zone, Copy, TXT, Markdown, and SRT controls were visible and usable; submitted genuine Shorts fixture `1WW76Rz4nqM`; result displayed `HOW TO: Edit with AI in YouTube Shorts`, 887 transcript chars, and Copy matched clipboard.
+- Public matrix rerun PASS: `scripts/phase1_matrix.py https://epic-transcript.robyncrane.com` returned `all_ok=true` across regression, control/manual captions, automatic captions, non-English, Shorts, moderate long cached video, private/unavailable helpful failure, and invalid URL helpful failure.
+- Test suite PASS: `pytest -q` returned 44 passed.
+- Evidence saved under `evidence/browser-mobile-qc/` with desktop/mobile initial and result screenshots plus `report.json`.

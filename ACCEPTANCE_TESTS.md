@@ -98,11 +98,11 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 | Moderate long video | `https://youtu.be/aircAruvnKk` | PASS | HTTP 200, `native-caption-subtitles`, cache hit, 286 segments, 3,360 words. |
 | Two-hour / long video | `https://www.youtube.com/watch?v=rwfk91ya81s` | PASS | Public async job `115c983594bd` completed `done`, record `5919d7b3c99a`, `queued-chunked-local-whisper`, cache miss, 13 chunks, 1,446 segments, 19,298 words, 7,244 seconds, credible start/end transcript. TXT/Markdown/SRT signed downloads returned HTTP 200. |
 | Repeated request confirms a cache hit | Regression and control videos | PASS | Public health script returned cache hit for both. |
-| Copy transcript | UI marker present | Pending browser interaction evidence | Needs direct browser copy-flow verification. |
+| Copy transcript | Public Chrome browser | PASS | Desktop browser submitted French fixture, rendered transcript, Copy showed `Copied to clipboard ✓`, and clipboard text matched the full transcript. |
 | TXT download | Regression record | PASS | HTTP 200, 94,784 bytes. |
 | Markdown download | Regression record | PASS | HTTP 200, 100,829 bytes. |
 | SRT download | Regression record | PASS | HTTP 200, 134,557 bytes. |
-| Mobile layout | Redesign evidence | PASS visual smoke | Mobile screenshot evidence exists in `evidence/`; full touch-flow still pending. |
+| Mobile layout and touch-flow | Public Chrome mobile emulation 390x844 | PASS | No horizontal overflow. URL, Transcribe, upload, Copy, TXT, Markdown, and SRT controls visible. Mobile submitted genuine Shorts fixture and copied transcript successfully. |
 | Button contrast and accessibility | Automated design tests | PASS smoke | Design tests passed for dark presentation surface, light results workspace, and functional IDs. Full accessibility audit still pending. |
 
 ## Phase 2 release gate: Any video or audio
@@ -263,3 +263,22 @@ Run time: 2026-08-31 02:52 EDT.
 - Credible transcript start: `[00:00] Imagine you're sitting on your couch, munching on popcorn...`.
 - Credible transcript end: `[02:00:42] together.`
 - Download proof: TXT HTTP 200, 121,979 bytes; Markdown HTTP 200, 127,963 bytes; SRT HTTP 200, 158,972 bytes.
+
+
+### Browser and mobile UX proof
+Run time: 2026-08-31.
+
+- Public app: `https://epic-transcript.robyncrane.com/`.
+- Browser path: Chrome CDP against the actual public page after remote-debugging approval.
+- Desktop viewport: 1440x950.
+- Desktop URL fixture: `https://www.youtube.com/watch?v=vgIle-XrvQI`.
+- Desktop result: `Avoir d'la broue dans l'toupèt!`, method `local-whisper`, 1,578 transcript chars.
+- Desktop copy result: PASS. Toast `Copied to clipboard ✓`; clipboard matched the full transcript.
+- Mobile viewport: 390x844.
+- Mobile URL fixture: `https://www.youtube.com/shorts/1WW76Rz4nqM`.
+- Mobile result: `HOW TO: Edit with AI in YouTube Shorts`, method `local-whisper`, 887 transcript chars.
+- Mobile layout: PASS. `overflowX=false`; core controls visible and sized for touch.
+- Mobile copy result: PASS. Toast `Copied to clipboard ✓`; clipboard matched the full transcript.
+- API wiring observed from browser network: `/api/setup`, `/api/recent`, `/api/transcribe-url-job`, and `/api/jobs/...`.
+- Static HTML check: async job markers present; old synchronous submit call absent.
+- Screenshot/report evidence: `evidence/browser-mobile-qc/report.json`, `desktop-initial.png`, `desktop-result.png`, `mobile-initial.png`, `mobile-result.png`.
