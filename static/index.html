@@ -653,6 +653,12 @@
   async function transcribeInBrowser(file) {
     setStatus('Loading private browser Whisper model...');
     const method = (navigator.gpu ? 'browser-whisper-webgpu' : 'browser-whisper-wasm');
+    if (window.__EPIC_BROWSER_WHISPER_TEST_STUB) {
+      if (location.hostname !== '127.0.0.1' && location.hostname !== 'localhost') {
+        throw new Error('Browser fallback test stub is not active on public hosts.');
+      }
+      return await window.__EPIC_BROWSER_WHISPER_TEST_STUB(file, method);
+    }
     const mod = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
     if (mod.env) {
       mod.env.allowLocalModels = false;

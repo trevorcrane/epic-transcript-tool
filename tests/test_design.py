@@ -157,3 +157,5 @@ def test_browser_local_whisper_fallback_is_actually_wired_for_failed_uploads():
     assert 'browser-whisper-wasm' in html
     assert 'await transcribeInBrowser(file)' in html
     assert 'Server upload failed, trying private browser transcription' in html
+    assert 'window.__EPIC_BROWSER_WHISPER_TEST_STUB' in html
+    assert 'Browser fallback test stub is not active' in html

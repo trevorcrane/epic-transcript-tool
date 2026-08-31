@@ -1,0 +1,29 @@
+{
+  "public_root": {
+    "status": 200,
+    "bytes": 57141,
+    "has_stub_guard": true,
+    "has_browser_fallback_wiring": true,
+    "has_history_storage": true
+  },
+  "browser_fallback": {
+    "title": "",
+    "method": "browser-whisper-webgpu \u00b7 123 chars",
+    "transcript": "Browser fallback proof transcript. This credible local browser transcript was created after the server upload route failed.",
+    "status": "Done",
+    "resultVisible": true,
+    "historyCount": 1,
+    "historyFirstMethod": "browser-whisper-webgpu",
+    "historyFirstBrowserOnly": true,
+    "hasLocalDownloads": true,
+    "browser_fallback": true,
+    "network": [
+      "http://127.0.0.1:50411/api/transcribe-upload"
+    ],
+    "viewport": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "evidence": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-browser-fallback-ui-report.json"
+}
