@@ -1140,6 +1140,30 @@ def build_100_content_assets(rec: dict) -> list[str]:
         "Document the behavior before automating it",
         "Review that point before changing the system",
     ]
+    support_lines = [
+        "show the operating lesson in one clear visual step",
+        "turn the proof point into a simple before-and-after frame",
+        "name the risk and show the better handoff",
+        "connect the excerpt to the result the buyer wants",
+        "make the missing step visible before the solution appears",
+        "show how the process protects the next conversion",
+        "translate the lesson into one repeatable behavior",
+        "tie the proof to a measurable business outcome",
+        "make the system easier to understand at a glance",
+        "end with the action the viewer should take next",
+    ]
+    email_blurbs = [
+        "turn this into one practical improvement the team can own",
+        "make the handoff clearer before more traffic is added",
+        "connect the proof point to the buyer's next decision",
+        "show why the process matters more than another standalone tool",
+        "translate the evidence into one sharper sales conversation",
+        "document the behavior that should repeat after this moment",
+        "remove the friction this excerpt makes visible",
+        "tie the lesson to the outcome the customer already wants",
+        "make the mechanism behind the result easier to trust",
+        "convert the transcript evidence into a simple next step",
+    ]
     ctas = [
         "Get the broken handoff written down before another tool is added",
         "Get one measurable follow-up step assigned from this evidence today",
@@ -1187,7 +1211,7 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Reel script":
             body = f"Reel script {slot}: {reel_lines[idx]}. Say: {takeaway} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Carousel slide":
-            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {takeaway} Supporting copy: make the operating lesson clear in one visual step. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Carousel slide {slot}: {carousel_heads[idx]}: {takeaway} Supporting copy: {support_lines[idx]}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "Quote card":
             body = f"Quote-card takeaway {slot}: {takeaway} Evidence line: {excerpt} {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         elif kind == "CTA":
@@ -1195,7 +1219,7 @@ def build_100_content_assets(rec: dict) -> list[str]:
         elif kind == "Objection reply":
             body = f"Reply: {slot}: {replies[idx]}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         else:
-            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: apply this lesson before adding another disconnected step. Clip caption: {carousel_heads[idx]} at {timestamp}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
+            body = f"Repurpose bundle {slot}: LinkedIn post: {takeaway} Email blurb: {email_blurbs[idx]}. Clip caption: {carousel_heads[idx]} at {timestamp}. {closers[idx]}. Source excerpt: {excerpt} [{timestamp}]"
         assets.append(f"{i}. **{kind} {slot}** - {body}")
     return assets
 

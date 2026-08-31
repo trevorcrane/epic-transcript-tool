@@ -105,6 +105,8 @@ def main() -> int:
         "the part worth fixing now",
         "the story starts with this proof point",
         "start with the visible proof point",
+        "apply this lesson before adding another disconnected step",
+        "make the operating lesson clear in one visual step",
     ]
     shell_counts = {shell: lower.count(shell) for shell in repeated_shells if lower.count(shell) > 2}
     require(not shell_counts, f"repeated live-output shells: {shell_counts}")

@@ -192,6 +192,8 @@ def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkey
         "the part worth fixing now",
         "the story starts with this proof point",
         "start with the visible proof point",
+        "apply this lesson before adding another disconnected step",
+        "make the operating lesson clear in one visual step",
     ]
     for shell in repeated_shells:
         assert lower.count(shell) <= 2
