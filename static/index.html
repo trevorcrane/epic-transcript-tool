@@ -99,7 +99,8 @@
   .hero { text-align:center; max-width:960px; margin:0 auto; }
   .eyebrow { display:none; }
   .hero h1 { margin:0 auto; max-width:760px; font-size:clamp(56px, 7.2vw, 84px); line-height:1.02; font-weight:650; letter-spacing:-.07em; }
-  .accent-text { display:block; background:linear-gradient(105deg, #f3d7ff 0%, #df9dff 30%, #ff6fbe 76%, #f107a3 115%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .accent-text,
+  .accent-machine { display:block; background:linear-gradient(105deg, #ffffff 0%, #df9dff 30%, #ff6fbe 76%, #f107a3 115%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 26px rgba(241,7,163,.34)); }
   .tagline { margin:28px auto 0; color:rgba(255,255,255,.50); font-size:20px; line-height:1.55; letter-spacing:.01em; }
   .hero-control { max-width:var(--form-max); margin:52px auto 0; padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:24px; background:linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.12), rgba(255,255,255,.08)); box-shadow:var(--shadow-glass); backdrop-filter:blur(22px); text-align:left; }
   .url-row { display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; }
@@ -216,6 +217,7 @@
     .url-input { height:54px; }
     .grab-btn { width:100%; height:56px; }
     .step-grid { grid-template-columns:1fr; gap:48px; }
+    .machine-card-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
 
     .analysis-menu { grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .question-row { flex-direction:column; }
@@ -371,7 +373,7 @@
 <div id="toast" class="toast">Copied to clipboard ✓</div>
 
 <div class="drawer" id="drawer">
-  <div class="drawer-head" id="drawerHead">
+  <div class="drawer-head" id="drawerHead" role="button" tabindex="0" aria-expanded="false" aria-controls="drawerBody">
     <div class="title-row">Your Transcript History <span id="drawerCount" style="opacity:.6"></span></div>
     <div class="chev">▲</div>
   </div>
@@ -922,8 +924,16 @@
   }
 
   // Recent drawer
-  els.drawerHead.addEventListener('click', () => {
-    els.drawer.classList.toggle('open');
+  function toggleDrawer() {
+    const isOpen = els.drawer.classList.toggle('open');
+    els.drawerHead.setAttribute('aria-expanded', String(isOpen));
+  }
+  els.drawerHead.addEventListener('click', toggleDrawer);
+  els.drawerHead.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleDrawer();
+    }
   });
 
   function timeAgo(iso) {
