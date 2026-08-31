@@ -62,6 +62,17 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 08:53 EDT.
+
+- Public app root: PASS, HTTP 200, 41,404 bytes, no visitor login.
+- Netlify review root: PASS, HTTP 200, 41,404 bytes at `https://epic-transcript-machine-review.netlify.app` and immutable deploy `https://6a9579a7b662aa6824e325ab--epic-transcript-machine-review.netlify.app`.
+- ChatGPT-reference UX alignment markers: PASS. Root HTML contains `Free Video Transcript`, `Generator`, `FAST · FREE · V3`, `Get Video Transcript`, `Quick and simple. No catch.`, `How it works`, `Frequently Asked Questions (FAQ)`, `faq-stage`, and `step-grid`.
+- Review build API base marker: PASS. Netlify HTML contains `https://epic-transcript.robyncrane.com` so review-page actions target the production no-login API.
+- Layout ordering: PASS. The primary `hero-control` appears before `How it works`, and `How it works` appears before `Frequently Asked Questions`.
+- Public `/health`: PASS, HTTP 200, `ready: true`, required `missing: []`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Public Phase 1 health script: PASS. Regression video returned HTTP 200, cache hit, 1,460 segments, 15,744 words, language `en`; manual-caption control returned HTTP 200, cache hit, 61 segments, 366 words, language `en`.
+- Automated suite: PASS. `./.venv/bin/python -m pytest -q` returned 44 passed. Static inline script syntax check also passed with `node --check` for the single inline script block.
+
 Run time: 2026-08-31 01:34 EDT.
 
 - Public app root: PASS, HTTP 200.
@@ -97,6 +108,7 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 08:53 EDT: public UX copy now explicitly names public media URL and upload format support in the how-it-works and FAQ sections. Root HTML verification passed for no-login public access and expected markers.
 - 2026-08-31 08:18 EDT: added cleanup/retention hardening and regression evidence.
 - Upload temporary media cleanup: PASS automated. `test_upload_temp_directory_is_removed_after_processing` proves the server removes the per-upload temp directory after processing.
 - Transcript and analysis retention cleanup: PASS automated and public. `test_delete_transcript_removes_saved_analysis_for_retention` proves an owner-authorized transcript delete removes the transcript and its saved analysis rows; SQLite connections now enable foreign-key enforcement. Public API verification after restart: record `c40edf087acd` and analysis `c3e5e11163a0` both returned HTTP 404 after delete.
@@ -185,6 +197,7 @@ Pass criteria:
 - Verbatim quotes are not fabricated.
 
 Current evidence:
+- 2026-08-31 08:53 EDT: public root still contains Phase 3 analysis markers after the UX alignment pass, including `/api/analyze-all/`, `analysisMenu`, `analysisCopyBtn`, and the ask-a-question controls.
 - 2026-08-31 06:32 EDT: Phase 3 starter backend and expanded full-menu UI are live on `https://epic-transcript.robyncrane.com/`.
 - 2026-08-31 07:43 EDT: long-transcript Phase 3 public proof passed on the two-hour cached fixture. The backend now samples beginning, middle, and ending timestamp evidence for long records instead of only the opening segments.
 - 2026-08-31 07:07 EDT: combined-output copy/download path is live on `https://epic-transcript.robyncrane.com/`.

@@ -41,3 +41,16 @@ def test_design_has_dark_presentation_and_light_results_surfaces():
     assert "light-stage" in html
     assert "radial-gradient(circle, rgba(123, 47, 247, 0.18)" in html
     assert "#f7f6f3" in html
+
+
+def test_chatgpt_reference_layout_version_markers():
+    html = HTML.read_text()
+    assert "Free Video Transcript" in html
+    assert "Generator" in html
+    assert "FAST · FREE · V3" in html
+    assert "Get Video Transcript" in html
+    assert "Quick and simple. No catch." in html
+    assert "Frequently Asked Questions (FAQ)" in html
+    assert "faq-stage" in html
+    assert "step-grid" in html
+    assert html.index("hero-control") < html.index("How it works") < html.index("Frequently Asked Questions")
