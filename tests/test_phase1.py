@@ -435,7 +435,7 @@ def test_local_whisper_passes_threads_when_configured(monkeypatch, tmp_path):
 def test_transcribe_url_job_returns_accepted_and_can_complete(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
-    def fake_record(url, owner_token, started=None):
+    def fake_record(url, owner_token, started=None, allow_long=False, job_id=None):
         return {"id":"rec1", "title":"French", "language":"fr", "provider_attempts":[{"provider":"local-whisper", "ok": True}]}
     monkeypatch.setattr(app, "transcribe_youtube_url_to_record", fake_record)
     client = TestClient(app.app)
@@ -490,3 +490,53 @@ def test_local_whisper_adds_ffmpeg_dir_to_subprocess_path(monkeypatch, tmp_path)
     segs, lang = app.transcribe_with_local_whisper(audio)
     assert lang == "en"
     assert segs[0]["text"] == "Hello path"
+
+
+def test_sync_route_still_rejects_long_video_but_async_job_allows_queued_chunks(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    long_meta = {"id": "lgvid1234AB", "title": "Two Hour Test", "duration": 7205, "webpage_url": "https://youtu.be/lgvid1234AB", "subtitles": {}, "automatic_captions": {}}
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: long_meta)
+    def fake_captions(meta):
+        return ([{"start": 0, "end": 5, "text": "start words here"}, {"start": 601, "end": 606, "text": "middle words here"}, {"start": 7190, "end": 7198, "text": "ending words here now"}], "en", "native-caption-manual")
+    monkeypatch.setattr(app, "fetch_caption_url_segments", fake_captions)
+    client = TestClient(app.app)
+    sync = client.post("/api/transcribe-url", data={"url": "https://youtu.be/lgvid1234AB", "owner": "owner-token-long-sync-aaaaaaaa"})
+    assert sync.status_code == 422
+    assert "too long" in sync.json()["detail"]
+    job = client.post("/api/transcribe-url-job", data={"url": "https://youtu.be/lgvid1234AB", "owner": "owner-token-long-async-aaaaaaaa"})
+    assert job.status_code == 202
+    job_id = job.json()["job"]["id"]
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        got = client.get(f"/api/jobs/{job_id}").json()["job"]
+        if got["status"] == "done":
+            break
+        time.sleep(0.05)
+    assert got["status"] == "done"
+    rec = got["record"]
+    assert rec["duration_seconds"] == 7205
+    assert rec["method"] == "queued-chunked-captions"
+    assert rec["provider_attempts"][-1]["chunks"] >= 2
+    assert "ending words here now" in rec["transcript"]
+
+
+def test_chunked_whisper_offsets_audio_chunks(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    meta = {"id": "longwhisp1A", "title": "Chunk Whisper", "duration": 1250, "webpage_url": "https://youtu.be/longwhisp1A"}
+    for name in ("fetch_caption_url_segments", "youtube_transcript_api_segments", "yt_dlp_grab_caption_segments"):
+        monkeypatch.setattr(app, name, lambda *a, **k: (_ for _ in ()).throw(RuntimeError("provider down")))
+    audio = tmp_path / "audio.mp3"; audio.write_bytes(b"audio")
+    chunks = [tmp_path / "chunk-0000.wav", tmp_path / "chunk-0001.wav"]
+    for c in chunks: c.write_bytes(b"chunk")
+    monkeypatch.setattr(app, "yt_dlp_download_audio", lambda url, work_dir: audio)
+    monkeypatch.setattr(app, "split_audio_for_long_transcription", lambda audio_path, work_dir, chunk_seconds: chunks)
+    def fake_whisper(path, language=None, model=None, timeout=None):
+        idx = chunks.index(path)
+        return ([{"start": 1, "end": 3, "text": f"chunk {idx} spoken words with enough credible text"}], "en")
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", fake_whisper)
+    rec = app.transcribe_long_youtube_queued("https://youtu.be/longwhisp1A", "longwhisp1A", time.monotonic(), tmp_path, "owner-token-long-whisper-aaaa", meta)
+    assert rec["method"] == "queued-chunked-local-whisper"
+    assert rec["segments"][1]["start"] == 601
+    assert rec["provider_attempts"][-1]["chunks"] == 2

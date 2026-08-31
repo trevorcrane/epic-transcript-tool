@@ -395,6 +395,10 @@
       const job = data.job || {};
       if (job.status === 'done' && job.record) return job.record;
       if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');
+      if (job.message) {
+        const percent = typeof job.percent === 'number' ? ` (${job.percent}%)` : '';
+        setStatus(`${job.message}${percent} ${elapsed}s`);
+      }
     }
     throw new Error('Transcript job is still running. Please try Recent in a minute.');
   }

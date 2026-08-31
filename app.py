@@ -623,6 +623,104 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     return segs, language or detected_lang or "unknown"
 
 
+
+def update_url_job(job_id: Optional[str], **fields) -> None:
+    if not job_id:
+        return
+    with URL_JOBS_LOCK:
+        if job_id in URL_JOBS:
+            URL_JOBS[job_id].update(fields)
+
+
+def chunk_segments_by_time(segs: list[dict], chunk_seconds: int = 600) -> list[list[dict]]:
+    chunks: list[list[dict]] = []
+    for seg in segs:
+        idx = int(float(seg.get("start", 0)) // chunk_seconds)
+        while len(chunks) <= idx:
+            chunks.append([])
+        chunks[idx].append(seg)
+    return [chunk for chunk in chunks if chunk]
+
+
+def offset_segments(segs: list[dict], offset: float) -> list[dict]:
+    shifted = []
+    for seg in segs:
+        shifted.append({"start": float(seg.get("start", 0)) + offset, "end": float(seg.get("end", seg.get("start", 0))) + offset, "text": seg.get("text", "")})
+    return shifted
+
+
+def split_audio_for_long_transcription(audio_path: Path, work_dir: Path, chunk_seconds: int) -> list[Path]:
+    chunks_dir = work_dir / "chunks"
+    chunks_dir.mkdir(parents=True, exist_ok=True)
+    out_template = chunks_dir / "chunk-%04d.wav"
+    cmd = [resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES), "-y", "-i", str(audio_path), "-ac", "1", "-ar", "16000", "-f", "segment", "-segment_time", str(chunk_seconds), "-reset_timestamps", "1", str(out_template)]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(os.getenv("LONG_VIDEO_SPLIT_TIMEOUT_SECONDS", "300")))
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or "Audio chunking failed")
+    chunks = sorted(chunks_dir.glob("chunk-*.wav"))
+    if not chunks:
+        raise RuntimeError("Audio chunking produced no chunks")
+    return chunks
+
+
+def transcribe_long_youtube_queued(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str], meta: dict, job_id: Optional[str] = None) -> dict:
+    attempts = [{"provider": "metadata", "ok": True, "duration_seconds": meta.get("duration")}]
+    title = meta.get("title") or f"YouTube {video_id}"
+    creator = meta.get("uploader") or meta.get("channel")
+    duration = meta.get("duration")
+    canonical = meta.get("webpage_url") or f"https://youtu.be/{video_id}"
+    expected_language = infer_expected_language(meta)
+    update_url_job(job_id, stage="captions", message="Checking captions for long video", percent=5, duration_seconds=duration)
+    providers = [
+        ("native-caption-extractor", lambda: fetch_caption_url_segments(meta)),
+        ("youtube-transcript-api", lambda: youtube_transcript_api_segments(video_id)),
+        ("yt-dlp-subtitles", lambda: yt_dlp_grab_caption_segments(url, work_dir, expected_language)),
+    ]
+    for name, fn in providers:
+        try:
+            segs, lang, *rest = fn()
+            if not segs or not timestamps_increase(segs):
+                raise RuntimeError("empty or invalid timestamps")
+            chunks = chunk_segments_by_time(segs, int(os.getenv("LONG_VIDEO_CHUNK_SECONDS", "600")))
+            transcript = segments_to_transcript(segs)
+            if transcript_word_count(transcript) < 10:
+                raise RuntimeError("transcript not credible")
+            attempts.append({"provider": name, "ok": True, "segments": len(segs), "words": transcript_word_count(transcript), "chunks": len(chunks)})
+            update_url_job(job_id, stage="saving", message=f"Saving long transcript from {len(chunks)} queued caption chunks", percent=95, chunks_total=len(chunks), chunks_done=len(chunks))
+            method = "queued-chunked-captions" if name != "youtube-transcript-api" else "queued-chunked-transcript-api"
+            return save_transcript(source=title, source_kind="youtube", method=method, transcript=transcript,
+                                   duration_seconds=duration, processing_seconds=time.monotonic() - started,
+                                   media_id=video_id, source_url=canonical, title=title, creator=creator,
+                                   language=lang, segments=segs, provider_attempts=attempts, cache_hit=False,
+                                   owner_token=owner_token)
+        except Exception as e:
+            attempts.append({"provider": name, "ok": False, "error": str(e)[:240]})
+    update_url_job(job_id, stage="download", message="Downloading long-video audio for chunked Whisper", percent=10)
+    try:
+        audio = yt_dlp_download_audio(url, work_dir)
+        chunk_seconds = int(os.getenv("LONG_VIDEO_CHUNK_SECONDS", "600"))
+        chunks = split_audio_for_long_transcription(audio, work_dir, chunk_seconds)
+        all_segs: list[dict] = []
+        expected_lang = infer_expected_language(meta)
+        for idx, chunk in enumerate(chunks, 1):
+            update_url_job(job_id, stage="transcribing", message=f"Transcribing chunk {idx} of {len(chunks)}", percent=min(90, 10 + int(80 * idx / max(len(chunks), 1))), chunks_total=len(chunks), chunks_done=idx - 1)
+            segs, lang = transcribe_with_local_whisper(chunk, language=expected_lang, model=os.getenv("LONG_VIDEO_WHISPER_MODEL", os.getenv("YOUTUBE_WHISPER_MODEL", "tiny")), timeout=int(os.getenv("LONG_VIDEO_CHUNK_TIMEOUT_SECONDS", "300")))
+            all_segs.extend(offset_segments(segs, (idx - 1) * chunk_seconds))
+        transcript = segments_to_transcript(all_segs)
+        if transcript_word_count(transcript) < 10:
+            raise RuntimeError("chunked Whisper transcript not credible")
+        attempts.append({"provider": "chunked-local-whisper", "ok": True, "segments": len(all_segs), "words": transcript_word_count(transcript), "chunks": len(chunks)})
+        update_url_job(job_id, stage="saving", message=f"Saving long transcript from {len(chunks)} audio chunks", percent=95, chunks_total=len(chunks), chunks_done=len(chunks))
+        return save_transcript(source=title, source_kind="youtube", method="queued-chunked-local-whisper", transcript=transcript,
+                               duration_seconds=duration, processing_seconds=time.monotonic() - started,
+                               media_id=video_id, source_url=canonical, title=title, creator=creator,
+                               language=lang, segments=all_segs, provider_attempts=attempts, cache_hit=False,
+                               owner_token=owner_token)
+    except Exception as e:
+        attempts.append({"provider": "chunked-local-whisper", "ok": False, "error": str(e)[:240]})
+        detail = json.dumps(attempts[-4:], ensure_ascii=False)
+        raise RuntimeError(f"Long-video queued transcription failed. Provider trail: {detail}")
+
 def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str] = None, meta: Optional[dict] = None) -> dict:
     attempts = []
     meta = meta or {}
@@ -726,7 +824,7 @@ def api_setup() -> dict:
     return setup_status()
 
 
-def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Optional[float] = None) -> dict:
+def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Optional[float] = None, allow_long: bool = False, job_id: Optional[str] = None) -> dict:
     started = started or time.monotonic()
     video_id = normalize_youtube_video_id(url)
     if not video_id:
@@ -741,10 +839,13 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
     cached = get_cached_transcript(video_id, expected_language=expected_language)
     if cached:
         return record_for_owner(cached, owner_token)
-    if (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS:
+    is_long = (meta_probe.get("duration") or 0) > MAX_SYNC_YOUTUBE_DURATION_SECONDS
+    if is_long and not allow_long:
         raise HTTPException(422, LONG_VIDEO_MESSAGE)
     work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
     try:
+        if is_long:
+            return transcribe_long_youtube_queued(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe, job_id=job_id)
         return transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)
     except RuntimeError as e:
         raise HTTPException(422, str(e))
@@ -756,7 +857,7 @@ def run_url_job(job_id: str, url: str, owner_token: str) -> None:
     with URL_JOBS_LOCK:
         URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
     try:
-        rec = transcribe_youtube_url_to_record(url, owner_token, started=time.monotonic())
+        rec = transcribe_youtube_url_to_record(url, owner_token, started=time.monotonic(), allow_long=True, job_id=job_id)
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time()})
     except HTTPException as e:
