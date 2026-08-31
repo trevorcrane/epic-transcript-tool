@@ -97,6 +97,8 @@ Status: bounded scripted matrix and two-hour/long-video transcription passing in
 ## Phase 2 release gate: Any video or audio
 
 Current implementation evidence:
+- 2026-08-31 05:17 EDT: added `test_non_youtube_media_url_falls_back_to_local_whisper` plus `scripts/phase2_public_url_smoke.py`, then ran it against the public no-login API.
+- Public supported non-YouTube media URL: PASS. Fixture `https://epic-transcript.robyncrane.com/static/phase2-public-url.mp3` returned HTTP 206 byte-range, `audio/mpeg`; `/api/transcribe-url` returned HTTP 200 in 8.93s, method `local-whisper`, source_kind `url`, language `en`, cache miss, 2 segments, 18 words. Credible transcript begins `Epic transcript machine phase 2 public URL test...`. Provider trail shows native captions failed cleanly, then free local Whisper succeeded.
 - 2026-08-31 04:42 EDT: added upload duration detection and ran `scripts/phase2_long_upload_smoke.py` against the public no-login API.
 - Public generated 31-minute MP3 upload: PASS, HTTP 200 in 54.50s, method `local-whisper`, duration `1862.0` seconds, language `en`, cache miss, 3 segments, 34 words, credible transcript begins `Epic transcript machine long upload proof...` and includes `[31:00]` continuation text.
 - 2026-08-31 04:06 EDT: added and ran `scripts/phase2_non_english_upload_smoke.py` against the public no-login API.
@@ -131,7 +133,7 @@ Successfully process:
 - Uploaded WAV.
 - Non-English recording. Public French WAV upload passed via local Whisper on 2026-08-31 04:06 EDT.
 - 30+ minute recording. Public generated 31-minute MP3 upload passed via local Whisper on 2026-08-31 04:42 EDT with duration metadata `1862.0` seconds.
-- Supported non-YouTube URL.
+- Supported non-YouTube URL. Public hosted MP3 URL passed on 2026-08-31 05:17 EDT via `/api/transcribe-url`, `local-whisper`, 2 segments, 18 words, no paid provider.
 - Unsupported URL with helpful upload guidance.
 - Desktop Chrome.
 - Mobile experience.

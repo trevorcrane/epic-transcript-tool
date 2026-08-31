@@ -492,6 +492,33 @@ def test_local_whisper_adds_ffmpeg_dir_to_subprocess_path(monkeypatch, tmp_path)
     assert segs[0]["text"] == "Hello path"
 
 
+def test_non_youtube_media_url_falls_back_to_local_whisper(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    calls = {"downloaded": False}
+    media = tmp_path / "downloaded.mp3"
+    media.write_bytes(b"audio")
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"id": "public-mp3", "title": "Public MP3", "webpage_url": url, "duration": 8})
+    monkeypatch.setattr(app, "fetch_caption_url_segments", lambda meta: (_ for _ in ()).throw(RuntimeError("No usable native caption track found")))
+    def fake_download(url, work_dir):
+        calls["downloaded"] = True
+        return media
+    monkeypatch.setattr(app, "yt_dlp_download_audio", fake_download)
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", lambda path: ([{"start": 0, "end": 4, "text": "epic transcript public url spoken words"}], "en"))
+    client = TestClient(app.app)
+
+    res = client.post("/api/transcribe-url", data={"url": "https://media.example.com/public.mp3", "owner": "owner-token-public-url-aaaaaaaa"})
+
+    assert res.status_code == 200
+    rec = res.json()["record"]
+    assert calls["downloaded"] is True
+    assert rec["source_kind"] == "url"
+    assert rec["method"] == "local-whisper"
+    assert rec["language"] == "en"
+    assert rec["word_count"] == 6
+    assert rec["provider_attempts"][0]["provider"] == "captions"
+
+
 def test_upload_records_media_duration_for_long_recordings(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
