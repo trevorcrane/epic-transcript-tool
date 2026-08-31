@@ -606,6 +606,8 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     files = list(out_dir.glob("*.vtt"))
     if files:
         segs = parse_vtt_segments(files[0].read_text(errors="ignore"))
+        if not segs:
+            segs = parse_whisper_stdout_segments(proc.stdout)
     else:
         segs = parse_whisper_stdout_segments(proc.stdout)
     shutil.rmtree(out_dir, ignore_errors=True)

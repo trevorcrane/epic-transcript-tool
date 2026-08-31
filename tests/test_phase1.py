@@ -449,3 +449,20 @@ def test_transcribe_url_job_returns_accepted_and_can_complete(monkeypatch, tmp_p
         time.sleep(0.01)
     assert got["status"] == "done"
     assert got["record"]["language"] == "fr"
+
+
+def test_local_whisper_falls_back_to_stdout_when_vtt_file_is_empty(monkeypatch, tmp_path):
+    audio = tmp_path / "jane.wav"
+    audio.write_bytes(b"fake")
+    fake_bin = tmp_path / "whisper"
+    fake_bin.write_text("#!/bin/sh\nexit 0\n")
+    fake_bin.chmod(0o755)
+    def fake_run(cmd, capture_output, text, timeout):
+        out_dir = Path(cmd[cmd.index("--output_dir") + 1])
+        (out_dir / "jane.vtt").write_text("WEBVTT\n\n")
+        return subprocess.CompletedProcess(cmd, 0, stdout="Detected language: English\n[00:00.000 --> 00:02.000] Real spoken words from stdout\n", stderr="")
+    monkeypatch.setattr(app, "resolve_whisper_binary", lambda: str(fake_bin))
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    segs, lang = app.transcribe_with_local_whisper(audio)
+    assert lang == "en"
+    assert segs == [{"start": 0.0, "end": 2.0, "text": "Real spoken words from stdout"}]
