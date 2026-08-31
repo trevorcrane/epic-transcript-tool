@@ -1129,6 +1129,17 @@ def make_srt(row: dict) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def make_vtt(row: dict) -> str:
+    lines = ["WEBVTT", ""]
+    for seg in row.get("segments") or []:
+        start = seconds_to_timestamp(seg.get("start", 0), comma=True).replace(",", ".")
+        end = seconds_to_timestamp(seg.get("end", seg.get("start", 0) + 2), comma=True).replace(",", ".")
+        lines += [f"{start} --> {end}", seg.get("text", ""), ""]
+    if not row.get("segments") and row.get("transcript"):
+        lines += ["00:00:00.000 --> 00:00:02.000", row.get("transcript", ""), ""]
+    return "\n".join(lines).strip() + "\n"
+
+
 @app.get("/", include_in_schema=False)
 def root_index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
@@ -1350,13 +1361,15 @@ def transcript_download_response(rec: dict, format: str) -> PlainTextResponse:
         body, media, ext = make_markdown(rec), "text/markdown", "md"
     elif format == "srt":
         body, media, ext = make_srt(rec), "application/x-subrip", "srt"
+    elif format == "vtt":
+        body, media, ext = make_vtt(rec), "text/vtt", "vtt"
     else:
         body, media, ext = rec.get("transcript", ""), "text/plain", "txt"
     return PlainTextResponse(body, media_type=media, headers={"Content-Disposition": f'attachment; filename="{safe}.{ext}"'})
 
 
 @app.post("/api/transcripts/{rec_id}/download-link")
-def api_download_link(request: Request, rec_id: str, format: str = Query("txt", pattern="^(txt|md|srt)$"), x_transcript_owner: Optional[str] = Header(None)) -> dict:
+def api_download_link(request: Request, rec_id: str, format: str = Query("txt", pattern="^(txt|md|srt|vtt)$"), x_transcript_owner: Optional[str] = Header(None)) -> dict:
     with db() as conn:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
     if not row:

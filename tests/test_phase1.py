@@ -117,7 +117,7 @@ def test_download_formats_are_available_for_saved_record(monkeypatch, tmp_path):
         owner_token="owner-token-123456789012345678901234",
     )
     client = TestClient(app.app)
-    for fmt, marker in [("txt", "[00:00] hello"), ("md", "# Format Test"), ("srt", "1\n00:00:00,000")]:
+    for fmt, marker in [("txt", "[00:00] hello"), ("md", "# Format Test"), ("srt", "1\n00:00:00,000"), ("vtt", "WEBVTT\n\n00:00:00.000 --> 00:00:01.000")]:
         link = client.post(f"/api/transcripts/{rec['id']}/download-link?format={fmt}", headers={"X-Transcript-Owner": "owner-token-123456789012345678901234"})
         assert link.status_code == 200
         path = urlparse(link.json()["url"]).path
