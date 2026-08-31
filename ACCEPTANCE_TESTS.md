@@ -62,6 +62,12 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 18:15 EDT, Phase 2 real browser Whisper preferred-route/timestamp proof.
+
+- Browser fallback model/wiring proof: PASS. Public root returned HTTP 200 with upgraded `Xenova/whisper-small` model marker, preferred browser route wiring `shouldPreferBrowserWhisper(file)`, real timestamp chunk wiring `return_timestamps: true` plus `chunks.map`, failed-upload fallback wiring, and subtitle formatter.
+- Real browser Whisper proof: PASS. Playwright loaded the local static UI, forced server upload failure, uploaded the generated WAV, ran the actual browser model path without the test stub, reached `Done`, rendered method `browser-whisper-webgpu · 61 chars`, transcript `Browser whisper real model proof for Epic transcript machine.`, saved one local-history item, and downloaded `epic-transcript-browser.vtt` with `WEBVTT` plus full `00:00:00.000 --> 00:00:03.320` timestamp. Evidence saved at `evidence/phase2-browser-real-whisper-attempt.json`.
+- Regression coverage: PASS. `tests/test_phase2_browser_real_whisper_smoke.py` passed and now checks the script rejects the old tiny model marker and requires the preferred browser route and timestamp checks.
+
 Run time: 2026-08-31 18:08 EDT, Phase 3 quote/citation archive and source-supported asset grounding.
 
 - Public app and recovery watchdog: PASS. After the API reload, `/health` returned HTTP 200 with `ready=true`, required `missing=[]`, optional missing only SMTP config and `GEMINI_API_KEY`, and the public watchdog completed async job `d015b3896eff` with record `622f1c581699`, method `native-caption-subtitles`, 61 segments, 366 words.

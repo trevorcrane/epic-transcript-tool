@@ -121,7 +121,7 @@ server.listen(0, '127.0.0.1', async () => {
       suggestedFilename: download.suggestedFilename(),
       bytes: Buffer.byteLength(vtt),
       hasWebVtt: vtt.includes('WEBVTT'),
-      hasFullTimestamp: /00:00:00\.000 --> 00:00:0[2-9]\.000/.test(vtt),
+      hasFullTimestamp: /00:00:00\.000 --> 00:00:0[2-9]\.\d{3}/.test(vtt),
     }
   };
   await browser.close();
