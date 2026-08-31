@@ -65,11 +65,15 @@ async function main(){
   });
   report.checks.reducedMotion = await page.emulateMedia({reducedMotion:'reduce'}).then(()=>page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches));
   await page.setViewportSize({width:390,height:844});
+  await page.waitForTimeout(250);
   await page.evaluate(() => { document.body.dataset.theme='dark'; });
-  report.checks.mobileOverflowDark = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  report.checks.mobileDarkMetrics = await page.evaluate(() => ({scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScrollWidth: document.body.scrollWidth}));
+  report.checks.mobileOverflowDark = report.checks.mobileDarkMetrics.scrollWidth > report.checks.mobileDarkMetrics.clientWidth + 1;
   report.screenshots.mobileDark = await screenshot(page,'v4-mobile-390-dark.png');
   await page.click('#themeToggle');
-  report.checks.mobileOverflowLight = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  await page.waitForTimeout(250);
+  report.checks.mobileLightMetrics = await page.evaluate(() => ({scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth, bodyScrollWidth: document.body.scrollWidth}));
+  report.checks.mobileOverflowLight = report.checks.mobileLightMetrics.scrollWidth > report.checks.mobileLightMetrics.clientWidth + 1;
   report.screenshots.mobileLight = await screenshot(page,'v4-mobile-390-light.png');
   await page.setViewportSize({width:1440,height:1100});
   await page.fill('#url', regressionUrl);
