@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "base": "https://epic-transcript.robyncrane.com",
+  "video_url": "https://youtu.be/dQw4w9WgXcQ",
+  "elapsed_seconds": 2.85,
+  "record": {
+    "id": "2109dab1aa1a",
+    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "method": "native-caption-subtitles",
+    "language": "en",
+    "word_count": 366,
+    "segment_count": 61,
+    "cache_hit": true
+  },
+  "analysis_id": "1a38b3076011",
+  "quote_count_checked": 4,
+  "all_quotes_exact_source_matches": true,
+  "all_sources_found_in_transcript": true,
+  "download": {
+    "status": 200,
+    "bytes": 1145,
+    "content_type": "text/markdown; charset=utf-8"
+  },
+  "checked_quotes": [
+    {
+      "quote": "[\u266a\u266a\u266a]",
+      "source": "[00:01] [\u266a\u266a\u266a]"
+    },
+    {
+      "quote": "\u266a We're no strangers to love \u266a",
+      "source": "[00:18] \u266a We're no strangers to love \u266a"
+    },
+    {
+      "quote": "\u266a You know the rules and so do I \u266a",
+      "source": "[00:22] \u266a You know the rules and so do I \u266a"
+    },
+    {
+      "quote": "\u266a A full commitment's what I'm thinking of \u266a",
+      "source": "[00:27] \u266a A full commitment's what I'm thinking of \u266a"
+    }
+  ]
+}

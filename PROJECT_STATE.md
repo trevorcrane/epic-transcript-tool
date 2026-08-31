@@ -1,6 +1,6 @@
 # PROJECT_STATE.md
 
-Updated: 2026-08-31 15:46 EDT
+Updated: 2026-08-31 16:02 EDT
 
 ## Current phase
 Phase 1: Bulletproof YouTube Transcripts. Active gate is production release verification and backend hardening. Latest sprint added a one-command hosted staging runbook into the transfer bundle, so the selected persistent Docker host can print or execute the seed verification, Docker build, detached container start, health wait, and Phase 1/2/3 smoke report steps from the bundle itself.
@@ -48,7 +48,8 @@ Status: Release-clear on the public no-login Phase 2 media gate. Hosted-containe
 - Fresh 30+ minute public upload proof from 2026-08-31 04:42 EDT: generated 31-minute MP3, 7,448,625 bytes, returned HTTP 200 in 54.50s through `local-whisper`, language `en`, cache miss, duration `1862.0` seconds, 3 segments, 34 words. Credible transcript begins `Epic transcript machine long upload proof...` and includes text at `[31:00]`.
 
 ### Version 3 / Phase 3: Video intelligence
-Status: Advanced publicly, not release-complete. Hosted-container UI/API contract now passes against a seeded persistent `/data` volume.
+Status: Advanced publicly, not release-complete. Hosted-container UI/API contract now passes against a seeded persistent `/data` volume. Latest sprint added a public quote-integrity smoke so Best Quotes cannot pass by inventing verbatim lines.
+- Phase 3 quote integrity advanced on 2026-08-31 16:02 EDT: added `scripts/phase3_quote_integrity_smoke.py` and ran it against `https://epic-transcript.robyncrane.com`. Public Rick Astley transcript completed from cache with record `2109dab1aa1a`, 366 words, 61 segments, method `native-caption-subtitles`; Best Quotes analysis `1a38b3076011` returned 4 quote lines, and every quoted line exactly matched its timestamped Source text and was found in the public transcript record. Markdown download returned HTTP 200, 1,145 bytes, `text/markdown`.
 - Added the first provider-safe Phase 3 backend: `/api/analyze/{transcript_id}` now produces timestamp-cited executive summary, action items, chapters, quotes, FAQ, sales insights, Trevor-use, starter content-asset maps, and question-answer outputs without paid providers or hiding the original transcript.
 - Added `/api/analysis/{analysis_id}/download` so generated analysis can be downloaded as Markdown.
 - Expanded the public UI from two starter buttons to the full starter intelligence menu: `All Outputs`, 16 individual output choices, ask-a-question input, `Ask`, and `Download Analysis` controls in the transcript workspace.
@@ -147,6 +148,11 @@ Prior full regression evidence:
 - Credible ending: `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ## Test results
+
+- `./.venv/bin/python -m py_compile scripts/phase3_quote_integrity_smoke.py && ./.venv/bin/python scripts/phase3_quote_integrity_smoke.py https://epic-transcript.robyncrane.com`: passed on 2026-08-31 16:02 EDT. Public transcript job returned record `2109dab1aa1a`, cache hit, 366 words, 61 segments; Best Quotes analysis `1a38b3076011` checked 4 quote/source pairs, all exact source matches, all sources found in transcript; Markdown download returned HTTP 200 / 1,145 bytes. Evidence saved to `evidence/phase3-quote-integrity-report.json`.
+- `./.venv/bin/python -m pytest -q`: passed on 2026-08-31 16:02 EDT with 65 tests.
+- Public root/health spot check on 2026-08-31 16:02 EDT: public root HTTP 200 / 57,250 bytes and Netlify review root HTTP 200 / 57,250 bytes with `Transcript Machine`, `Get Transcript`, upload, YouTube, and async markers; `/health` returned ready true with required `missing=[]`, optional missing only SMTP config and `GEMINI_API_KEY`.
+- Static inline JavaScript syntax check: passed on 2026-08-31 16:02 EDT with one script block and `node --check` exit 0.
 
 - `./.venv/bin/python scripts/hosted_staging_runbook.py http://127.0.0.1:8092 --data-dir evidence/hosted-staging-runbook-data --out evidence/hosted-staging-runbook-smoke-report.json --port 8092 --execute`: passed on 2026-08-31 15:46 EDT. The runbook verified/extracted the seed package, built Docker image `epic-transcript-machine:hosted-staging`, started a detached container, waited for `/health` HTTP 200, ran all hosted staging smokes, saved `evidence/hosted-staging-runbook-smoke-report.json`, and removed the container. Summary saved at `evidence/hosted-staging-runbook-execute-report.json`: `ok=true`; smoke `ok=true`; Phase 1 PASS 32.63s; Phase 2 PASS 12.33s; Phase 3 PASS 2.64s; extracted DB SHA-256 `6e0db1c41d476ee036defd4f5882167dcb93344fbbbf6a032a7d0874ca347bd4`; 394 transcript rows after smoke.
 - `./.venv/bin/python -m pytest -q`: passed on 2026-08-31 15:46 EDT with 65 tests.
