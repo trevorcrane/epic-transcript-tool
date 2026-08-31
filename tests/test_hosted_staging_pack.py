@@ -75,6 +75,7 @@ def test_hosted_staging_pack_copies_seed_db_and_writes_manifest(tmp_path):
     assert manifest["sha256"] == payload["sha256"]
     assert manifest["transcript_count"] == 4
     assert "docker run" in manifest["verify_commands"][0]
+    assert "scripts/hosted_staging_smoke.py" in manifest["verify_commands"][-1]
 
 
 def test_hosted_staging_verify_validates_and_extracts_seed_package(tmp_path):
@@ -125,3 +126,26 @@ def test_hosted_staging_verify_validates_and_extracts_seed_package(tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM transcripts").fetchone()[0] == 4
     finally:
         conn.close()
+
+
+def test_hosted_staging_smoke_print_plan_lists_all_release_lanes(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "hosted_staging_smoke.py"),
+            "https://staging.example.test",
+            "--print-plan",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["base_url"] == "https://staging.example.test"
+    assert [step["phase"] for step in payload["steps"]] == ["phase1", "phase2", "phase3"]
+    assert payload["steps"][0]["command"][-2:] == ["scripts/phase1_matrix.py", "https://staging.example.test"]
+    assert payload["steps"][1]["command"][-2:] == ["scripts/phase2_upload_smoke.py", "https://staging.example.test"]
+    assert payload["steps"][2]["command"][-2:] == ["scripts/phase3_ui_contract_smoke.py", "https://staging.example.test"]
