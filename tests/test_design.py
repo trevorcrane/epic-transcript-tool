@@ -93,7 +93,7 @@ def test_reference_faqs_and_theme_toggle_are_present():
     assert "? '☾ Dark' : '☀ Light'" not in html
     assert ".theme-toggle { min-width:44px; min-height:44px" in html
     assert "body[data-theme='light'] .hero-control" in html
-    assert "body[data-theme='light'] .drop-zone" in html
+    assert "body[data-theme='light'] .upload-mini" in html
     assert "body[data-theme='light'] .status" in html
 
 
@@ -113,3 +113,34 @@ def test_visible_version_phase_status_is_removed_from_hero():
     assert "Bulletproof YouTube transcripts: public gate passed." not in html
     assert "Any video or audio: uploads and public media verified" not in html
     assert "Video intelligence: starter outputs live" not in html
+
+
+def test_owner_ui_history_correction_contract():
+    html = HTML.read_text()
+    assert "Your Transcript History" in html
+    assert "Recent <span" not in html
+    assert 'placeholder="Enter URL..."' in html
+    assert "Enter YouTube URL" not in html
+    assert 'id="uploadBtn"' in html
+    assert 'aria-label="Upload audio, video, or transcript file"' in html
+    assert "drop-zone" not in html
+    assert "clearHistoryBtn" in html
+    assert "Local to this browser" in html
+    assert "No cloud sync" in html
+    assert "epicTranscriptHistory" in html
+    assert "saveLocalHistory" in html
+    assert "clearLocalHistory" in html
+    assert "Unlock All EPIC Machines" in html
+    assert html.index('id="result"') < html.index("Unlock All EPIC Machines") < html.index("Frequently Asked Questions")
+    for machine in ["Content Machine", "Clip Machine", "Sales Machine", "Story Machine", "Offer Machine", "Follow-Up Machine"]:
+        assert machine in html
+    assert html.count("Coming Soon") >= 6 or "Tell me when they unlock" in html
+    assert "EPIC Transcript Machine · v<span id=\"releaseVersion\"></span> · Powered by" in html
+    assert "https://epic.media" in html
+    assert "const RELEASE_VERSION" in html
+
+
+def test_100_assets_quality_gate_blocks_template_duplication():
+    html = HTML.read_text()
+    # Design smoke documents that this UI still exposes the currently open Phase 3 gate.
+    assert "Create 100 content assets" in html

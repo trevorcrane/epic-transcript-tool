@@ -70,20 +70,20 @@
   body[data-theme='light'] .logo, body[data-theme='light'] .hero, body[data-theme='light'] .theme-toggle { color:#171719; }
   body[data-theme='light'] .tagline, body[data-theme='light'] .proof-strip, body[data-theme='light'] .step-card p { color:rgba(23,23,25,.62); }
   body[data-theme='light'] .hero-control { background:rgba(255,255,255,.92); border-color:rgba(0,0,0,.10); }
-  body[data-theme='light'] .drop-zone, body[data-theme='light'] .divider, body[data-theme='light'] .status { color:#171719; }
-  body[data-theme='light'] .drop-zone { background:#fff; border-color:rgba(0,0,0,.16); }
-  body[data-theme='light'] .drop-zone:hover, body[data-theme='light'] .drop-zone.dragover { color:#171719; background:rgba(241,7,163,.06); }
+  body[data-theme='light'] .upload-mini, body[data-theme='light'] .history-note, body[data-theme='light'] .status { color:#171719; }
+  body[data-theme='light'] .upload-mini { background:#fff; border-color:rgba(0,0,0,.16); }
+  body[data-theme='light'] .upload-mini:hover { color:#171719; background:rgba(241,7,163,.06); }
   body[data-theme='light'] .file-name { color:#7b2ff7; }
   body[data-theme='light'] .divider::before, body[data-theme='light'] .divider::after { background:rgba(0,0,0,.12); }
   body[data-theme='light'] .status { background:#fff; border-color:rgba(0,0,0,.10); }
-  body[data-theme='light'] .drop-zone { background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.12); color:#171719; }
+  body[data-theme='light'] .upload-mini { background:rgba(255,255,255,.7); border-color:rgba(0,0,0,.12); color:#171719; }
   body[data-theme='light'] .status { border-color:rgba(30,30,40,.12); background:rgba(255,255,255,.72); color:#171719; }
   body[data-theme='light'] .url-input { color:#171719; background-color:#fff; }
   body[data-theme='light'] .url-input::placeholder { color:#8a8a91; }
   body[data-theme='light'] .result-card, body[data-theme='light'] .transcript-box, body[data-theme='light'] .analysis-box, body[data-theme='light'] .question-row input { color:#171719; }
   body[data-theme='light'] .step-number { background:#171719; color:#fff; }
   body[data-theme='light'] .hero-control,
-  body[data-theme='light'] .drop-zone,
+  body[data-theme='light'] .upload-mini,
   body[data-theme='light'] .status,
   body[data-theme='light'] .banner,
   body[data-theme='light'] .analysis-panel,
@@ -112,9 +112,12 @@
   .grab-btn:disabled { opacity:.55; cursor:not-allowed; }
   .divider { display:flex; align-items:center; justify-content:center; gap:14px; margin:22px 8px 14px; color:rgba(255,255,255,.34); font-size:11px; letter-spacing:.18em; text-transform:uppercase; }
   .divider::before, .divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.10); }
-  .drop-zone { display:block; border:1px dashed rgba(255,255,255,.22); border-radius:16px; padding:10px 14px; text-align:center; cursor:pointer; color:rgba(255,255,255,.64); transition:.15s ease; background:rgba(255,255,255,.035); font-size:13px; font-weight:750; }
-  .drop-zone:hover, .drop-zone.dragover { color:#fff; border-color:var(--color-pink); background:rgba(241,7,163,.08); }
-  .drop-zone input[type=file] { display:none; }
+  .input-tools { display:flex; gap:8px; align-items:stretch; margin-top:10px; }
+  .input-tools .url-row { flex:1; margin-top:0; }
+  .upload-mini { width:46px; min-width:46px; min-height:46px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.18); border-radius:15px; cursor:pointer; color:#fff; transition:.15s ease; background:linear-gradient(115deg, rgba(123,47,247,.35), rgba(241,7,163,.22)); box-shadow:0 12px 34px rgba(123,47,247,.18); font-size:18px; font-weight:900; }
+  .upload-mini:hover { border-color:var(--color-pink); transform:translateY(-1px); }
+  .upload-mini input[type=file] { position:absolute; inline-size:1px; block-size:1px; opacity:0; pointer-events:none; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .file-name { color:#ff77bf; font-weight:800; margin-top:6px; }
   .types { display:none; }
 
@@ -190,7 +193,15 @@
   .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-12px); opacity:0; pointer-events:none; z-index:50; padding:10px 16px; border-radius:999px; background:rgba(5,150,105,.12); border:1px solid rgba(5,150,105,.3); color:#bbf7d0; font-weight:700; transition:.18s ease; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .toast.error { background:var(--color-error-bg); color:var(--color-error-text); border-color:var(--color-error-border); }
-  .footer { padding:34px 20px; background:#09090b; color:var(--white-45); text-align:center; font-size:13px; }
+  .machine-band { padding:34px 20px 18px; background:#f7f6f3; }
+  .machine-card-grid { max-width:980px; margin:16px auto 0; display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+  .machine-card { border:1px solid rgba(123,47,247,.14); background:#fff; color:#171719; border-radius:18px; padding:14px 12px; min-height:112px; box-shadow:0 16px 44px rgba(16,16,20,.06); }
+  .machine-icon { width:34px; height:34px; border-radius:12px; display:grid; place-items:center; background:linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); color:#fff; margin-bottom:9px; }
+  .machine-card h3 { margin:0 0 5px; font-size:14px; letter-spacing:-.02em; }
+  .machine-card p { margin:0; font-size:12px; color:rgba(23,23,25,.62); }
+  .coming-soon { display:inline-block; margin-top:8px; font-size:10px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:#7b2ff7; }
+  .footer { padding:24px 20px; background:#09090b; color:var(--white-45); text-align:center; font-size:13px; }
+  .footer a { color:#fff; text-decoration:none; font-weight:800; }
   :focus-visible { outline:3px solid #ff77bf; outline-offset:3px; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; } }
   @media (max-width: 760px) {
@@ -200,7 +211,8 @@
     .nav .pill { letter-spacing:.18em; font-size:10px; }
     .hero h1 { font-size:clamp(46px, 15vw, 68px); }
     .tagline { font-size:18px; }
-    .url-row { grid-template-columns:1fr; }
+    .input-tools { align-items:center; }
+    .input-tools .url-row { grid-template-columns:1fr; }
     .url-input { height:54px; }
     .grab-btn { width:100%; height:56px; }
     .step-grid { grid-template-columns:1fr; gap:48px; }
@@ -222,7 +234,7 @@
     .hero h1 { font-size:43px; line-height:1.04; }
     .hero-control { margin-top:38px; border-radius:22px; }
     .url-input { padding-left:48px; font-size:14px; }
-    .drop-zone { padding:15px 12px; }
+    .upload-mini { min-height:44px; }
     .how-stage, .light-stage, .faq-stage { padding-left:12px; padding-right:12px; }
   }
 </style>
@@ -245,23 +257,24 @@
 
       <main class="hero" id="start">
         <div class="eyebrow"></div>
-        <h1>Free Video Transcript <span class="accent-text">Machine</span></h1>
+        <h1>Free Video Transcript <span class="accent-machine">MACHINE</span></h1>
         <p class="tagline">Paste a YouTube or public media URL, or upload an audio/video/transcript file.</p>
 
         <div id="banner" class="banner hidden"></div>
 
         <section class="hero-control" aria-label="Transcript input">
           <form id="form" autocomplete="off">
-            <div class="url-row">
-              <input id="url" class="url-input" type="url" placeholder="Enter YouTube URL..." inputmode="url" autocomplete="off" spellcheck="false" />
-              <button id="grab" class="grab-btn" type="submit">Get Transcript</button>
+            <div class="input-tools">
+              <div class="url-row">
+                <input id="url" class="url-input" type="url" placeholder="Enter URL..." inputmode="url" autocomplete="off" spellcheck="false" />
+                <button id="grab" class="grab-btn" type="submit">Get Transcript</button>
+              </div>
+              <label class="upload-mini" id="drop" for="file" aria-label="Upload audio, video, or transcript file" title="Upload">
+                <span id="uploadBtn" aria-hidden="true">↥</span><span class="sr-only">Choose file</span>
+                <input id="file" type="file" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt" />
+              </label>
             </div>
-            <div class="divider">or upload media</div>
-            <label class="drop-zone" id="drop">
-              <input id="file" type="file" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt" />
-              <div class="dz-text">Choose file</div>
-              <div class="file-name" id="fileName"></div>
-            </label>
+            <div class="file-name" id="fileName" aria-live="polite"></div>
             <input id="browserLocal" type="checkbox" hidden />
           </form>
         </section>
@@ -325,6 +338,19 @@
       </div>
     </div>
   </section>
+  <section class="machine-band" aria-label="Unlock All EPIC Machines">
+    <div class="shell">
+      <h2>Unlock All EPIC Machines</h2>
+      <div class="machine-card-grid">
+        <div class="machine-card"><div class="machine-icon">✍</div><h3>Content Machine</h3><p>Turn transcripts into campaigns.</p><span class="coming-soon">Coming Soon</span></div>
+        <div class="machine-card"><div class="machine-icon">▶</div><h3>Clip Machine</h3><p>Find short-form moments.</p><span class="coming-soon">Coming Soon</span></div>
+        <div class="machine-card"><div class="machine-icon">$</div><h3>Sales Machine</h3><p>Pull follow-up and offer angles.</p><span class="coming-soon">Coming Soon</span></div>
+        <div class="machine-card"><div class="machine-icon">★</div><h3>Story Machine</h3><p>Shape stories from raw calls.</p><span class="coming-soon">Coming Soon</span></div>
+        <div class="machine-card"><div class="machine-icon">◆</div><h3>Offer Machine</h3><p>Clarify promise and proof.</p><span class="coming-soon">Coming Soon</span></div>
+        <div class="machine-card"><div class="machine-icon">↗</div><h3>Follow-Up Machine</h3><p>Draft next-step sequences.</p><span class="coming-soon">Coming Soon</span></div>
+      </div>
+    </div>
+  </section>
 
   <section class="faq-stage">
     <div class="shell">
@@ -339,17 +365,19 @@
     </div>
   </section>
 
-  <footer class="footer">EPIC Transcript Machine · Public, no-login review build</footer>
+  <footer class="footer">EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by <a href="https://epic.media" target="_blank" rel="noopener">epic.media</a></footer>
 </div>
 
 <div id="toast" class="toast">Copied to clipboard ✓</div>
 
 <div class="drawer" id="drawer">
   <div class="drawer-head" id="drawerHead">
-    <div class="title-row">Recent <span id="drawerCount" style="opacity:.6"></span></div>
+    <div class="title-row">Your Transcript History <span id="drawerCount" style="opacity:.6"></span></div>
     <div class="chev">▲</div>
   </div>
   <div class="drawer-body" id="drawerBody">
+    <div class="history-note">Local to this browser. No cloud sync or sign-in required.</div>
+    <button class="clear-history" id="clearHistoryBtn" type="button">Clear history</button>
     <div class="recent-empty">No transcripts yet.</div>
   </div>
 </div>
@@ -371,6 +399,7 @@
     return '';
   }
   const API = detectBase();
+  const RELEASE_VERSION = '3.2.0';
 
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -382,7 +411,7 @@
     copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), downloadVttBtn: $('downloadVttBtn'), emailBtn: $('emailBtn'),
     summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisCopyBtn: $('analysisCopyBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
     toast: $('toast'),
-    drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'),
+    drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
     banner: $('banner'),
   };
   let currentRecord = null;
@@ -395,6 +424,7 @@
     ['content_assets_100', 'Create 100 content assets']
   ];
   const OWNER_KEY = 'epicTranscriptOwnerToken';
+  const HISTORY_KEY = 'epicTranscriptHistory';
   function ownerToken() {
     let token = localStorage.getItem(OWNER_KEY);
     if (!token) {
@@ -498,6 +528,7 @@
     els.analysisCopyBtn.disabled = true;
     els.analysisDownloadBtn.disabled = true;
     els.result.classList.add('show');
+    saveLocalHistory(rec);
     autoCopy(rec.transcript || '');
   }
 
@@ -732,6 +763,64 @@
     }
   });
 
+  // Browser-local history drawer
+  function loadLocalHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]').filter(Boolean); } catch (_) { return []; }
+  }
+  function saveLocalHistory(rec) {
+    if (!rec || !(rec.id || rec.source)) return;
+    const items = loadLocalHistory().filter(item => item.id !== rec.id);
+    items.unshift({ id: rec.id || 'local-' + Date.now(), source: rec.source || rec.title || '(untitled)', title: rec.title || rec.source || '(untitled)', method: rec.method || 'local', created_at: rec.created_at || new Date().toISOString(), transcript: rec.transcript || '', duration_seconds: rec.duration_seconds || 0, processing_seconds: rec.processing_seconds || 0, browser_only: !!rec.browser_only });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 20)));
+  }
+  function clearLocalHistory() {
+    localStorage.removeItem(HISTORY_KEY);
+    els.drawerCount.textContent = '';
+    renderRecentItems([]);
+    showToast('Transcript history cleared ✓');
+  }
+
+  function renderRecentItems(items) {
+    els.drawerBody.innerHTML = '<div class="history-note">Local to this browser. No cloud sync or sign-in required.</div><button class="clear-history" id="clearHistoryBtn" type="button">Clear history</button>';
+    const clearBtn = $('clearHistoryBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearLocalHistory);
+    els.drawerCount.textContent = items.length ? '· ' + items.length : '';
+    if (!items.length) {
+      els.drawerBody.insertAdjacentHTML('beforeend', '<div class="recent-empty">No transcripts yet.</div>');
+      return;
+    }
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'recent-item';
+      row.innerHTML = `
+        <div class="meta">
+          <div class="src"></div>
+          <div class="when"></div>
+        </div>
+        <button class="del" title="Delete from this browser" aria-label="Delete transcript from this browser">×</button>
+      `;
+      row.querySelector('.src').textContent = item.source || item.title || '(untitled)';
+      row.querySelector('.when').textContent = (item.created_at ? timeAgo(item.created_at) + ' · ' : '') + (item.method || 'local');
+      row.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('del')) return;
+        if (item.transcript) { renderResult(item); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+        try {
+          const full = await jfetch('/api/transcripts/' + item.id, { headers: ownerHeaders() });
+          renderResult(full);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) { showToast('Could not open: ' + err.message, true); }
+      });
+      row.querySelector('.del').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const next = loadLocalHistory().filter(local => local.id !== item.id);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+        if (currentRecord && currentRecord.id === item.id) { els.result.classList.remove('show'); currentRecord = null; }
+        renderRecentItems(next);
+      });
+      els.drawerBody.appendChild(row);
+    });
+  }
+
   // Recent drawer
   els.drawerHead.addEventListener('click', () => {
     els.drawer.classList.toggle('open');
@@ -748,50 +837,13 @@
   }
 
   async function loadRecent() {
+    const localItems = loadLocalHistory();
+    renderRecentItems(localItems);
     try {
       const data = await jfetch('/api/recent?limit=20', { headers: ownerHeaders() });
-      const items = data.items || [];
-      els.drawerCount.textContent = items.length ? '· ' + items.length : '';
-      if (!items.length) {
-        els.drawerBody.innerHTML = '<div class="recent-empty">No transcripts yet.</div>';
-        return;
-      }
-      els.drawerBody.innerHTML = '';
-      items.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'recent-item';
-        row.innerHTML = `
-          <div class="meta">
-            <div class="src"></div>
-            <div class="when"></div>
-          </div>
-          <button class="del" title="Delete">×</button>
-        `;
-        row.querySelector('.src').textContent = item.source || '(untitled)';
-        row.querySelector('.when').textContent = timeAgo(item.created_at) + ' · ' + item.method;
-        row.addEventListener('click', async (e) => {
-          if (e.target.classList.contains('del')) return;
-          try {
-            const full = await jfetch('/api/transcripts/' + item.id, { headers: ownerHeaders() });
-            renderResult(full);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          } catch (err) { showToast('Could not open: ' + err.message, true); }
-        });
-        row.querySelector('.del').addEventListener('click', async (e) => {
-          e.stopPropagation();
-          if (!confirm('Delete this transcript?')) return;
-          try {
-            await jfetch('/api/transcripts/' + item.id, { method: 'DELETE', headers: ownerHeaders() });
-            if (currentRecord && currentRecord.id === item.id) {
-              els.result.classList.remove('show');
-              currentRecord = null;
-            }
-            loadRecent();
-          } catch (err) { showToast('Delete failed: ' + err.message, true); }
-        });
-        els.drawerBody.appendChild(row);
-      });
-    } catch (e) { /* keep silent */ }
+      const serverItems = (data.items || []).filter(item => !localItems.some(local => local.id === item.id));
+      renderRecentItems(localItems.concat(serverItems).slice(0, 20));
+    } catch (e) { /* local browser history still works without server recent */ }
   }
 
   async function loadSetup() {
@@ -818,6 +870,8 @@
     }
   }
   function toggleTheme() { setTheme((document.body.dataset.theme || 'dark') === 'dark' ? 'light' : 'dark'); }
+  if (els.releaseVersion) els.releaseVersion.textContent = RELEASE_VERSION;
+  if (els.clearHistoryBtn) els.clearHistoryBtn.addEventListener('click', clearLocalHistory);
   const themeToggle = document.getElementById('themeToggle');
   if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
   setTheme(localStorage.getItem('epicTranscriptTheme') || 'dark');
