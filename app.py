@@ -547,14 +547,26 @@ def transcribe_with_gemini_youtube(url: str) -> tuple[list[dict], str]:
 
 def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
     out_template = str(work_dir / "audio.%(ext)s")
-    cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--ffmpeg-location", str(Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)).parent), "--no-warnings", "-f", "bestaudio/best", "-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", out_template, url]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-    if proc.returncode != 0:
-        raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr else "Audio download failed.")
-    matches = sorted(work_dir.glob("audio.*"))
-    if not matches:
-        raise RuntimeError("Audio download completed but no file was created.")
-    return matches[0]
+    base_cmd = [resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--ffmpeg-location", str(Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)).parent), "--no-warnings", "-f", "bestaudio/best", "-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", out_template]
+    variants = [[], ["--extractor-args", "youtube:player_client=android"]]
+    errors = []
+    for extra in variants:
+        for old in work_dir.glob("audio.*"):
+            old.unlink(missing_ok=True)
+        cmd = base_cmd + extra + [url]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        except subprocess.TimeoutExpired:
+            errors.append("audio download timed out")
+            continue
+        if proc.returncode == 0:
+            matches = sorted(work_dir.glob("audio.*"))
+            if matches:
+                return matches[0]
+            errors.append("Audio download completed but no file was created.")
+        else:
+            errors.append(proc.stderr.strip().splitlines()[-1] if proc.stderr else "Audio download failed.")
+    raise RuntimeError(errors[-1] if errors else "Audio download failed.")
 
 
 def resolve_whisper_binary() -> str:

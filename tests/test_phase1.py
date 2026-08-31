@@ -343,3 +343,18 @@ def test_local_whisper_reports_detected_language_from_output(monkeypatch, tmp_pa
     segs, lang = app.transcribe_with_local_whisper(audio)
     assert lang == "fr"
     assert segs[0]["text"] == "Bonjour tout le monde"
+
+
+def test_youtube_audio_download_retries_android_client_after_403(monkeypatch, tmp_path):
+    attempts = []
+    def fake_run(cmd, capture_output, text, timeout):
+        attempts.append(cmd)
+        if len(attempts) == 1:
+            return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="ERROR: HTTP Error 403: Forbidden")
+        (tmp_path / "audio.mp3").write_bytes(b"audio")
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    out = app.yt_dlp_download_audio("https://www.youtube.com/watch?v=EXa5OWG4XeY", tmp_path)
+    assert out.name == "audio.mp3"
+    assert len(attempts) == 2
+    assert "youtube:player_client=android" in attempts[1]
