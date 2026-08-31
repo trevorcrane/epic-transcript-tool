@@ -600,7 +600,10 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
         cmd += ["--threads", threads]
     if language:
         cmd += ["--language", language]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")))
+    env = os.environ.copy()
+    ffmpeg_dir = str(Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)).parent)
+    env["PATH"] = ffmpeg_dir + os.pathsep + env.get("PATH", "")
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")), env=env)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "Local Whisper transcription failed")
     files = list(out_dir.glob("*.vtt"))
