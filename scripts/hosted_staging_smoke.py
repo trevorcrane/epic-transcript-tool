@@ -77,6 +77,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print the smoke sequence without running network/API tests",
     )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        help="Optional JSON report path for host-side proof collection",
+    )
     return parser.parse_args()
 
 
@@ -86,7 +91,11 @@ def main() -> int:
         payload = {"ok": True, "base_url": args.base_url, "steps": build_steps(args.base_url)}
     else:
         payload = run_smokes(args.base_url)
-    print(json.dumps(payload, indent=2, sort_keys=True))
+    output = json.dumps(payload, indent=2, sort_keys=True)
+    if args.out:
+        args.out.expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(output + "\n")
+    print(output)
     return 0 if payload["ok"] else 1
 
 

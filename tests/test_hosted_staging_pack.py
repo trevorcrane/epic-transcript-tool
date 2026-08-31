@@ -76,6 +76,7 @@ def test_hosted_staging_pack_copies_seed_db_and_writes_manifest(tmp_path):
     assert manifest["transcript_count"] == 4
     assert "docker run" in manifest["verify_commands"][0]
     assert "scripts/hosted_staging_smoke.py" in manifest["verify_commands"][-1]
+    assert "--out evidence/hosted-staging-smoke-report.json" in manifest["verify_commands"][-1]
 
 
 def test_hosted_staging_verify_validates_and_extracts_seed_package(tmp_path):
@@ -129,12 +130,15 @@ def test_hosted_staging_verify_validates_and_extracts_seed_package(tmp_path):
 
 
 def test_hosted_staging_smoke_print_plan_lists_all_release_lanes(tmp_path):
+    report_path = tmp_path / "hosted-staging-smoke-report.json"
     result = subprocess.run(
         [
             sys.executable,
             str(ROOT / "scripts" / "hosted_staging_smoke.py"),
             "https://staging.example.test",
             "--print-plan",
+            "--out",
+            str(report_path),
         ],
         cwd=ROOT,
         text=True,
@@ -143,6 +147,8 @@ def test_hosted_staging_smoke_print_plan_lists_all_release_lanes(tmp_path):
     )
 
     payload = json.loads(result.stdout)
+    saved_payload = json.loads(report_path.read_text())
+    assert saved_payload == payload
     assert payload["ok"] is True
     assert payload["base_url"] == "https://staging.example.test"
     assert [step["phase"] for step in payload["steps"]] == ["phase1", "phase2", "phase3"]

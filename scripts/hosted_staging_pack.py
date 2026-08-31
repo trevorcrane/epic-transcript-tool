@@ -82,7 +82,7 @@ def build_manifest(db_path: Path) -> dict:
         "verify_commands": [
             'docker run --rm -p 8090:8090 -v "$PWD/data-hosted-test:/data" epic-transcript-machine',
             "docker exec <container> python - <<'PY'\nimport os, sqlite3\np='/data/transcripts.db'\nprint(os.path.exists(p), os.stat(p).st_size)\ncon=sqlite3.connect(p)\nprint(con.execute('select count(*) from transcripts').fetchone()[0])\nPY",
-            "./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host>",
+            "./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json",
         ],
     }
     return manifest

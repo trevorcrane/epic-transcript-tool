@@ -63,16 +63,16 @@ The command writes `evidence/hosted-staging-seed.tar.gz` with:
 - `manifest.json` containing database size, SHA-256 checksum, transcript count, and counts for the required Phase 1 cached media IDs.
 - a single hosted staging smoke command that runs Phase 1, Phase 2, and Phase 3 public-style tests against the staging URL.
 
-Current package evidence from 2026-08-31 13:36 EDT:
+Current package evidence from 2026-08-31 13:53 EDT:
 
 - Package: `evidence/hosted-staging-seed.tar.gz`.
 - Source DB: `data/transcripts.db`.
-- DB size: 26,484,736 bytes.
-- Package size: 4,540,759 bytes.
-- SHA-256: `82a140b363bed8c675278be139f103bede56d6b8f3a575ecf7c079a658d29c4a`.
-- Transcript rows: 345.
-- Required cached media present: `v34Eg12mhDM` 90 rows, `dQw4w9WgXcQ` 75 rows, `SXHMnicI6Pg` 15 rows, `aircAruvnKk` 15 rows.
-- Manifest smoke command: `./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host>`.
+- DB size: 26,742,784 bytes.
+- Package size: 4,583,649 bytes.
+- SHA-256: `ce83c5b88b91e7f1a44f293e47de2c8c62a707bd87894a284893e86c81b6f4f3`.
+- Transcript rows: 347.
+- Required cached media present: `v34Eg12mhDM` 91 rows, `dQw4w9WgXcQ` 76 rows, `SXHMnicI6Pg` 15 rows, `aircAruvnKk` 15 rows.
+- Manifest smoke command: `./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json`.
 
 ## Host-side seed verification
 
@@ -95,9 +95,9 @@ Current local verification evidence from 2026-08-31 13:21 EDT:
 - Command: `./.venv/bin/python scripts/hosted_staging_verify.py evidence/hosted-staging-seed.tar.gz --extract-to evidence/hosted-staging-verify-data`.
 - Result: PASS, `ok=true`.
 - Extracted DB: `evidence/hosted-staging-verify-data/transcripts.db`.
-- SHA-256 verified: `82a140b363bed8c675278be139f103bede56d6b8f3a575ecf7c079a658d29c4a`.
-- Transcript rows verified: 345.
-- Required cached media verified: `v34Eg12mhDM` 90, `dQw4w9WgXcQ` 75, `SXHMnicI6Pg` 15, `aircAruvnKk` 15.
+- SHA-256 verified: `ce83c5b88b91e7f1a44f293e47de2c8c62a707bd87894a284893e86c81b6f4f3`.
+- Transcript rows verified: 347.
+- Required cached media verified: `v34Eg12mhDM` 91, `dQw4w9WgXcQ` 76, `SXHMnicI6Pg` 15, `aircAruvnKk` 15.
 
 ## Cutover checklist
 
@@ -106,7 +106,7 @@ Current local verification evidence from 2026-08-31 13:21 EDT:
 3. Run `scripts/hosted_staging_verify.py` on the host with `--extract-to` pointed at the mounted persistent data directory.
 4. Run with persistent data: `docker run --rm -p 8090:8090 -v "$PWD/data-hosted-test:/data" epic-transcript-machine`.
 5. Verify `/health` returns HTTP 200 and required `missing: []`.
-6. Run `./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host>`. It runs the Phase 1 async matrix, Phase 2 upload smoke, and Phase 3 UI contract smoke in order and returns one JSON pass/fail report.
+6. Run `./.venv/bin/python scripts/hosted_staging_smoke.py http://<staging-host> --out evidence/hosted-staging-smoke-report.json`. It runs the Phase 1 async matrix, Phase 2 upload smoke, and Phase 3 UI contract smoke in order, prints one JSON pass/fail report, and saves the same JSON as durable host proof.
 9. Deploy to the selected host with a persistent `/data` volume.
 10. Move DNS only after hosted `/health`, transcript, upload, download, and analysis evidence passes.
 11. Keep the launchd iMac/tunnel path as rollback until the hosted domain has passed a 24-hour health window.
@@ -119,4 +119,8 @@ Current local verification evidence from 2026-08-31 13:21 EDT:
 - Seeded local Docker validation passed on 2026-08-31: `/health`, Phase 1 async matrix, Phase 2 upload/download smoke, and Phase 3 UI contract all passed against `127.0.0.1:8091` when `/data` was seeded from the current SQLite cache.
 - Staging cache packaging passed on 2026-08-31 13:06 EDT. `scripts/hosted_staging_pack.py` created the seed tarball and automated manifest, and `tests/test_hosted_staging_pack.py` covers the copy/manifest contract.
 - Host-side seed verification tooling passed on 2026-08-31 13:21 EDT. `scripts/hosted_staging_verify.py` validates the package manifest, SHA-256, transcript count, and required cached media IDs, then extracts `transcripts.db` into the selected persistent data directory before container start.
-- Host-side release-smoke runner passed on 2026-08-31 13:36 EDT. `scripts/hosted_staging_smoke.py` gives the selected host a one-command Phase 1/2/3 staging acceptance run after the seeded container is online.
+- Host-side release-smoke runner passed on 2026-08-31 13:53 EDT. `scripts/hosted_staging_smoke.py` gives the selected host a one-command Phase 1/2/3 staging acceptance run after the seeded container is online and can save the proof with `--out evidence/hosted-staging-smoke-report.json`.
+
+## Latest smoke report persistence proof
+
+- 2026-08-31 13:53 EDT: `scripts/hosted_staging_smoke.py` was run against the current public product with `--out evidence/hosted-staging-smoke-report.json`. The saved report returned `ok=true`; Phase 1 matrix passed in 24.61s, Phase 2 upload smoke passed in 11.99s, and Phase 3 UI contract passed in 3.44s.
