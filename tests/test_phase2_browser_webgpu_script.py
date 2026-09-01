@@ -10,3 +10,15 @@ def test_webgpu_proof_script_enables_real_webgpu_adapter_flags():
     assert "--enable-unsafe-webgpu" in source
     assert "--use-angle=metal" in source
     assert "--ignore-gpu-blocklist" in source
+
+
+def test_webgpu_proof_script_records_adapter_device_and_mobile_wasm_artifact():
+    source = SCRIPT.read_text()
+
+    assert "gpuProof" in source
+    assert "requestAdapter" in source
+    assert "requestDevice" in source
+    assert "adapterFeatures" in source
+    assert "userAgent" in source
+    assert "mobileWasm" in source
+    assert "desktopWebgpu" in source
