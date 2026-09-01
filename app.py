@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
+import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -47,8 +48,10 @@ DATA_DIR = configured_path("TRANSCRIPT_DATA_DIR", ROOT / "data")
 STATIC_DIR = configured_path("TRANSCRIPT_STATIC_DIR", ROOT / "static")
 DB_PATH = DATA_DIR / "transcripts.db"
 URL_JOBS_PATH = DATA_DIR / "url_jobs.json"
+PHASE3_GEMINI_USAGE_PATH = DATA_DIR / "phase3_gemini_usage.json"
 URL_JOBS: dict[str, dict] = {}
 URL_JOBS_LOCK = threading.Lock()
+PHASE3_GEMINI_USAGE_LOCK = threading.Lock()
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -75,6 +78,7 @@ WHISPER_BINARY_CANDIDATES = [
 ]
 
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
+PHASE3_GEMINI_PUBLIC_ERROR = "Gemini is not configured for Phase 3 yet. The transcript is safe; ask Trevor to add the server-side Gemini key and retry."
 MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
 LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
 ANALYSIS_OUTPUTS = [
@@ -951,6 +955,110 @@ def _segment_lines(rec: dict, limit: int = 8) -> list[str]:
     return lines
 
 
+def is_public_youtube_record(rec: dict) -> bool:
+    if rec.get("source_kind") != "youtube":
+        return False
+    source_url = rec.get("source_url") or ""
+    media_id = rec.get("media_id") or ""
+    parsed = urlparse(source_url)
+    host = (parsed.netloc or "").lower()
+    return bool(media_id and ("youtube.com" in host or "youtu.be" in host))
+
+
+def phase3_gemini_daily_limit() -> int:
+    return max(0, int(os.getenv("PHASE3_GEMINI_DAILY_LIMIT", "20")))
+
+
+def phase3_gemini_usage_key() -> str:
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def reserve_phase3_gemini_call() -> int:
+    limit = phase3_gemini_daily_limit()
+    if limit <= 0:
+        raise HTTPException(429, "Phase 3 Gemini free-quota limit reached. No key or provider detail was exposed.")
+    key = phase3_gemini_usage_key()
+    with PHASE3_GEMINI_USAGE_LOCK:
+        try:
+            usage = json.loads(PHASE3_GEMINI_USAGE_PATH.read_text()) if PHASE3_GEMINI_USAGE_PATH.exists() else {}
+        except Exception:
+            usage = {}
+        used = int(usage.get(key, 0))
+        if used >= limit:
+            raise HTTPException(429, "Phase 3 Gemini free-quota limit reached. No key or provider detail was exposed.")
+        usage = {key: used + 1}
+        PHASE3_GEMINI_USAGE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        PHASE3_GEMINI_USAGE_PATH.write_text(json.dumps(usage), encoding="utf-8")
+        return used + 1
+
+
+def build_gemini_prompt(rec: dict, output_type: str, question: Optional[str] = None) -> str:
+    title = rec.get("title") or rec.get("source") or "Transcript"
+    word_count = rec.get("word_count") or transcript_word_count(rec.get("transcript", ""))
+    evidence_lines = _segment_lines(rec, 24)
+    evidence = "\n".join(f"- {line}" for line in evidence_lines)
+    label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
+    return f"""You are generating Phase 3 output for EPIC Transcript Machine.
+
+Limits and safety:
+- Use ONLY the provided timestamped transcript evidence.
+- Do not invent facts, quotes, numbers, promises, or provider details.
+- Every claim must be tied to a timestamp.
+- Return publishable, useful content. No editor instructions or placeholders.
+- Include the phrase: AI-generated from the transcript with Gemini.
+- Include a Transcript evidence section with the relevant timestamped lines.
+- If asked for 100 content assets, return exactly 100 numbered, distinct, finished assets. Each must include a timestamp and a Source excerpt.
+
+Output type: {label} ({output_type})
+Question: {question or ''}
+Source title: {title}
+Words reviewed: {word_count}
+
+Timestamped transcript evidence:
+{evidence}
+""".strip()
+
+
+def call_gemini_text(prompt: str) -> str:
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not key:
+        raise HTTPException(503, PHASE3_GEMINI_PUBLIC_ERROR)
+    model = os.getenv("PHASE3_GEMINI_MODEL", "gemini-1.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    try:
+        response = requests.post(
+            url,
+            params={"key": key},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.4, "maxOutputTokens": int(os.getenv("PHASE3_GEMINI_MAX_OUTPUT_TOKENS", "8192"))},
+            },
+            timeout=int(os.getenv("PHASE3_GEMINI_TIMEOUT_SECONDS", "45")),
+        )
+    except Exception:
+        raise HTTPException(502, "Phase 3 Gemini request failed safely. No key or provider detail was exposed.")
+    if response.status_code != 200:
+        raise HTTPException(502, "Phase 3 Gemini returned a safe upstream error. No key or provider detail was exposed.")
+    try:
+        data = response.json()
+        parts = data["candidates"][0]["content"]["parts"]
+        text = "\n".join(part.get("text", "") for part in parts).strip()
+    except Exception:
+        text = ""
+    if not text:
+        raise HTTPException(502, "Phase 3 Gemini returned empty output. No key or provider detail was exposed.")
+    return text
+
+
+def build_gemini_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
+    if output_type not in ANALYSIS_OUTPUTS:
+        raise HTTPException(400, "Unsupported analysis output type.")
+    if not is_public_youtube_record(rec):
+        raise HTTPException(400, "Gemini Phase 3 is limited to public YouTube transcripts only.")
+    reserve_phase3_gemini_call()
+    return call_gemini_text(build_gemini_prompt(rec, output_type, question=question))
+
+
 def _evidence_cycle(evidence: list[str], count: int) -> list[str]:
     if not evidence:
         evidence = ["[00:00] Transcript evidence unavailable."]
@@ -1426,6 +1534,12 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
     return "\n".join(header + [""] + body_map.get(output_type, [f"## {label}", first, second])).strip() + "\n"
 
 
+def build_phase3_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
+    if is_public_youtube_record(rec) and (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+        return build_gemini_analysis_text(rec, output_type, question=question)
+    return build_analysis_text(rec, output_type, question=question)
+
+
 def save_analysis(*, transcript_id: str, output_type: str, question: Optional[str], analysis: str, owner_token: str) -> dict:
     init_db()
     analysis_id = uuid.uuid4().hex[:12]
@@ -1443,7 +1557,7 @@ def build_combined_analysis_text(rec: dict) -> str:
     for output_type in ANALYSIS_OUTPUTS:
         if output_type == "ask_question":
             continue
-        parts.append(build_analysis_text(rec, output_type))
+        parts.append(build_phase3_analysis_text(rec, output_type))
     return "\n\n---\n\n".join(parts).strip() + "\n"
 
 def make_markdown(row: dict) -> str:
@@ -1772,7 +1886,7 @@ def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[st
         raise HTTPException(404, "Transcript not found.")
     require_owner(row, x_transcript_owner)
     rec = row_to_record(row)
-    analysis = build_analysis_text(rec, output_type, question=question)
+    analysis = build_phase3_analysis_text(rec, output_type, question=question)
     saved = save_analysis(
         transcript_id=rec_id,
         output_type=output_type,

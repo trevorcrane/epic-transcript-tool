@@ -1,4 +1,5 @@
 import re
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -328,3 +329,57 @@ def test_phase3_analysis_schema_migrates_existing_partial_table(monkeypatch, tmp
     with sqlite3.connect(db_path) as conn:
         cols = {row[1] for row in conn.execute("PRAGMA table_info(analyses)").fetchall()}
     assert {"transcript_id", "output_type", "question", "analysis", "owner_token"}.issubset(cols)
+
+
+def test_phase3_gemini_only_runs_for_public_youtube_and_never_for_uploads(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+    app.init_db()
+    called = []
+
+    def fake_gemini(rec, output_type, question=None):
+        called.append((rec["source_kind"], output_type))
+        return "# Gemini output\n\nAI-generated from the transcript with Gemini.\n\n## Transcript evidence\n- [00:00] Public YouTube evidence\n\n## Summary\nUseful Gemini result.\n"
+
+    monkeypatch.setattr(app, "build_gemini_analysis_text", fake_gemini)
+    youtube = app.save_transcript(
+        source="Public YouTube",
+        source_kind="youtube",
+        method="native-caption-automatic_captions",
+        transcript="[00:00] Public YouTube evidence",
+        duration_seconds=5,
+        processing_seconds=0,
+        media_id="yt123",
+        source_url="https://youtu.be/yt123",
+        title="Public YouTube",
+        creator="Tester",
+        language="en",
+        segments=[{"start": 0, "end": 5, "text": "Public YouTube evidence"}],
+        provider_attempts=[],
+        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+    )
+    upload = seed_record(tmp_path, monkeypatch)
+    client = TestClient(app.app)
+
+    yres = client.post(f"/api/analyze/{youtube['id']}", data={"output_type": "executive_summary"}, headers={"X-Transcript-Owner": "owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+    ures = client.post(f"/api/analyze/{upload['id']}", data={"output_type": "executive_summary"}, headers={"X-Transcript-Owner": "owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+
+    assert yres.status_code == 200
+    assert "Gemini" in yres.json()["analysis"]
+    assert ures.status_code == 200
+    assert "Gemini output" not in ures.json()["analysis"]
+    assert called == [("youtube", "executive_summary")]
+
+
+def test_phase3_gemini_quota_and_errors_do_not_expose_key(monkeypatch, tmp_path):
+    rec = seed_record(tmp_path, monkeypatch)
+    rec["source_kind"] = "youtube"
+    rec["source_url"] = "https://youtu.be/testpublic"
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+    monkeypatch.setenv("PHASE3_GEMINI_DAILY_LIMIT", "0")
+
+    with pytest.raises(app.HTTPException) as exc:
+        app.build_gemini_analysis_text(rec, "executive_summary")
+
+    assert exc.value.status_code == 429
+    assert "secret-test-key" not in str(exc.value.detail)
