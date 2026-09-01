@@ -1573,12 +1573,14 @@ def transcribe_public_media_url_to_record(url: str, owner_token: str, started: O
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
-def run_url_job(job_id: str, url: str, owner_token: str) -> None:
+def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure: bool = False) -> None:
     with URL_JOBS_LOCK:
         URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
         save_url_jobs_locked()
     try:
         started = time.monotonic()
+        if phase1_qc_force_failure:
+            raise HTTPException(422, "forced backend transcription failure. Provider trail: forced before provider work; no Whisper execution")
         if normalize_youtube_video_id(url):
             rec = transcribe_youtube_url_to_record(url, owner_token, started=started, allow_long=True, job_id=job_id)
         else:
@@ -1603,7 +1605,7 @@ def run_url_job(job_id: str, url: str, owner_token: str) -> None:
 
 
 @app.post("/api/transcribe-url-job")
-def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None)) -> JSONResponse:
+def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None), phase1_qc_force_failure: Optional[str] = Form(None)) -> JSONResponse:
     url = (url or "").strip()
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     if not re.match(r"^https?://", url, re.IGNORECASE):
@@ -1612,7 +1614,8 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
     with URL_JOBS_LOCK:
         URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
         save_url_jobs_locked()
-    thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token), daemon=True)
+    force_failure = (phase1_qc_force_failure or "").lower() in {"1", "true", "yes"} and url == "https://example.com/hermes-forced-failure.mp3"
+    thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token, force_failure), daemon=True)
     thread.start()
     return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
 

@@ -661,6 +661,39 @@ def test_url_job_state_survives_memory_reset_and_hides_private_detail(monkeypatc
     assert "private_error_detail" not in job
 
 
+def test_qc_forced_failure_job_skips_providers_persists_and_hides_detail(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    monkeypatch.setattr(app, "URL_JOBS_PATH", tmp_path / "url_jobs.json")
+    called = {"youtube": 0, "media": 0}
+    monkeypatch.setattr(app, "transcribe_youtube_url_to_record", lambda *a, **k: called.__setitem__("youtube", 1))
+    monkeypatch.setattr(app, "transcribe_public_media_url_to_record", lambda *a, **k: called.__setitem__("media", 1))
+    client = TestClient(app.app)
+
+    res = client.post("/api/transcribe-url-job", data={"url":"https://example.com/hermes-forced-failure.mp3", "owner":"phase1-forced-failure-owner", "phase1_qc_force_failure":"true"})
+    assert res.status_code == 202
+    job_id = res.json()["job"]["id"]
+
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        got = client.get(f"/api/jobs/{job_id}").json()["job"]
+        if got["status"] == "error":
+            break
+        time.sleep(0.05)
+    assert got["status"] == "error"
+    assert got["error"] == app.BLOCKED_MESSAGE
+    assert "private_error_detail" not in got
+    assert called == {"youtube": 0, "media": 0}
+    with app.URL_JOBS_LOCK:
+        private = app.URL_JOBS[job_id].get("private_error_detail")
+        app.URL_JOBS.clear()
+    reread = client.get(f"/api/jobs/{job_id}")
+    assert reread.status_code == 200
+    assert reread.json()["job"]["error"] == app.BLOCKED_MESSAGE
+    assert "private_error_detail" not in reread.json()["job"]
+    assert "forced backend transcription failure" in private
+
+
 def test_async_medium_video_uses_single_audio_route_before_chunking(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
