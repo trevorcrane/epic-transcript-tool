@@ -410,7 +410,7 @@ def test_youtube_audio_fallback_passes_language_hint_and_tiny_model(monkeypatch,
     assert rec["method"] == "local-whisper"
     assert calls["language"] == "fr"
     assert calls["model"] == "tiny"
-    assert calls["timeout"] == 35
+    assert calls["timeout"] == 190
     assert any(a["provider"] == "yt-dlp-subtitles" and "fr" in a["error"] for a in rec["provider_attempts"])
 
 
@@ -680,6 +680,30 @@ def test_async_medium_video_uses_single_audio_route_before_chunking(monkeypatch,
 
     assert rec["id"] == "rec1"
     assert calls == [("https://youtu.be/mediumvid12", "mediumvid12", 281)]
+
+
+def test_uncached_spanish_audio_gets_duration_scaled_whisper_timeout(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    meta = {"id": "kJQP7kiw5Fk", "title": "Spanish", "duration": 282, "webpage_url": "https://youtu.be/kJQP7kiw5Fk", "language": "es"}
+    audio = tmp_path / "audio.mp3"; audio.write_bytes(b"audio")
+    monkeypatch.setattr(app, "fetch_caption_url_segments", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("caption blocked")))
+    monkeypatch.setattr(app, "youtube_transcript_api_segments", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("caption blocked")))
+    monkeypatch.setattr(app, "yt_dlp_grab_caption_segments", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("caption blocked")))
+    monkeypatch.setattr(app, "yt_dlp_download_audio", lambda *a, **k: audio)
+    seen = {}
+
+    def fake_whisper(input_path, language=None, model=None, timeout=None):
+        seen.update({"language": language, "model": model, "timeout": timeout})
+        return ([{"start": 0, "end": 1, "text": "hola mundo prueba"}], "es")
+
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", fake_whisper)
+    rec = app.transcribe_youtube_uncached("https://youtu.be/kJQP7kiw5Fk", "kJQP7kiw5Fk", time.monotonic(), tmp_path, "owner-token-spanish-aaaa", meta)
+
+    assert rec["language"] == "es"
+    assert seen["language"] == "es"
+    assert seen["model"] == "tiny"
+    assert seen["timeout"] >= 564
 
 
 def test_unsupported_upload_returns_helpful_exact_supported_formats(monkeypatch, tmp_path):

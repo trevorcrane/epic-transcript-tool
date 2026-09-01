@@ -706,6 +706,15 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     return segs, language or detected_lang or "unknown"
 
 
+def youtube_whisper_timeout_seconds(duration: Optional[float]) -> int:
+    configured = os.getenv("YOUTUBE_WHISPER_TIMEOUT_SECONDS")
+    if configured:
+        return int(configured)
+    if duration and duration > 0:
+        return max(120, min(1200, int(duration * 2)))
+    return 120
+
+
 
 def update_url_job(job_id: Optional[str], **fields) -> None:
     if not job_id:
@@ -900,7 +909,7 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
         audio_path = yt_dlp_download_audio(url, work_dir)
         expected_lang = infer_expected_language(meta)
         whisper_model = os.getenv("YOUTUBE_WHISPER_MODEL", "tiny") if expected_lang else None
-        segs, lang = transcribe_with_local_whisper(audio_path, language=expected_lang, model=whisper_model, timeout=int(os.getenv("YOUTUBE_WHISPER_TIMEOUT_SECONDS", "35")))
+        segs, lang = transcribe_with_local_whisper(audio_path, language=expected_lang, model=whisper_model, timeout=youtube_whisper_timeout_seconds(duration))
         transcript = segments_to_transcript(segs)
         attempts.append({"provider": "local-whisper", "ok": True, "segments": len(segs), "words": transcript_word_count(transcript)})
         return save_transcript(source=title, source_kind="youtube", method="local-whisper", transcript=transcript,
