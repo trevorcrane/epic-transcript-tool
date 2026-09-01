@@ -1,10 +1,13 @@
 {
   "base_url": "https://epic-transcript.robyncrane.com",
+  "unique_video_ids_ok": true,
   "results": [
     {
       "case": "regression",
+      "url": "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD",
+      "video_id": "v34Eg12mhDM",
       "http_status": 200,
-      "processing_duration": 2.858,
+      "processing_duration": 2.381,
       "ok": true,
       "provider_attempted": [
         "metadata",
@@ -16,12 +19,28 @@
       "language": "en",
       "cache_status": "hit",
       "error_category": null,
-      "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)"
+      "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)",
+      "beginning": "I wanted to make this video to show you",
+      "end": "value from it. Look forward to seeing you soon.",
+      "timestamps_increasing": true,
+      "quality_checks": {
+        "http_200": true,
+        "video_id": true,
+        "method": true,
+        "segment_count": true,
+        "word_count": true,
+        "nonempty_title": true,
+        "nonempty_beginning_end": true,
+        "timestamps_increasing": true,
+        "required_fields": true
+      }
     },
     {
       "case": "manual-caption-control",
+      "url": "https://youtu.be/dQw4w9WgXcQ",
+      "video_id": "dQw4w9WgXcQ",
       "http_status": 200,
-      "processing_duration": 1.62,
+      "processing_duration": 1.813,
       "ok": true,
       "provider_attempted": [
         "metadata",
@@ -33,12 +52,28 @@
       "language": "en",
       "cache_status": "hit",
       "error_category": null,
-      "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)"
+      "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+      "beginning": "[\u266a\u266a\u266a]",
+      "end": "\u266a Never gonna tell a lie and hurt you \u266a",
+      "timestamps_increasing": true,
+      "quality_checks": {
+        "http_200": true,
+        "video_id": true,
+        "method": true,
+        "segment_count": true,
+        "word_count": true,
+        "nonempty_title": true,
+        "nonempty_beginning_end": true,
+        "timestamps_increasing": true,
+        "required_fields": true
+      }
     },
     {
       "case": "automatic-caption-control",
+      "url": "https://www.youtube.com/shorts/SXHMnicI6Pg",
+      "video_id": "SXHMnicI6Pg",
       "http_status": 200,
-      "processing_duration": 2.228,
+      "processing_duration": 2.067,
       "ok": true,
       "provider_attempted": [
         "metadata",
@@ -50,7 +85,21 @@
       "language": "en",
       "cache_status": "hit",
       "error_category": null,
-      "title": "Let\u2019s see how many people get Rick rolled \ud83e\udd2a"
+      "title": "Let\u2019s see how many people get Rick rolled \ud83e\udd2a",
+      "beginning": "[Music]",
+      "end": "[Music] foreign",
+      "timestamps_increasing": true,
+      "quality_checks": {
+        "http_200": true,
+        "video_id": true,
+        "method": true,
+        "segment_count": true,
+        "word_count": true,
+        "nonempty_title": true,
+        "nonempty_beginning_end": true,
+        "timestamps_increasing": true,
+        "required_fields": true
+      }
     }
   ]
 }
