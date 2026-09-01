@@ -56,6 +56,7 @@ def test_v5_allows_only_color_font_version_and_functional_deltas_from_baseline()
     assert "--color-pink: #f107a3" in html
     assert ".machine-band { padding:34px 20px 18px; background:#f7f6f3; color:#171719; }" in html
     assert ".machine-band h2 { font-family:var(--font-heading); color:#171719; }" in html
+    assert "body[data-theme='light'] .title::before { color:rgba(23,23,25,.62); }" in html
     assert "body[data-theme='light'] .footer a { color:#7b2ff7; }" in html
     assert 'calc(100vw - 36px)' in html
     assert 'padding:16px 12px 56px' in html
