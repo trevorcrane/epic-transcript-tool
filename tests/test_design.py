@@ -52,6 +52,9 @@ def test_v5_allows_only_color_font_version_and_functional_deltas_from_baseline()
     assert "--color-bg: #000000" in html
     assert "--color-bg-raised: #0D0D0F" in html
     assert "linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%)" in html
+    assert "background:linear-gradient(105deg, #7b2ff7 0%, #c22ffc 45%, #f107a3 100%)" in html
+    accent_machine_rule = html[html.index(".accent-machine {"):html.index(".tagline", html.index(".accent-machine {"))]
+    assert "#ffffff" not in accent_machine_rule
     assert "--color-purple: #7b2ff7" in html
     assert "--color-pink: #f107a3" in html
     assert ".machine-band { padding:34px 20px 18px; background:#f7f6f3; color:#171719; }" in html
