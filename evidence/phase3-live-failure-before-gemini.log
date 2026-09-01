@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/scripts/phase3_all_outputs_smoke.py", line 233, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/scripts/phase3_all_outputs_smoke.py", line 175, in main
+    res = as_json(request(f"/api/analyze/{rec['id']}", method="POST", data=payload, headers={"X-Transcript-Owner": owner}, timeout=90))
+  File "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/scripts/phase3_all_outputs_smoke.py", line 73, in as_json
+    return json.loads(result.body.decode())
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/usr/local/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
