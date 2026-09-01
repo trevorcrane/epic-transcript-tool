@@ -4,7 +4,7 @@
     {
       "case": "regression",
       "http_status": 200,
-      "processing_duration": 2.198,
+      "processing_duration": 2.858,
       "ok": true,
       "provider_attempted": [
         "metadata",
@@ -21,7 +21,7 @@
     {
       "case": "manual-caption-control",
       "http_status": 200,
-      "processing_duration": 1.538,
+      "processing_duration": 1.62,
       "ok": true,
       "provider_attempted": [
         "metadata",
@@ -38,19 +38,19 @@
     {
       "case": "automatic-caption-control",
       "http_status": 200,
-      "processing_duration": 1.833,
+      "processing_duration": 2.228,
       "ok": true,
       "provider_attempted": [
         "metadata",
         "native-caption-extractor"
       ],
       "provider_succeeded": "native-caption-automatic_captions",
-      "segment_count": 1460,
-      "word_count": 15744,
+      "segment_count": 2,
+      "word_count": 3,
       "language": "en",
       "cache_status": "hit",
       "error_category": null,
-      "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)"
+      "title": "Let\u2019s see how many people get Rick rolled \ud83e\udd2a"
     }
   ]
 }

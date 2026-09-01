@@ -36,3 +36,15 @@ def test_phase1_health_env_base_still_works_without_cli_arg(monkeypatch):
     )
 
     assert module.BASE_URL == "https://env.example.test"
+
+
+def test_phase1_health_uses_three_distinct_stable_video_ids(monkeypatch):
+    module = load_phase1_health(monkeypatch, ["phase1_health.py"])
+
+    urls = {case.name: case.url for case in module.CASES}
+
+    assert len(urls) == 3
+    assert "v34Eg12mhDM" in urls["regression"]
+    assert "dQw4w9WgXcQ" in urls["manual-caption-control"]
+    assert "SXHMnicI6Pg" in urls["automatic-caption-control"]
+    assert len({case.url.split("?")[0].rstrip("/").split("/")[-1] for case in module.CASES}) == 3
