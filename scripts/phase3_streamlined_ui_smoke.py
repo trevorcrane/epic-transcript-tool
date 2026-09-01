@@ -143,9 +143,11 @@ def main() -> int:
         analyses[output_type] = validate_analysis(output_type, text)
         analysis_ids[output_type] = str(data.get("analysis_id") or "")
 
-    for retired in ["main_ideas", "chapters", "best_quotes", "faq", "content_assets_100"]:
-        blocked = request(f"/api/analyze/{rec['id']}", method="POST", data={"output_type": retired}, headers={"X-Transcript-Owner": owner})
-        require(blocked.status == 400, f"retired output {retired} returned {blocked.status}, expected 400")
+    retired_api_statuses = {}
+    for retired_output in ["main_ideas", "chapters", "best_quotes", "faq", "content_assets_100"]:
+        blocked = request(f"/api/analyze/{rec['id']}", method="POST", data={"output_type": retired_output}, headers={"X-Transcript-Owner": owner})
+        retired_api_statuses[retired_output] = blocked.status
+        require(blocked.status == 400, f"retired output {retired_output} returned {blocked.status}, expected 400")
 
     report = {
         "ok": True,
@@ -153,6 +155,7 @@ def main() -> int:
         "video_url": VIDEO,
         "elapsed_seconds": round(time.monotonic() - started, 2),
         "ui": {"required_present": required, "retired_absent": retired, "client_secret_markers_absent": True},
+        "retired_api_statuses": retired_api_statuses,
         "record": {"id": rec.get("id"), "title": rec.get("title"), "method": rec.get("method"), "language": rec.get("language"), "word_count": rec.get("word_count"), "segment_count": rec.get("segment_count") or len(rec.get("segments") or []), "cache_hit": rec.get("cache_hit")},
         "declared_outputs": ids,
         "analyses": analyses,
