@@ -49,6 +49,7 @@ async function gpuProbe(page){
     const proof={hasNavigatorGpu:!!navigator.gpu, adapterRequested:false, adapterAvailable:false, requestDeviceOk:false, adapterFeatures:[], wgslLanguageFeatures:[], error:null};
     proof.userAgent = navigator.userAgent;
     proof.platform = navigator.platform;
+    proof.gpuType = typeof navigator.gpu;
     proof.hardwareConcurrency = navigator.hardwareConcurrency;
     proof.deviceMemory = navigator.deviceMemory || null;
     try{

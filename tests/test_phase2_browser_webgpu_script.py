@@ -20,6 +20,7 @@ def test_webgpu_proof_script_records_adapter_device_and_mobile_wasm_artifact():
     assert "requestDevice" in source
     assert "adapterFeatures" in source
     assert "userAgent" in source
+    assert "gpuType" in source
     assert "mobileWasm" in source
     assert "desktopWebgpu" in source
 
