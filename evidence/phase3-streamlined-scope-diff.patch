@@ -1,0 +1,904 @@
+diff --git a/app.py b/app.py
+index 13ebd5c..344bd3d 100644
+--- a/app.py
++++ b/app.py
+@@ -82,28 +82,11 @@ PHASE3_GEMINI_PUBLIC_ERROR = "Gemini is not configured for Phase 3 yet. The tran
+ MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
+ LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
+ ANALYSIS_OUTPUTS = [
+-    "executive_summary", "main_ideas", "action_items", "chapters", "best_quotes",
+-    "stories_examples", "content_framework", "blog_post", "newsletter", "social_posts",
+-    "short_form_hooks", "faq", "sales_insights", "objections_answers",
+-    "trevor_use", "content_assets_100", "ask_question",
++    "executive_summary", "action_items", "ask_question",
+ ]
+ ANALYSIS_LABELS = {
+     "executive_summary": "Executive summary",
+-    "main_ideas": "Main ideas",
+     "action_items": "Action items",
+-    "chapters": "Chapters",
+-    "best_quotes": "Best quotes",
+-    "stories_examples": "Stories and examples",
+-    "content_framework": "Content framework",
+-    "blog_post": "Blog post",
+-    "newsletter": "Newsletter",
+-    "social_posts": "Social posts",
+-    "short_form_hooks": "Short-form video hooks",
+-    "faq": "FAQ",
+-    "sales_insights": "Sales insights",
+-    "objections_answers": "Objections and answers",
+-    "trevor_use": "How Trevor can use this",
+-    "content_assets_100": "Create 100 content assets",
+     "ask_question": "Ask the video",
+ }
+ 
+diff --git a/scripts/phase2_browser_real_whisper_smoke.py b/scripts/phase2_browser_real_whisper_smoke.py
+index 9c2de74..5942fe6 100644
+--- a/scripts/phase2_browser_real_whisper_smoke.py
++++ b/scripts/phase2_browser_real_whisper_smoke.py
+@@ -105,11 +105,12 @@ server.listen(0, '127.0.0.1', async () => {
+     if (state.visible || state.status.startsWith('Error:')) break;
+   }
+   const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+-  await page.click('#downloadVttBtn');
++  await page.selectOption('#downloadFormat', 'srt');
++  await page.click('#downloadBtn');
+   const download = await downloadPromise;
+-  const vttPath = path.join(path.dirname(outPath), 'phase2-browser-real-whisper.vtt');
+-  await download.saveAs(vttPath);
+-  const vtt = fs.readFileSync(vttPath, 'utf8');
++  const srtPath = path.join(path.dirname(outPath), 'phase2-browser-real-whisper.srt');
++  await download.saveAs(srtPath);
++  const srt = fs.readFileSync(srtPath, 'utf8');
+   const report = {
+     url,
+     ok: Boolean(state.visible && state.transcript && state.transcript.length > 10 && state.method.includes('browser-whisper')),
+@@ -117,18 +118,18 @@ server.listen(0, '127.0.0.1', async () => {
+     browserErrors,
+     elapsedSeconds: (Date.now() - started) / 1000,
+     state,
+-    vttDownload: {
++    srtDownload: {
+       suggestedFilename: download.suggestedFilename(),
+-      bytes: Buffer.byteLength(vtt),
+-      hasWebVtt: vtt.includes('WEBVTT'),
+-      hasFullTimestamp: /00:00:00\.000 --> 00:00:0[2-9]\.\d{3}/.test(vtt),
++      bytes: Buffer.byteLength(srt),
++      hasSequence: /^1\n/.test(srt),
++      hasFullTimestamp: /00:00:00,000 --> 00:00:0[2-9],\d{3}/.test(srt),
+     }
+   };
+   await browser.close();
+   server.close();
+   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
+   console.log(JSON.stringify(report, null, 2));
+-  process.exit(report.ok && report.vttDownload.hasWebVtt && report.vttDownload.hasFullTimestamp ? 0 : 2);
++  process.exit(report.ok && report.srtDownload.hasSequence && report.srtDownload.hasFullTimestamp ? 0 : 2);
+ });
+ '''
+ 
+@@ -153,10 +154,10 @@ def main() -> None:
+     wav = make_wav()
+     browser = run_browser(wav)
+     require(bool(browser.get("ok")), "real browser Whisper fallback did not render a transcript")
+-    raw_vtt = browser.get("vttDownload")
+-    vtt = raw_vtt if isinstance(raw_vtt, dict) else {}
+-    require(bool(vtt.get("hasWebVtt")), "real browser Whisper VTT download missing WEBVTT")
+-    require(bool(vtt.get("hasFullTimestamp")), "real browser Whisper VTT download missing full timestamps")
++    raw_srt = browser.get("srtDownload")
++    srt = raw_srt if isinstance(raw_srt, dict) else {}
++    require(bool(srt.get("hasSequence")), "real browser Whisper SRT download missing sequence")
++    require(bool(srt.get("hasFullTimestamp")), "real browser Whisper SRT download missing full timestamps")
+     report = {"public_root": public_root, "browser": browser, "evidence": str(OUT)}
+     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
+     print(json.dumps(report, indent=2))
+diff --git a/static/index.html b/static/index.html
+index 65be2c4..43a0d39 100644
+--- a/static/index.html
++++ b/static/index.html
+@@ -167,10 +167,7 @@
+   .analysis-panel.show { display:block; }
+   .analysis-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; color:var(--color-purple); background:rgba(123,47,247,.06); font-size:13px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; }
+   .analysis-tools { display:grid; gap:12px; padding:16px; border-bottom:1px solid rgba(123,47,247,.10); background:#fff; }
+-  .analysis-menu { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
+-  .analysis-choice { min-height:38px; padding:8px 10px; border:1px solid rgba(0,0,0,.09); border-radius:11px; background:#fbfaf8; color:var(--color-text-dark); font-size:12px; font-weight:800; cursor:pointer; text-align:left; }
+-  .analysis-choice:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.09); }
+-  .analysis-choice:disabled { opacity:.55; cursor:not-allowed; }
++  .download-menu { height:40px; border:1px solid rgba(0,0,0,.10); border-radius:12px; padding:0 12px; background:#fff; color:var(--color-text-dark); font-weight:800; }
+   .question-row { display:flex; gap:8px; }
+   .question-row input { flex:1; min-width:0; height:42px; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:0 12px; color:var(--color-text-dark); }
+   .analysis-box { margin:0; padding:18px; white-space:pre-wrap; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.75; max-height:420px; overflow:auto; }
+@@ -323,23 +320,21 @@
+         <div class="transcript-box" id="transcript"></div>
+         <div class="actions">
+           <button class="btn" id="copyBtn" type="button">Copy</button>
+-          <button class="btn" id="downloadBtn" type="button">TXT</button>
+-          <button class="btn" id="downloadMdBtn" type="button">Markdown</button>
+-          <button class="btn" id="downloadSrtBtn" type="button">SRT</button>
+-          <button class="btn" id="downloadVttBtn" type="button">VTT</button>
+-          <button class="btn ai" id="summaryBtn" type="button">AI Summary</button>
++          <label class="sr-only" for="downloadFormat">Download format</label>
++          <select class="download-menu" id="downloadFormat" aria-label="Download transcript format">
++            <option value="txt">TXT</option>
++            <option value="md">Markdown</option>
++            <option value="srt">SRT</option>
++          </select>
++          <button class="btn" id="downloadBtn" type="button">Download</button>
++          <button class="btn ai" id="summaryBtn" type="button">Summary</button>
+           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
+-          <button class="btn ai" id="allAnalysisBtn" type="button">All Outputs</button>
+-          <button class="btn" id="analysisCopyBtn" type="button" disabled>Copy Analysis</button>
+-          <button class="btn" id="analysisDownloadBtn" type="button" disabled>Download Analysis</button>
+-          <button class="btn" id="emailBtn" type="button">Email to Me</button>
+         </div>
+         <div class="analysis-panel" id="analysisPanel" aria-live="polite">
+           <div class="analysis-head"><span id="analysisTitle">Video intelligence</span></div>
+           <div class="analysis-tools">
+-            <div class="analysis-menu" id="analysisMenu" aria-label="Video intelligence outputs"></div>
+             <div class="question-row">
+-              <input id="questionInput" type="text" placeholder="Ask a question about this transcript" />
++              <input id="questionInput" type="text" placeholder="Ask about this transcript. Examples: Quotes · Chapters · Hooks · FAQ" />
+               <button class="btn ai" id="askBtn" type="button">Ask</button>
+             </div>
+           </div>
+@@ -419,21 +414,14 @@
+     status: $('status'), statusText: $('statusText'),
+     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
+     transcript: $('transcript'),
+-    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), downloadVttBtn: $('downloadVttBtn'), emailBtn: $('emailBtn'),
+-    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisCopyBtn: $('analysisCopyBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
++    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadFormat: $('downloadFormat'),
++    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
+     toast: $('toast'),
+     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
+     banner: $('banner'), browserLocal: $('browserLocal'),
+   };
+   let currentRecord = null;
+   let currentAnalysis = null;
+-  const analysisOutputs = [
+-    ['executive_summary', 'Executive summary'], ['main_ideas', 'Main ideas'], ['action_items', 'Action items'], ['chapters', 'Chapters'],
+-    ['best_quotes', 'Best quotes'], ['stories_examples', 'Stories and examples'], ['content_framework', 'Content framework'], ['blog_post', 'Blog post'],
+-    ['newsletter', 'Newsletter'], ['social_posts', 'Social posts'], ['short_form_hooks', 'Short-form hooks'], ['faq', 'FAQ'],
+-    ['sales_insights', 'Sales insights'], ['objections_answers', 'Objections and answers'], ['trevor_use', 'How Trevor can use this'],
+-    ['content_assets_100', 'Create 100 content assets']
+-  ];
+   const OWNER_KEY = 'epicTranscriptOwnerToken';
+   const HISTORY_KEY = 'epicTranscriptHistory';
+   function ownerToken() {
+@@ -536,8 +524,6 @@
+     currentAnalysis = null;
+     els.analysisPanel.classList.remove('show');
+     els.analysisBox.textContent = '';
+-    els.analysisCopyBtn.disabled = true;
+-    els.analysisDownloadBtn.disabled = true;
+     els.result.classList.add('show');
+     saveLocalHistory(rec);
+     autoCopy(rec.transcript || '');
+@@ -841,14 +827,10 @@
+       .then(data => { window.location.href = data.url; })
+       .catch(e => showToast('Download failed: ' + e.message, true));
+   }
+-  els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'));
+-  els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
+-  els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'));
+-  els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'));
++  els.downloadBtn.addEventListener('click', () => downloadCurrent(els.downloadFormat.value || 'txt'));
+ 
+   function setAnalysisControlsDisabled(disabled) {
+-    [els.summaryBtn, els.actionsBtn, els.allAnalysisBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });
+-    els.analysisMenu.querySelectorAll('button').forEach(btn => { btn.disabled = disabled; });
++    [els.summaryBtn, els.actionsBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });
+   }
+ 
+   async function analyzeCurrent(outputType, label, question) {
+@@ -865,8 +847,6 @@
+       els.analysisTitle.textContent = label;
+       els.analysisBox.textContent = data.analysis || '';
+       els.analysisPanel.classList.add('show');
+-      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
+-      els.analysisDownloadBtn.disabled = !data.analysis_id;
+       setStatus(label + ' ready', 'done');
+       setTimeout(clearStatus, 1200);
+     } catch (e) {
+@@ -875,41 +855,8 @@
+       setAnalysisControlsDisabled(false);
+     }
+   }
+-  function renderAnalysisMenu() {
+-    els.analysisMenu.innerHTML = '';
+-    analysisOutputs.forEach(([id, label]) => {
+-      const btn = document.createElement('button');
+-      btn.className = 'analysis-choice';
+-      btn.type = 'button';
+-      btn.textContent = label;
+-      btn.addEventListener('click', () => analyzeCurrent(id, label));
+-      els.analysisMenu.appendChild(btn);
+-    });
+-  }
+-  async function runAllStarterOutputs() {
+-    if (!currentRecord) return;
+-    setAnalysisControlsDisabled(true);
+-    els.analysisPanel.classList.add('show');
+-    els.analysisTitle.textContent = 'All video intelligence outputs';
+-    els.analysisBox.textContent = 'Creating all outputs...';
+-    try {
+-      setStatus('Creating all outputs...', '');
+-      const data = await jfetch('/api/analyze-all/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
+-      currentAnalysis = data;
+-      els.analysisBox.textContent = data.analysis || '';
+-      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
+-      els.analysisDownloadBtn.disabled = !data.analysis_id;
+-      setStatus('All outputs ready', 'done');
+-      setTimeout(clearStatus, 1200);
+-    } catch (e) {
+-      setStatus('Analysis error: ' + e.message, 'error');
+-    } finally {
+-      setAnalysisControlsDisabled(false);
+-    }
+-  }
+-  els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'AI Summary'));
++  els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'Summary'));
+   els.actionsBtn.addEventListener('click', () => analyzeCurrent('action_items', 'Action Items'));
+-  els.allAnalysisBtn.addEventListener('click', runAllStarterOutputs);
+   els.askBtn.addEventListener('click', () => {
+     const q = els.questionInput.value.trim();
+     if (!q) { els.questionInput.focus(); return; }
+@@ -918,44 +865,6 @@
+   els.questionInput.addEventListener('keydown', (e) => {
+     if (e.key === 'Enter') { e.preventDefault(); els.askBtn.click(); }
+   });
+-  els.analysisDownloadBtn.addEventListener('click', async () => {
+-    if (!currentAnalysis || !currentAnalysis.analysis_id) return;
+-    try {
+-      const res = await fetch(apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download'), { headers: ownerHeaders() });
+-      if (!res.ok) throw new Error(res.statusText || 'Download failed');
+-      const blob = await res.blob();
+-      const cd = res.headers.get('Content-Disposition') || '';
+-      const match = cd.match(/filename="?([^";]+)"?/i);
+-      const a = document.createElement('a');
+-      a.href = URL.createObjectURL(blob);
+-      a.download = match ? match[1] : 'analysis.md';
+-      a.click();
+-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+-      showToast('Analysis download ready ✓');
+-    } catch (e) {
+-      showToast('Analysis download failed: ' + e.message, true);
+-    }
+-  });
+-  els.analysisCopyBtn.addEventListener('click', async () => {
+-    const text = els.analysisBox.textContent || '';
+-    if (!text.trim()) return;
+-    try {
+-      await navigator.clipboard.writeText(text);
+-      showToast('Analysis copied ✓');
+-    } catch (e) { showToast('Analysis copy failed', true); }
+-  });
+-  els.emailBtn.addEventListener('click', async () => {
+-    if (!currentRecord) return;
+-    els.emailBtn.disabled = true;
+-    try {
+-      const data = await jfetch('/api/email/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
+-      showToast('Emailed to ' + (data.to || 'you'));
+-    } catch (e) {
+-      showToast('Email failed: ' + e.message, true);
+-    } finally {
+-      els.emailBtn.disabled = false;
+-    }
+-  });
+ 
+   // Browser-local history drawer
+   function loadLocalHistory() {
+@@ -1085,7 +994,6 @@
+     if (a) a.hidden = !isOpen;
+     if (item) item.classList.toggle('open', isOpen);
+   }));
+-  renderAnalysisMenu();
+   loadSetup();
+   loadRecent();
+ })();
+diff --git a/tests/test_design.py b/tests/test_design.py
+index 66a94bc..82d1cc2 100644
+--- a/tests/test_design.py
++++ b/tests/test_design.py
+@@ -72,17 +72,20 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
+     html = HTML.read_text()
+     assert "hero-control" in html
+     assert html.index('id="url"') < html.index('id="result"')
+-    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
++    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadFormat", "downloadBtn", "summaryBtn", "actionsBtn", "analysisPanel", "questionInput", "askBtn", "analysisBox"]:
+         assert f'id="{required_id}"' in html
++    for retired_id in ["downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "allAnalysisBtn", "analysisMenu", "analysisCopyBtn", "analysisDownloadBtn", "emailBtn"]:
++        assert f'id="{retired_id}"' not in html
+ 
+ 
+ def test_phase3_video_intelligence_ui_is_wired_but_not_claimed_in_hero():
+     html = HTML.read_text()
+-    for label in ["AI Summary", "Action Items", "All Outputs", "Ask a question about this transcript", "Main ideas", "Chapters", "Best quotes", "Blog post", "Create 100 content assets"]:
++    for label in ["Summary", "Action Items", "Ask about this transcript", "Quotes · Chapters · Hooks · FAQ"]:
+         assert label in html
++    for retired in ["AI Summary", "All Outputs", "Main ideas", "Best quotes", "Blog post", "Create 100 content assets", "Copy Analysis", "Download Analysis", "Email to Me"]:
++        assert retired not in html
+     assert "/api/analyze/" in html
+-    assert "/api/analyze-all/" in html
+-    assert "/api/analysis/" in html
++    assert "/api/analyze-all/" not in html
+     hero = html[html.index('<main class="hero"'):html.index('</main>')]
+     assert "Turn it into assets" not in hero
+     assert "Posts and hooks" not in hero
+@@ -171,11 +174,14 @@ def test_faqs_and_theme_toggle_are_present():
+     assert "☾" in html
+ 
+ 
+-def test_vtt_download_and_owner_headers_are_available():
++def test_one_transcript_download_menu_and_owner_headers_are_available():
+     html = HTML.read_text()
+-    assert 'id="downloadVttBtn"' in html
+-    assert "els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'))" in html
+-    assert "WEBVTT" in html
++    assert 'id="downloadFormat"' in html
++    assert '<option value="txt">TXT</option>' in html
++    assert '<option value="md">Markdown</option>' in html
++    assert '<option value="srt">SRT</option>' in html
++    assert '<option value="vtt">' not in html
++    assert "downloadCurrent(els.downloadFormat.value || 'txt')" in html
+     assert "X-Transcript-Owner" in html
+     assert "/api/transcripts/" in html
+     assert "/download-link?format=" in html
+diff --git a/tests/test_phase2_browser_real_whisper_smoke.py b/tests/test_phase2_browser_real_whisper_smoke.py
+index 4b2877e..08e834b 100644
+--- a/tests/test_phase2_browser_real_whisper_smoke.py
++++ b/tests/test_phase2_browser_real_whisper_smoke.py
+@@ -14,4 +14,4 @@ def test_phase2_browser_real_whisper_smoke_runs_without_test_stub_and_saves_repo
+     assert "phase2-browser-real-whisper-attempt.json" in script
+     assert "browser-whisper" in script
+     assert "transcribe-upload" in script
+-    assert "downloadVttBtn" in script
++    assert "downloadFormat" in script
+diff --git a/tests/test_phase3.py b/tests/test_phase3.py
+index 94c568e..5b388b7 100644
+--- a/tests/test_phase3.py
++++ b/tests/test_phase3.py
+@@ -1,336 +1,90 @@
+ import re
+-import pytest
++import sqlite3
+ 
++import pytest
+ from fastapi.testclient import TestClient
+ 
+ import app
+ 
++OWNER = "owner-token-phase3-abcdefghijklmnopqrstuvwxyz"
++
+ 
+-def seed_record(tmp_path, monkeypatch):
++def seed_record(tmp_path, monkeypatch, *, source_kind="youtube", source_url="https://youtu.be/analysis123", media_id="analysis123"):
+     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+     app.init_db()
+     return app.save_transcript(
+         source="Strategy Call",
+-        source_kind="upload",
+-        method="seed",
++        source_kind=source_kind,
++        method="native-caption-automatic_captions" if source_kind == "youtube" else "seed",
+         transcript="[00:00] We need to launch the offer next week.\n[00:10] Trevor should call Len about the client follow up.\n[00:20] The main idea is to turn transcripts into content assets.\n[00:30] Customers object that they do not have time.\n[00:40] Action item: send the proposal by Friday.",
+         duration_seconds=45,
+         processing_seconds=0,
+-        media_id="analysis123",
+-        source_url="upload",
++        media_id=media_id,
++        source_url=source_url,
+         title="Strategy Call",
+         creator="Tester",
+         language="en",
+         segments=[
+-            {"start":0,"end":9,"text":"We need to launch the offer next week."},
+-            {"start":10,"end":19,"text":"Trevor should call Len about the client follow up."},
+-            {"start":20,"end":29,"text":"The main idea is to turn transcripts into content assets."},
+-            {"start":30,"end":39,"text":"Customers object that they do not have time."},
+-            {"start":40,"end":45,"text":"Action item: send the proposal by Friday."},
++            {"start": 0, "end": 9, "text": "We need to launch the offer next week."},
++            {"start": 10, "end": 19, "text": "Trevor should call Len about the client follow up."},
++            {"start": 20, "end": 29, "text": "The main idea is to turn transcripts into content assets."},
++            {"start": 30, "end": 39, "text": "Customers object that they do not have time."},
++            {"start": 40, "end": 45, "text": "Action item: send the proposal by Friday."},
+         ],
+         provider_attempts=[],
+-        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
++        owner_token=OWNER,
+     )
+ 
+ 
+-def test_phase3_analysis_outputs_do_not_hide_original_transcript(monkeypatch, tmp_path):
+-    rec = seed_record(tmp_path, monkeypatch)
+-    client = TestClient(app.app)
+-    res = client.post(f"/api/analyze/{rec['id']}", data={"output_type":"executive_summary"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    assert res.status_code == 200
+-    data = res.json()
+-    assert data["ok"] is True
+-    assert data["output_type"] == "executive_summary"
+-    assert "[00:00]" in data["analysis"]
+-    assert "AI-generated" in data["analysis"]
+-    reread = client.get(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    assert reread.status_code == 200
+-    assert reread.json()["transcript"].startswith("[00:00] We need")
+-
+-
+-def test_phase3_all_declared_outputs_return_useful_text(monkeypatch, tmp_path):
+-    rec = seed_record(tmp_path, monkeypatch)
+-    client = TestClient(app.app)
+-    seen_bodies = set()
+-    for output_type in app.ANALYSIS_OUTPUTS:
+-        res = client.post(f"/api/analyze/{rec['id']}", data={"output_type": output_type, "question":"What should Trevor do?"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-        assert res.status_code == 200, output_type
+-        text = res.json()["analysis"]
+-        assert len(text) > 40, output_type
+-        assert "Transcript evidence" in text or "timestamp" in text.lower() or "[00:" in text, output_type
+-        body = text.split("## Transcript evidence", 1)[-1]
+-        assert body not in seen_bodies, output_type
+-        seen_bodies.add(body)
++def test_phase3_scope_is_streamlined_to_summary_action_items_and_ask():
++    assert app.ANALYSIS_OUTPUTS == ["executive_summary", "action_items", "ask_question"]
++    assert app.ANALYSIS_LABELS == {
++        "executive_summary": "Executive summary",
++        "action_items": "Action items",
++        "ask_question": "Ask the video",
++    }
+ 
+ 
+-def test_phase3_each_output_uses_timestamped_transcript_citations(monkeypatch, tmp_path):
++def test_phase3_streamlined_outputs_do_not_hide_original_transcript(monkeypatch, tmp_path):
+     rec = seed_record(tmp_path, monkeypatch)
+     client = TestClient(app.app)
+-    transcript_stamps = {int(seg["start"]) for seg in rec["segments"]}
+-    stamp_re = re.compile(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]")
+-
+-    def to_seconds(match):
+-        a, b, c = match.groups()
+-        return int(a) * 60 + int(b) if c is None else int(a) * 3600 + int(b) * 60 + int(c)
+-
+     for output_type in app.ANALYSIS_OUTPUTS:
+         res = client.post(
+             f"/api/analyze/{rec['id']}",
+-            data={"output_type": output_type, "question": "What should Trevor do?"},
+-            headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
++            data={"output_type": output_type, "question": "What quotes should Trevor use?"},
++            headers={"X-Transcript-Owner": OWNER},
+         )
+         assert res.status_code == 200, output_type
+-        text = res.json()["analysis"]
+-        citations = [to_seconds(match) for match in stamp_re.finditer(text)]
+-        assert citations, output_type
+-        assert any(ts in transcript_stamps for ts in citations), output_type
+-        assert "AI-generated from the transcript" in text, output_type
++        data = res.json()
++        assert data["ok"] is True
++        assert data["output_type"] == output_type
++        assert "AI-generated" in data["analysis"]
++        assert re.search(r"\[00:\d{2}\]", data["analysis"]), output_type
++    reread = client.get(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner": OWNER})
++    assert reread.status_code == 200
++    assert reread.json()["transcript"].startswith("[00:00] We need")
+ 
+ 
+-def test_phase3_create_100_content_assets_returns_100_assets(monkeypatch, tmp_path):
++def test_phase3_retired_outputs_are_not_supported(monkeypatch, tmp_path):
+     rec = seed_record(tmp_path, monkeypatch)
+     client = TestClient(app.app)
+-    res = client.post(
+-        f"/api/analyze/{rec['id']}",
+-        data={"output_type": "content_assets_100"},
+-        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+-    )
+-    assert res.status_code == 200
+-    text = res.json()["analysis"]
+-    assert "starter map" not in text.lower()
+-    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+-    assert len(numbered) == 100
+-    for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+-        assert label in text
+-
+-
+-def test_phase3_100_assets_are_finished_diverse_and_cover_long_transcript(monkeypatch, tmp_path):
+-    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+-    app.init_db()
+-    segments = [
+-        {
+-            "start": i * 60,
+-            "end": i * 60 + 20,
+-            "text": f"Strategy lesson {i}: build system {i} before selling service {i}, then prove result {i} with a client story.",
+-        }
+-        for i in range(90)
+-    ]
+-    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+-    rec = app.save_transcript(
+-        source="Long Sales System Training",
+-        source_kind="youtube",
+-        method="native-caption-automatic_captions",
+-        transcript=transcript,
+-        duration_seconds=5400,
+-        processing_seconds=0,
+-        media_id="long-assets-123",
+-        source_url="https://youtu.be/longassets123",
+-        title="Long Sales System Training",
+-        creator="Tester",
+-        language="en",
+-        segments=segments,
+-        provider_attempts=[],
+-        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+-    )
+-    client = TestClient(app.app)
+-    res = client.post(
+-        f"/api/analyze/{rec['id']}",
+-        data={"output_type": "content_assets_100"},
+-        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+-    )
+-    assert res.status_code == 200
+-    text = res.json()["analysis"]
+-    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+-    assert len(numbered) == 100
+-    lower = text.lower()
+-    for forbidden in ["use `", " use [", " to create:", "create a ", "turn the moment into", "brief a creator", "lead with", "use this as", "shape this", "shape the source", "the story starts with", "fix that moment", "lead with this transcript moment", "use this as the main point", "open by repeating", "teach this moment", "summarize this moment", "play this timestamp", "headline from source", "source idea"]:
+-        assert forbidden not in lower
+-    unique_bodies = {line.split(" - ", 1)[-1] for line in numbered}
+-    assert len(unique_bodies) >= 90
+-    bodies = [line.split(" - ", 1)[-1] for line in numbered]
+-    for label in ["Hook", "Short post", "Reel script", "Carousel slide", "CTA", "Objection reply", "Repurpose prompt"]:
+-        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+-        stems = {" ".join(body.lower().split()[:7]) for body in subset}
+-        assert len(stems) == len(subset)
+-    repeated_sentence_frames = {}
+-    for body in bodies:
+-        first_sentence = body.split(".", 1)[0].lower().strip(" “”\"")
+-        repeated_sentence_frames[first_sentence] = repeated_sentence_frames.get(first_sentence, 0) + 1
+-    assert max(repeated_sentence_frames.values()) <= 3
+-    timestamps = []
+-    for line in numbered:
+-        for match in __import__("re").finditer(r"\[(\d{2}):(\d{2})(?::(\d{2}))?\]", line):
+-            a, b, c = match.groups()
+-            timestamps.append(int(a) * 60 + int(b) if c is None else int(a) * 3600 + int(b) * 60 + int(c))
+-    assert len(timestamps) == 100
+-    assert sum(1 for ts in timestamps if ts <= 900) >= 10
+-    assert sum(1 for ts in timestamps if 1800 <= ts <= 3600) >= 10
+-    assert sum(1 for ts in timestamps if ts >= 4500) >= 10
+-    assert "Source excerpt:" in text
+-    assert "Strategy lesson" in text
+-    assert "Email subject" in text and "Subject:" in text
+-    assert "CTA" in text and "Get" in text
+-    assert "Objection reply" in text and "Reply:" in text
+-    quote_cards = [line for line in numbered if "**Quote card" in line]
+-    assert quote_cards
+-    assert all("“" not in line and "”" not in line for line in quote_cards)
+-    repurpose = [line for line in numbered if "**Repurpose prompt" in line]
+-    assert repurpose
+-    assert all("LinkedIn" in line and "Email" in line and "Clip" in line for line in repurpose)
+-    hooks = [line for line in numbered if "**Hook" in line]
+-    hook_stems = {line.split(":", 1)[0] for line in hooks}
+-    assert len(hook_stems) == 10
+-    subjects = [line for line in numbered if "**Email subject" in line]
+-    subject_stems = {line.split("Subject:", 1)[1].split(" - ", 1)[0].strip() for line in subjects}
+-    assert len(subject_stems) == 10
+-    assert all(len(line.split("Subject:", 1)[1].split("Source excerpt:", 1)[0].strip().split()) >= 6 for line in subjects)
+-    hooks = [line for line in numbered if "**Hook" in line]
+-    assert all("Source excerpt:" in line and line.split(" - ", 1)[1].split("Source excerpt:", 1)[0].strip().endswith((".", "?", "!")) for line in hooks)
+-    repeated_shells = [
+-        "stop losing the lesson hiding in plain sight",
+-        "the practical takeaway is this",
+-        "fix that moment before adding another layer",
+-        "the part worth fixing now",
+-        "the story starts with this proof point",
+-        "start with the visible proof point",
+-        "apply this lesson before adding another disconnected step",
+-        "make the operating lesson clear in one visual step",
+-    ]
+-    for shell in repeated_shells:
+-        assert lower.count(shell) <= 2
+-    for label in ["Hook", "Short post", "Email subject", "Newsletter angle", "Reel script", "Carousel slide", "Quote card", "CTA", "Objection reply", "Repurpose prompt"]:
+-        subset = [line.split(" - ", 1)[-1] for line in numbered if f"**{label}" in line]
+-        openings = {}
+-        endings = {}
+-        for body in subset:
+-            asset_prose = body.split("Source excerpt:", 1)[0].strip().lower()
+-            normalized_words = __import__("re").sub(r"[^a-z0-9 ]+", " ", asset_prose).split()
+-            opening = " ".join(normalized_words[:5])
+-            ending = " ".join(normalized_words[-7:])
+-            openings[opening] = openings.get(opening, 0) + 1
+-            endings[ending] = endings.get(ending, 0) + 1
+-            assert len(normalized_words) >= 8
+-            assert asset_prose.endswith((".", "?", "!"))
+-        assert max(openings.values()) == 1
+-        assert max(endings.values()) <= 2
+-
+-
+-def test_phase3_100_assets_do_not_attach_unrelated_claims_to_citations(monkeypatch, tmp_path):
+-    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+-    app.init_db()
+-    segments = [
+-        {"start": i * 15, "end": i * 15 + 10, "text": f"Segment {i} says zebra alpha {i} and orchard beta {i} only."}
+-        for i in range(120)
+-    ]
+-    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+-    rec = app.save_transcript(
+-        source="Grounding Test",
+-        source_kind="youtube",
+-        method="native-caption-automatic_captions",
+-        transcript=transcript,
+-        duration_seconds=1800,
+-        processing_seconds=0,
+-        media_id="grounding-assets-123",
+-        source_url="https://youtu.be/grounding123",
+-        title="Grounding Test",
+-        creator="Tester",
+-        language="en",
+-        segments=segments,
+-        provider_attempts=[],
+-        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+-    )
+-    client = TestClient(app.app)
+-    res = client.post(
+-        f"/api/analyze/{rec['id']}",
+-        data={"output_type": "content_assets_100"},
+-        headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"},
+-    )
+-    assert res.status_code == 200
+-    text = res.json()["analysis"]
+-    numbered = [line for line in text.splitlines() if line[:1].isdigit() and ". **" in line]
+-    assert len(numbered) == 100
+-    forbidden_unrelated = ["local business", "speed-to-lead", "follow-up machine", "enterprise value", "missed leads", "valuation"]
+-    assert not any(term in text.lower() for term in forbidden_unrelated)
+-    for line in numbered:
+-        assert "zebra alpha" in line and "orchard beta" in line
+-        assert "Source excerpt:" in line
++    for output_type in ["main_ideas", "chapters", "best_quotes", "faq", "content_assets_100", "trevor_use"]:
++        res = client.post(f"/api/analyze/{rec['id']}", data={"output_type": output_type}, headers={"X-Transcript-Owner": OWNER})
++        assert res.status_code == 400
++        assert "Unsupported analysis output type" in res.text
+ 
+ 
+ def test_phase3_analysis_can_be_downloaded(monkeypatch, tmp_path):
+     rec = seed_record(tmp_path, monkeypatch)
+     client = TestClient(app.app)
+-    made = client.post(f"/api/analyze/{rec['id']}", data={"output_type":"action_items"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"}).json()
++    made = client.post(f"/api/analyze/{rec['id']}", data={"output_type": "action_items"}, headers={"X-Transcript-Owner": OWNER}).json()
+     unauth = client.get(f"/api/analysis/{made['analysis_id']}/download")
+     assert unauth.status_code == 403
+-    res = client.get(f"/api/analysis/{made['analysis_id']}/download", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
++    res = client.get(f"/api/analysis/{made['analysis_id']}/download", headers={"X-Transcript-Owner": OWNER})
+     assert res.status_code == 200
+     assert "Action" in res.text or "proposal" in res.text
+ 
+ 
+-def test_phase3_combined_outputs_can_be_saved_copied_and_downloaded(monkeypatch, tmp_path):
+-    rec = seed_record(tmp_path, monkeypatch)
+-    client = TestClient(app.app)
+-    made = client.post(f"/api/analyze-all/{rec['id']}", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    assert made.status_code == 200
+-    data = made.json()
+-    assert data["output_type"] == "all_outputs"
+-    assert "# Executive summary" in data["analysis"]
+-    assert "# Create 100 content assets" in data["analysis"]
+-    assert "Ask the video" not in data["analysis"]
+-    assert data["analysis"].count("AI-generated from the transcript") >= 10
+-    res = client.get(f"/api/analysis/{data['analysis_id']}/download", headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    assert res.status_code == 200
+-    assert "# Executive summary" in res.text
+-    assert "# Create 100 content assets" in res.text
+-
+-
+-def test_phase3_long_transcripts_use_beginning_middle_and_end_evidence(monkeypatch, tmp_path):
+-    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+-    app.init_db()
+-    segments = [
+-        {"start": i * 60, "end": i * 60 + 20, "text": f"Long transcript evidence segment {i}"}
+-        for i in range(90)
+-    ]
+-    transcript = "\n".join(f"[{app.seconds_to_timestamp(s['start'])}] {s['text']}" for s in segments)
+-    rec = app.save_transcript(
+-        source="Two Hour Strategy Session",
+-        source_kind="youtube",
+-        method="queued-chunked-local-whisper",
+-        transcript=transcript,
+-        duration_seconds=5400,
+-        processing_seconds=0,
+-        media_id="long-analysis-123",
+-        source_url="https://youtu.be/longproof123",
+-        title="Two Hour Strategy Session",
+-        creator="Tester",
+-        language="en",
+-        segments=segments,
+-        provider_attempts=[],
+-        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
+-    )
+-    client = TestClient(app.app)
+-    res = client.post(f"/api/analyze/{rec['id']}", data={"output_type":"executive_summary"}, headers={"X-Transcript-Owner":"owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    assert res.status_code == 200
+-    text = res.json()["analysis"]
+-    assert "Long transcript evidence segment 0" in text
+-    assert "Long transcript evidence segment 44" in text or "Long transcript evidence segment 45" in text
+-    assert "Long transcript evidence segment 89" in text
+-
+-
+-def test_phase3_analysis_schema_migrates_existing_partial_table(monkeypatch, tmp_path):
+-    import sqlite3
+-    db_path = tmp_path / "transcripts.db"
+-    with sqlite3.connect(db_path) as conn:
+-        conn.execute("CREATE TABLE analyses (id TEXT PRIMARY KEY, created_at TEXT)")
+-    monkeypatch.setattr(app, "DB_PATH", db_path)
+-
+-    app.init_db()
+-
+-    with sqlite3.connect(db_path) as conn:
+-        cols = {row[1] for row in conn.execute("PRAGMA table_info(analyses)").fetchall()}
+-    assert {"transcript_id", "output_type", "question", "analysis", "owner_token"}.issubset(cols)
+-
+-
+ def test_phase3_gemini_only_runs_for_public_youtube_and_never_for_uploads(monkeypatch, tmp_path):
+     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+     monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+@@ -338,43 +92,46 @@ def test_phase3_gemini_only_runs_for_public_youtube_and_never_for_uploads(monkey
+     called = []
+ 
+     def fake_gemini(rec, output_type, question=None):
+-        called.append((rec["source_kind"], output_type))
++        called.append((rec["source_kind"], output_type, question))
+         return "# Gemini output\n\nAI-generated from the transcript with Gemini.\n\n## Transcript evidence\n- [00:00] Public YouTube evidence\n\n## Summary\nUseful Gemini result.\n"
+ 
+     monkeypatch.setattr(app, "build_gemini_analysis_text", fake_gemini)
+-    youtube = app.save_transcript(
+-        source="Public YouTube",
+-        source_kind="youtube",
+-        method="native-caption-automatic_captions",
+-        transcript="[00:00] Public YouTube evidence",
++    youtube = seed_record(tmp_path, monkeypatch)
++    upload = app.save_transcript(
++        source="Private Upload",
++        source_kind="upload",
++        method="seed",
++        transcript="[00:00] Private upload evidence",
+         duration_seconds=5,
+         processing_seconds=0,
+-        media_id="yt123",
+-        source_url="https://youtu.be/yt123",
+-        title="Public YouTube",
++        media_id="upload123",
++        source_url="upload",
++        title="Private Upload",
+         creator="Tester",
+         language="en",
+-        segments=[{"start": 0, "end": 5, "text": "Public YouTube evidence"}],
++        segments=[{"start": 0, "end": 5, "text": "Private upload evidence"}],
+         provider_attempts=[],
+-        owner_token="owner-token-phase3-abcdefghijklmnopqrstuvwxyz",
++        owner_token=OWNER,
+     )
+-    upload = seed_record(tmp_path, monkeypatch)
+     client = TestClient(app.app)
+ 
+-    yres = client.post(f"/api/analyze/{youtube['id']}", data={"output_type": "executive_summary"}, headers={"X-Transcript-Owner": "owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-    ures = client.post(f"/api/analyze/{upload['id']}", data={"output_type": "executive_summary"}, headers={"X-Transcript-Owner": "owner-token-phase3-abcdefghijklmnopqrstuvwxyz"})
+-
+-    assert yres.status_code == 200
+-    assert "Gemini" in yres.json()["analysis"]
++    for output_type in app.ANALYSIS_OUTPUTS:
++        data = {"output_type": output_type}
++        if output_type == "ask_question":
++            data["question"] = "Quotes?"
++        res = client.post(f"/api/analyze/{youtube['id']}", data=data, headers={"X-Transcript-Owner": OWNER})
++        assert res.status_code == 200
++        assert "Gemini" in res.json()["analysis"]
++
++    ures = client.post(f"/api/analyze/{upload['id']}", data={"output_type": "executive_summary"}, headers={"X-Transcript-Owner": OWNER})
+     assert ures.status_code == 200
+     assert "Gemini output" not in ures.json()["analysis"]
+-    assert called == [("youtube", "executive_summary")]
++    assert [row[1] for row in called] == app.ANALYSIS_OUTPUTS
++    assert all(row[0] == "youtube" for row in called)
+ 
+ 
+ def test_phase3_gemini_quota_and_errors_do_not_expose_key(monkeypatch, tmp_path):
+     rec = seed_record(tmp_path, monkeypatch)
+-    rec["source_kind"] = "youtube"
+-    rec["source_url"] = "https://youtu.be/testpublic"
+     monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+     monkeypatch.setenv("PHASE3_GEMINI_DAILY_LIMIT", "0")
+ 
+@@ -383,3 +140,16 @@ def test_phase3_gemini_quota_and_errors_do_not_expose_key(monkeypatch, tmp_path)
+ 
+     assert exc.value.status_code == 429
+     assert "secret-test-key" not in str(exc.value.detail)
++
++
++def test_phase3_analysis_schema_migrates_existing_partial_table(monkeypatch, tmp_path):
++    db_path = tmp_path / "transcripts.db"
++    with sqlite3.connect(db_path) as conn:
++        conn.execute("CREATE TABLE analyses (id TEXT PRIMARY KEY, created_at TEXT)")
++    monkeypatch.setattr(app, "DB_PATH", db_path)
++
++    app.init_db()
++
++    with sqlite3.connect(db_path) as conn:
++        cols = {row[1] for row in conn.execute("PRAGMA table_info(analyses)").fetchall()}
++    assert {"transcript_id", "output_type", "question", "analysis", "owner_token"}.issubset(cols)
+diff --git a/tests/test_phase3_all_outputs_smoke_script.py b/tests/test_phase3_all_outputs_smoke_script.py
+index e08b320..4f80a57 100644
+--- a/tests/test_phase3_all_outputs_smoke_script.py
++++ b/tests/test_phase3_all_outputs_smoke_script.py
+@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
+ 
+ def load_smoke():
+     spec = importlib.util.spec_from_file_location(
+-        "phase3_all_outputs_smoke_under_test",
+-        ROOT / "scripts" / "phase3_all_outputs_smoke.py",
++        "phase3_streamlined_ui_smoke_under_test",
++        ROOT / "scripts" / "phase3_streamlined_ui_smoke.py",
+     )
+     assert spec is not None
+     module = importlib.util.module_from_spec(spec)
+@@ -20,57 +20,19 @@ def load_smoke():
+     return module
+ 
+ 
+-def make_assets_text(latest_timestamp: str) -> str:
+-    labels = [
+-        "Hook",
+-        "Short post",
+-        "Email subject",
+-        "Newsletter angle",
+-        "Reel script",
+-        "Carousel slide",
+-        "Quote card",
+-        "CTA",
+-        "Objection reply",
+-        "Repurpose prompt",
+-    ]
+-    lines = ["AI-generated from the transcript"]
+-    for i in range(1, 101):
+-        label = labels[(i - 1) % len(labels)]
+-        timestamp = "[00:05]" if i == 1 else latest_timestamp
+-        if label == "Email subject":
+-            body = f"Subject: angle {i} - distinct body {i}"
+-        elif label == "Objection reply":
+-            body = f"Reply: distinct body {i}"
+-        elif label == "CTA":
+-            body = f"Get distinct body {i}"
+-        else:
+-            body = f"distinct body {i}"
+-        lines.append(f"{i}. **{label}** {timestamp} - {body}")
+-    return "\n".join(lines)
+-
+-
+-def test_content_assets_short_transcript_uses_relative_late_coverage():
++def test_streamlined_smoke_expected_outputs_match_replaced_scope():
+     module = load_smoke()
+-
+-    detail = module.validate_analysis(
+-        "content_assets_100",
+-        make_assets_text("[03:27]"),
+-        transcript_duration_seconds=212,
+-    )
+-
+-    assert detail["asset_count"] == 100
+-    assert detail["latest_timestamp_seconds"] == 207
++    assert module.EXPECTED_OUTPUTS == ["executive_summary", "action_items", "ask_question"]
++    assert "content_assets_100" in module.RETIRED_MARKERS
++    assert 'id="allAnalysisBtn"' in module.RETIRED_MARKERS
++    assert 'id="downloadVttBtn"' in module.RETIRED_MARKERS
+ 
+ 
+-def test_content_assets_long_transcript_requires_real_middle_and_late_coverage():
++def test_streamlined_validate_analysis_requires_timestamp_and_disclaimer():
+     module = load_smoke()
+-
+-    text = make_assets_text("[21:00]").replace("2. **Short post** [21:00]", "2. **Short post** [12:00]")
+     detail = module.validate_analysis(
+-        "content_assets_100",
+-        text,
+-        transcript_duration_seconds=1800,
++        "ask_question",
++        "AI-generated from the transcript with Gemini.\n\n## Transcript evidence\n- [00:00] Quote evidence from source.\n\n## Answer\nQuote and chapter ideas from the video are grounded in [00:00] evidence.",
+     )
+-
+-    assert detail["has_middle_coverage"] is True
+-    assert detail["latest_timestamp_seconds"] >= 20 * 60
++    assert detail["has_timestamp"] is True
++    assert detail["has_disclaimer"] is True

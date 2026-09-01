@@ -105,11 +105,12 @@ server.listen(0, '127.0.0.1', async () => {
     if (state.visible || state.status.startsWith('Error:')) break;
   }
   const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
-  await page.click('#downloadVttBtn');
+  await page.selectOption('#downloadFormat', 'srt');
+  await page.click('#downloadBtn');
   const download = await downloadPromise;
-  const vttPath = path.join(path.dirname(outPath), 'phase2-browser-real-whisper.vtt');
-  await download.saveAs(vttPath);
-  const vtt = fs.readFileSync(vttPath, 'utf8');
+  const srtPath = path.join(path.dirname(outPath), 'phase2-browser-real-whisper.srt');
+  await download.saveAs(srtPath);
+  const srt = fs.readFileSync(srtPath, 'utf8');
   const report = {
     url,
     ok: Boolean(state.visible && state.transcript && state.transcript.length > 10 && state.method.includes('browser-whisper')),
@@ -117,18 +118,18 @@ server.listen(0, '127.0.0.1', async () => {
     browserErrors,
     elapsedSeconds: (Date.now() - started) / 1000,
     state,
-    vttDownload: {
+    srtDownload: {
       suggestedFilename: download.suggestedFilename(),
-      bytes: Buffer.byteLength(vtt),
-      hasWebVtt: vtt.includes('WEBVTT'),
-      hasFullTimestamp: /00:00:00\.000 --> 00:00:0[2-9]\.\d{3}/.test(vtt),
+      bytes: Buffer.byteLength(srt),
+      hasSequence: /^1\n/.test(srt),
+      hasFullTimestamp: /00:00:00,000 --> 00:00:0[2-9],\d{3}/.test(srt),
     }
   };
   await browser.close();
   server.close();
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
-  process.exit(report.ok && report.vttDownload.hasWebVtt && report.vttDownload.hasFullTimestamp ? 0 : 2);
+  process.exit(report.ok && report.srtDownload.hasSequence && report.srtDownload.hasFullTimestamp ? 0 : 2);
 });
 '''
 
@@ -153,10 +154,10 @@ def main() -> None:
     wav = make_wav()
     browser = run_browser(wav)
     require(bool(browser.get("ok")), "real browser Whisper fallback did not render a transcript")
-    raw_vtt = browser.get("vttDownload")
-    vtt = raw_vtt if isinstance(raw_vtt, dict) else {}
-    require(bool(vtt.get("hasWebVtt")), "real browser Whisper VTT download missing WEBVTT")
-    require(bool(vtt.get("hasFullTimestamp")), "real browser Whisper VTT download missing full timestamps")
+    raw_srt = browser.get("srtDownload")
+    srt = raw_srt if isinstance(raw_srt, dict) else {}
+    require(bool(srt.get("hasSequence")), "real browser Whisper SRT download missing sequence")
+    require(bool(srt.get("hasFullTimestamp")), "real browser Whisper SRT download missing full timestamps")
     report = {"public_root": public_root, "browser": browser, "evidence": str(OUT)}
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))

@@ -14,4 +14,4 @@ def test_phase2_browser_real_whisper_smoke_runs_without_test_stub_and_saves_repo
     assert "phase2-browser-real-whisper-attempt.json" in script
     assert "browser-whisper" in script
     assert "transcribe-upload" in script
-    assert "downloadVttBtn" in script
+    assert "downloadFormat" in script

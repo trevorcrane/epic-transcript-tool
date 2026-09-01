@@ -72,17 +72,20 @@ def test_primary_control_stays_first_viewport_and_functional_ids_remain():
     html = HTML.read_text()
     assert "hero-control" in html
     assert html.index('id="url"') < html.index('id="result"')
-    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadBtn", "downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "summaryBtn", "actionsBtn", "allAnalysisBtn", "analysisPanel", "analysisMenu", "questionInput", "askBtn", "analysisBox", "analysisCopyBtn", "analysisDownloadBtn"]:
+    for required_id in ["form", "url", "grab", "file", "drop", "result", "transcript", "copyBtn", "downloadFormat", "downloadBtn", "summaryBtn", "actionsBtn", "analysisPanel", "questionInput", "askBtn", "analysisBox"]:
         assert f'id="{required_id}"' in html
+    for retired_id in ["downloadMdBtn", "downloadSrtBtn", "downloadVttBtn", "allAnalysisBtn", "analysisMenu", "analysisCopyBtn", "analysisDownloadBtn", "emailBtn"]:
+        assert f'id="{retired_id}"' not in html
 
 
 def test_phase3_video_intelligence_ui_is_wired_but_not_claimed_in_hero():
     html = HTML.read_text()
-    for label in ["AI Summary", "Action Items", "All Outputs", "Ask a question about this transcript", "Main ideas", "Chapters", "Best quotes", "Blog post", "Create 100 content assets"]:
+    for label in ["Summary", "Action Items", "Ask about this transcript", "Quotes · Chapters · Hooks · FAQ"]:
         assert label in html
+    for retired in ["AI Summary", "All Outputs", "Main ideas", "Best quotes", "Blog post", "Create 100 content assets", "Copy Analysis", "Download Analysis", "Email to Me"]:
+        assert retired not in html
     assert "/api/analyze/" in html
-    assert "/api/analyze-all/" in html
-    assert "/api/analysis/" in html
+    assert "/api/analyze-all/" not in html
     hero = html[html.index('<main class="hero"'):html.index('</main>')]
     assert "Turn it into assets" not in hero
     assert "Posts and hooks" not in hero
@@ -171,11 +174,14 @@ def test_faqs_and_theme_toggle_are_present():
     assert "☾" in html
 
 
-def test_vtt_download_and_owner_headers_are_available():
+def test_one_transcript_download_menu_and_owner_headers_are_available():
     html = HTML.read_text()
-    assert 'id="downloadVttBtn"' in html
-    assert "els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'))" in html
-    assert "WEBVTT" in html
+    assert 'id="downloadFormat"' in html
+    assert '<option value="txt">TXT</option>' in html
+    assert '<option value="md">Markdown</option>' in html
+    assert '<option value="srt">SRT</option>' in html
+    assert '<option value="vtt">' not in html
+    assert "downloadCurrent(els.downloadFormat.value || 'txt')" in html
     assert "X-Transcript-Owner" in html
     assert "/api/transcripts/" in html
     assert "/download-link?format=" in html

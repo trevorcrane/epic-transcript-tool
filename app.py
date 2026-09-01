@@ -82,28 +82,11 @@ PHASE3_GEMINI_PUBLIC_ERROR = "Gemini is not configured for Phase 3 yet. The tran
 MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
 LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
 ANALYSIS_OUTPUTS = [
-    "executive_summary", "main_ideas", "action_items", "chapters", "best_quotes",
-    "stories_examples", "content_framework", "blog_post", "newsletter", "social_posts",
-    "short_form_hooks", "faq", "sales_insights", "objections_answers",
-    "trevor_use", "content_assets_100", "ask_question",
+    "executive_summary", "action_items", "ask_question",
 ]
 ANALYSIS_LABELS = {
     "executive_summary": "Executive summary",
-    "main_ideas": "Main ideas",
     "action_items": "Action items",
-    "chapters": "Chapters",
-    "best_quotes": "Best quotes",
-    "stories_examples": "Stories and examples",
-    "content_framework": "Content framework",
-    "blog_post": "Blog post",
-    "newsletter": "Newsletter",
-    "social_posts": "Social posts",
-    "short_form_hooks": "Short-form video hooks",
-    "faq": "FAQ",
-    "sales_insights": "Sales insights",
-    "objections_answers": "Objections and answers",
-    "trevor_use": "How Trevor can use this",
-    "content_assets_100": "Create 100 content assets",
     "ask_question": "Ask the video",
 }
 

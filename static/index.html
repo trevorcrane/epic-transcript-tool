@@ -167,10 +167,7 @@
   .analysis-panel.show { display:block; }
   .analysis-head { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; color:var(--color-purple); background:rgba(123,47,247,.06); font-size:13px; font-weight:850; text-transform:uppercase; letter-spacing:.08em; }
   .analysis-tools { display:grid; gap:12px; padding:16px; border-bottom:1px solid rgba(123,47,247,.10); background:#fff; }
-  .analysis-menu { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
-  .analysis-choice { min-height:38px; padding:8px 10px; border:1px solid rgba(0,0,0,.09); border-radius:11px; background:#fbfaf8; color:var(--color-text-dark); font-size:12px; font-weight:800; cursor:pointer; text-align:left; }
-  .analysis-choice:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.09); }
-  .analysis-choice:disabled { opacity:.55; cursor:not-allowed; }
+  .download-menu { height:40px; border:1px solid rgba(0,0,0,.10); border-radius:12px; padding:0 12px; background:#fff; color:var(--color-text-dark); font-weight:800; }
   .question-row { display:flex; gap:8px; }
   .question-row input { flex:1; min-width:0; height:42px; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:0 12px; color:var(--color-text-dark); }
   .analysis-box { margin:0; padding:18px; white-space:pre-wrap; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.75; max-height:420px; overflow:auto; }
@@ -323,23 +320,21 @@
         <div class="transcript-box" id="transcript"></div>
         <div class="actions">
           <button class="btn" id="copyBtn" type="button">Copy</button>
-          <button class="btn" id="downloadBtn" type="button">TXT</button>
-          <button class="btn" id="downloadMdBtn" type="button">Markdown</button>
-          <button class="btn" id="downloadSrtBtn" type="button">SRT</button>
-          <button class="btn" id="downloadVttBtn" type="button">VTT</button>
-          <button class="btn ai" id="summaryBtn" type="button">AI Summary</button>
+          <label class="sr-only" for="downloadFormat">Download format</label>
+          <select class="download-menu" id="downloadFormat" aria-label="Download transcript format">
+            <option value="txt">TXT</option>
+            <option value="md">Markdown</option>
+            <option value="srt">SRT</option>
+          </select>
+          <button class="btn" id="downloadBtn" type="button">Download</button>
+          <button class="btn ai" id="summaryBtn" type="button">Summary</button>
           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
-          <button class="btn ai" id="allAnalysisBtn" type="button">All Outputs</button>
-          <button class="btn" id="analysisCopyBtn" type="button" disabled>Copy Analysis</button>
-          <button class="btn" id="analysisDownloadBtn" type="button" disabled>Download Analysis</button>
-          <button class="btn" id="emailBtn" type="button">Email to Me</button>
         </div>
         <div class="analysis-panel" id="analysisPanel" aria-live="polite">
           <div class="analysis-head"><span id="analysisTitle">Video intelligence</span></div>
           <div class="analysis-tools">
-            <div class="analysis-menu" id="analysisMenu" aria-label="Video intelligence outputs"></div>
             <div class="question-row">
-              <input id="questionInput" type="text" placeholder="Ask a question about this transcript" />
+              <input id="questionInput" type="text" placeholder="Ask about this transcript. Examples: Quotes · Chapters · Hooks · FAQ" />
               <button class="btn ai" id="askBtn" type="button">Ask</button>
             </div>
           </div>
@@ -419,21 +414,14 @@
     status: $('status'), statusText: $('statusText'),
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
-    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadMdBtn: $('downloadMdBtn'), downloadSrtBtn: $('downloadSrtBtn'), downloadVttBtn: $('downloadVttBtn'), emailBtn: $('emailBtn'),
-    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), allAnalysisBtn: $('allAnalysisBtn'), analysisCopyBtn: $('analysisCopyBtn'), analysisDownloadBtn: $('analysisDownloadBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), analysisMenu: $('analysisMenu'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
+    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadFormat: $('downloadFormat'),
+    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
     banner: $('banner'), browserLocal: $('browserLocal'),
   };
   let currentRecord = null;
   let currentAnalysis = null;
-  const analysisOutputs = [
-    ['executive_summary', 'Executive summary'], ['main_ideas', 'Main ideas'], ['action_items', 'Action items'], ['chapters', 'Chapters'],
-    ['best_quotes', 'Best quotes'], ['stories_examples', 'Stories and examples'], ['content_framework', 'Content framework'], ['blog_post', 'Blog post'],
-    ['newsletter', 'Newsletter'], ['social_posts', 'Social posts'], ['short_form_hooks', 'Short-form hooks'], ['faq', 'FAQ'],
-    ['sales_insights', 'Sales insights'], ['objections_answers', 'Objections and answers'], ['trevor_use', 'How Trevor can use this'],
-    ['content_assets_100', 'Create 100 content assets']
-  ];
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   const HISTORY_KEY = 'epicTranscriptHistory';
   function ownerToken() {
@@ -536,8 +524,6 @@
     currentAnalysis = null;
     els.analysisPanel.classList.remove('show');
     els.analysisBox.textContent = '';
-    els.analysisCopyBtn.disabled = true;
-    els.analysisDownloadBtn.disabled = true;
     els.result.classList.add('show');
     saveLocalHistory(rec);
     autoCopy(rec.transcript || '');
@@ -841,14 +827,10 @@
       .then(data => { window.location.href = data.url; })
       .catch(e => showToast('Download failed: ' + e.message, true));
   }
-  els.downloadBtn.addEventListener('click', () => downloadCurrent('txt'));
-  els.downloadMdBtn.addEventListener('click', () => downloadCurrent('md'));
-  els.downloadSrtBtn.addEventListener('click', () => downloadCurrent('srt'));
-  els.downloadVttBtn.addEventListener('click', () => downloadCurrent('vtt'));
+  els.downloadBtn.addEventListener('click', () => downloadCurrent(els.downloadFormat.value || 'txt'));
 
   function setAnalysisControlsDisabled(disabled) {
-    [els.summaryBtn, els.actionsBtn, els.allAnalysisBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });
-    els.analysisMenu.querySelectorAll('button').forEach(btn => { btn.disabled = disabled; });
+    [els.summaryBtn, els.actionsBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });
   }
 
   async function analyzeCurrent(outputType, label, question) {
@@ -865,8 +847,6 @@
       els.analysisTitle.textContent = label;
       els.analysisBox.textContent = data.analysis || '';
       els.analysisPanel.classList.add('show');
-      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
-      els.analysisDownloadBtn.disabled = !data.analysis_id;
       setStatus(label + ' ready', 'done');
       setTimeout(clearStatus, 1200);
     } catch (e) {
@@ -875,41 +855,8 @@
       setAnalysisControlsDisabled(false);
     }
   }
-  function renderAnalysisMenu() {
-    els.analysisMenu.innerHTML = '';
-    analysisOutputs.forEach(([id, label]) => {
-      const btn = document.createElement('button');
-      btn.className = 'analysis-choice';
-      btn.type = 'button';
-      btn.textContent = label;
-      btn.addEventListener('click', () => analyzeCurrent(id, label));
-      els.analysisMenu.appendChild(btn);
-    });
-  }
-  async function runAllStarterOutputs() {
-    if (!currentRecord) return;
-    setAnalysisControlsDisabled(true);
-    els.analysisPanel.classList.add('show');
-    els.analysisTitle.textContent = 'All video intelligence outputs';
-    els.analysisBox.textContent = 'Creating all outputs...';
-    try {
-      setStatus('Creating all outputs...', '');
-      const data = await jfetch('/api/analyze-all/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
-      currentAnalysis = data;
-      els.analysisBox.textContent = data.analysis || '';
-      els.analysisCopyBtn.disabled = !(data.analysis || '').trim();
-      els.analysisDownloadBtn.disabled = !data.analysis_id;
-      setStatus('All outputs ready', 'done');
-      setTimeout(clearStatus, 1200);
-    } catch (e) {
-      setStatus('Analysis error: ' + e.message, 'error');
-    } finally {
-      setAnalysisControlsDisabled(false);
-    }
-  }
-  els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'AI Summary'));
+  els.summaryBtn.addEventListener('click', () => analyzeCurrent('executive_summary', 'Summary'));
   els.actionsBtn.addEventListener('click', () => analyzeCurrent('action_items', 'Action Items'));
-  els.allAnalysisBtn.addEventListener('click', runAllStarterOutputs);
   els.askBtn.addEventListener('click', () => {
     const q = els.questionInput.value.trim();
     if (!q) { els.questionInput.focus(); return; }
@@ -917,44 +864,6 @@
   });
   els.questionInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); els.askBtn.click(); }
-  });
-  els.analysisDownloadBtn.addEventListener('click', async () => {
-    if (!currentAnalysis || !currentAnalysis.analysis_id) return;
-    try {
-      const res = await fetch(apiUrl('/api/analysis/' + currentAnalysis.analysis_id + '/download'), { headers: ownerHeaders() });
-      if (!res.ok) throw new Error(res.statusText || 'Download failed');
-      const blob = await res.blob();
-      const cd = res.headers.get('Content-Disposition') || '';
-      const match = cd.match(/filename="?([^";]+)"?/i);
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = match ? match[1] : 'analysis.md';
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast('Analysis download ready ✓');
-    } catch (e) {
-      showToast('Analysis download failed: ' + e.message, true);
-    }
-  });
-  els.analysisCopyBtn.addEventListener('click', async () => {
-    const text = els.analysisBox.textContent || '';
-    if (!text.trim()) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Analysis copied ✓');
-    } catch (e) { showToast('Analysis copy failed', true); }
-  });
-  els.emailBtn.addEventListener('click', async () => {
-    if (!currentRecord) return;
-    els.emailBtn.disabled = true;
-    try {
-      const data = await jfetch('/api/email/' + currentRecord.id, { method: 'POST', headers: ownerHeaders() });
-      showToast('Emailed to ' + (data.to || 'you'));
-    } catch (e) {
-      showToast('Email failed: ' + e.message, true);
-    } finally {
-      els.emailBtn.disabled = false;
-    }
   });
 
   // Browser-local history drawer
@@ -1085,7 +994,6 @@
     if (a) a.hidden = !isOpen;
     if (item) item.classList.toggle('open', isOpen);
   }));
-  renderAnalysisMenu();
   loadSetup();
   loadRecent();
 })();

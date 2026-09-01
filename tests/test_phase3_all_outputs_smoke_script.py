@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def load_smoke():
     spec = importlib.util.spec_from_file_location(
-        "phase3_all_outputs_smoke_under_test",
-        ROOT / "scripts" / "phase3_all_outputs_smoke.py",
+        "phase3_streamlined_ui_smoke_under_test",
+        ROOT / "scripts" / "phase3_streamlined_ui_smoke.py",
     )
     assert spec is not None
     module = importlib.util.module_from_spec(spec)
@@ -20,57 +20,19 @@ def load_smoke():
     return module
 
 
-def make_assets_text(latest_timestamp: str) -> str:
-    labels = [
-        "Hook",
-        "Short post",
-        "Email subject",
-        "Newsletter angle",
-        "Reel script",
-        "Carousel slide",
-        "Quote card",
-        "CTA",
-        "Objection reply",
-        "Repurpose prompt",
-    ]
-    lines = ["AI-generated from the transcript"]
-    for i in range(1, 101):
-        label = labels[(i - 1) % len(labels)]
-        timestamp = "[00:05]" if i == 1 else latest_timestamp
-        if label == "Email subject":
-            body = f"Subject: angle {i} - distinct body {i}"
-        elif label == "Objection reply":
-            body = f"Reply: distinct body {i}"
-        elif label == "CTA":
-            body = f"Get distinct body {i}"
-        else:
-            body = f"distinct body {i}"
-        lines.append(f"{i}. **{label}** {timestamp} - {body}")
-    return "\n".join(lines)
-
-
-def test_content_assets_short_transcript_uses_relative_late_coverage():
+def test_streamlined_smoke_expected_outputs_match_replaced_scope():
     module = load_smoke()
-
-    detail = module.validate_analysis(
-        "content_assets_100",
-        make_assets_text("[03:27]"),
-        transcript_duration_seconds=212,
-    )
-
-    assert detail["asset_count"] == 100
-    assert detail["latest_timestamp_seconds"] == 207
+    assert module.EXPECTED_OUTPUTS == ["executive_summary", "action_items", "ask_question"]
+    assert "content_assets_100" in module.RETIRED_MARKERS
+    assert 'id="allAnalysisBtn"' in module.RETIRED_MARKERS
+    assert 'id="downloadVttBtn"' in module.RETIRED_MARKERS
 
 
-def test_content_assets_long_transcript_requires_real_middle_and_late_coverage():
+def test_streamlined_validate_analysis_requires_timestamp_and_disclaimer():
     module = load_smoke()
-
-    text = make_assets_text("[21:00]").replace("2. **Short post** [21:00]", "2. **Short post** [12:00]")
     detail = module.validate_analysis(
-        "content_assets_100",
-        text,
-        transcript_duration_seconds=1800,
+        "ask_question",
+        "AI-generated from the transcript with Gemini.\n\n## Transcript evidence\n- [00:00] Quote evidence from source.\n\n## Answer\nQuote and chapter ideas from the video are grounded in [00:00] evidence.",
     )
-
-    assert detail["has_middle_coverage"] is True
-    assert detail["latest_timestamp_seconds"] >= 20 * 60
+    assert detail["has_timestamp"] is True
+    assert detail["has_disclaimer"] is True
