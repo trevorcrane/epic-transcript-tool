@@ -46,6 +46,7 @@ def configured_path(env_name: str, default: Path) -> Path:
 DATA_DIR = configured_path("TRANSCRIPT_DATA_DIR", ROOT / "data")
 STATIC_DIR = configured_path("TRANSCRIPT_STATIC_DIR", ROOT / "static")
 DB_PATH = DATA_DIR / "transcripts.db"
+URL_JOBS_PATH = DATA_DIR / "url_jobs.json"
 URL_JOBS: dict[str, dict] = {}
 URL_JOBS_LOCK = threading.Lock()
 
@@ -712,6 +713,29 @@ def update_url_job(job_id: Optional[str], **fields) -> None:
     with URL_JOBS_LOCK:
         if job_id in URL_JOBS:
             URL_JOBS[job_id].update(fields)
+            save_url_jobs_locked()
+
+
+def save_url_jobs_locked() -> None:
+    URL_JOBS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = URL_JOBS_PATH.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(URL_JOBS, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(URL_JOBS_PATH)
+
+
+def load_url_jobs_locked() -> None:
+    if not URL_JOBS_PATH.exists():
+        return
+    try:
+        data = json.loads(URL_JOBS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    if isinstance(data, dict):
+        URL_JOBS.update({str(k): v for k, v in data.items() if isinstance(v, dict)})
+
+
+with URL_JOBS_LOCK:
+    load_url_jobs_locked()
 
 
 def visitor_safe_transcription_error(detail: object) -> str:
@@ -1543,6 +1567,7 @@ def transcribe_public_media_url_to_record(url: str, owner_token: str, started: O
 def run_url_job(job_id: str, url: str, owner_token: str) -> None:
     with URL_JOBS_LOCK:
         URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
+        save_url_jobs_locked()
     try:
         started = time.monotonic()
         if normalize_youtube_video_id(url):
@@ -1553,6 +1578,7 @@ def run_url_job(job_id: str, url: str, owner_token: str) -> None:
             rec = transcribe_public_media_url_to_record(url, owner_token, started=started)
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time(), "percent": 100})
+            save_url_jobs_locked()
     except HTTPException as e:
         with URL_JOBS_LOCK:
             safe_error = visitor_safe_transcription_error(e.detail)
@@ -1560,9 +1586,11 @@ def run_url_job(job_id: str, url: str, owner_token: str) -> None:
             if safe_error != str(e.detail):
                 updates["private_error_detail"] = str(e.detail)
             URL_JOBS[job_id].update(updates)
+            save_url_jobs_locked()
     except Exception as e:
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "error", "error": str(e), "status_code": 500, "finished_at": time.time()})
+            save_url_jobs_locked()
 
 
 @app.post("/api/transcribe-url-job")
@@ -1574,6 +1602,7 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
     job_id = uuid.uuid4().hex[:12]
     with URL_JOBS_LOCK:
         URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
+        save_url_jobs_locked()
     thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token), daemon=True)
     thread.start()
     return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
@@ -1582,6 +1611,8 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
 @app.get("/api/jobs/{job_id}")
 def api_get_job(job_id: str) -> JSONResponse:
     with URL_JOBS_LOCK:
+        if job_id not in URL_JOBS:
+            load_url_jobs_locked()
         job = dict(URL_JOBS.get(job_id) or {})
     if not job:
         raise HTTPException(404, "Job not found")

@@ -637,6 +637,30 @@ def test_async_job_masks_provider_details_from_visitors(monkeypatch, tmp_path):
     assert "private_error_detail" not in got
 
 
+def test_url_job_state_survives_memory_reset_and_hides_private_detail(monkeypatch, tmp_path):
+    jobs_path = tmp_path / "url_jobs.json"
+    monkeypatch.setattr(app, "URL_JOBS_PATH", jobs_path)
+    with app.URL_JOBS_LOCK:
+        app.URL_JOBS.clear()
+        app.URL_JOBS["persist123456"] = {
+            "id": "persist123456",
+            "status": "error",
+            "url": "https://youtu.be/kJQP7kiw5Fk",
+            "error": app.BLOCKED_MESSAGE,
+            "private_error_detail": "Provider trail: raw subprocess details",
+        }
+        app.save_url_jobs_locked()
+        app.URL_JOBS.clear()
+
+    res = TestClient(app.app).get("/api/jobs/persist123456")
+
+    assert res.status_code == 200
+    job = res.json()["job"]
+    assert job["status"] == "error"
+    assert job["error"] == app.BLOCKED_MESSAGE
+    assert "private_error_detail" not in job
+
+
 def test_async_medium_video_uses_single_audio_route_before_chunking(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
