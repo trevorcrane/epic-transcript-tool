@@ -1,0 +1,95 @@
+{
+  "ok": true,
+  "base": "https://epic-transcript.robyncrane.com",
+  "video_url": "https://youtu.be/dQw4w9WgXcQ",
+  "elapsed_seconds": 4.65,
+  "ui": {
+    "required_present": {
+      "id=\"transcript\"": true,
+      "id=\"copyBtn\"": true,
+      "id=\"downloadFormat\"": true,
+      "<option value=\"txt\">TXT</option>": true,
+      "<option value=\"md\">Markdown</option>": true,
+      "<option value=\"srt\">SRT</option>": true,
+      "id=\"downloadBtn\"": true,
+      "id=\"summaryBtn\"": true,
+      "id=\"actionsBtn\"": true,
+      "id=\"questionInput\"": true,
+      "Quotes \u00b7 Chapters \u00b7 Hooks \u00b7 FAQ": true,
+      "id=\"askBtn\"": true,
+      "Your Transcript History": true
+    },
+    "retired_absent": {
+      "id=\"allAnalysisBtn\"": true,
+      "id=\"analysisMenu\"": true,
+      "id=\"downloadVttBtn\"": true,
+      "id=\"downloadMdBtn\"": true,
+      "id=\"downloadSrtBtn\"": true,
+      "id=\"analysisCopyBtn\"": true,
+      "id=\"analysisDownloadBtn\"": true,
+      "id=\"emailBtn\"": true,
+      "All Outputs": true,
+      "AI Summary": true,
+      "Main ideas": true,
+      "Best quotes": true,
+      "Blog post": true,
+      "Create 100 content assets": true,
+      "content_assets_100": true,
+      "/api/analyze-all/": true
+    },
+    "client_secret_markers_absent": true
+  },
+  "retired_api_statuses": {
+    "main_ideas": 400,
+    "chapters": 400,
+    "best_quotes": 400,
+    "faq": 400,
+    "content_assets_100": 400
+  },
+  "record": {
+    "id": "3a14dec41b61",
+    "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "method": "native-caption-subtitles",
+    "language": "en",
+    "word_count": 366,
+    "segment_count": 61,
+    "cache_hit": true
+  },
+  "declared_outputs": [
+    "executive_summary",
+    "action_items",
+    "ask_question"
+  ],
+  "analyses": {
+    "executive_summary": {
+      "chars": 1155,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "sha256": "6852135d36b2d597f42d98f32f00e9a02df3479e9f57d4a858961cd568fdb540",
+      "preview": "# Executive summary\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [\u266a\u266a\u266a]\n- [00:18]"
+    },
+    "action_items": {
+      "chars": 1099,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "sha256": "83d59b7f72ff0dad590cf2478192c7fbe1bf2e2b73c930e48541e8fe11f43fdd",
+      "preview": "# Action items\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [\u266a\u266a\u266a]\n- [00:18] \u266a We"
+    },
+    "ask_question": {
+      "chars": 967,
+      "has_timestamp": true,
+      "has_disclaimer": true,
+      "has_evidence": true,
+      "sha256": "023a47bf7f314bf1f4a30d64011098f844c74bbc734f47a65e8ee61ddacb12c5",
+      "preview": "# Ask the video\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [\u266a\u266a\u266a]\n- [00:18] \u266a W"
+    }
+  },
+  "analysis_ids": {
+    "executive_summary": "c9fcad03e7b8",
+    "action_items": "637919ef9812",
+    "ask_question": "f7cc01482fd1"
+  },
+  "gemini_marker_present": false
+}

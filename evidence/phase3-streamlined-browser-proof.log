@@ -1,0 +1,107 @@
+{
+  "ok": true,
+  "screenshots": {
+    "desktop": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase3-streamlined-desktop.png",
+    "desktop_sha256": "2dac5ac22d7d18af49762a1ed4061b4a60e43838fcd4284ab06534094b5aafa2",
+    "mobile": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase3-streamlined-mobile.png",
+    "mobile_sha256": "4c9526dbf21bcc0e8207a2c531ac120aff701b5947db1e60399983bd8583edc5"
+  },
+  "desktop": {
+    "requiredPresent": {
+      "transcript": true,
+      "copyBtn": true,
+      "downloadFormat": true,
+      "downloadBtn": true,
+      "summaryBtn": true,
+      "actionsBtn": true,
+      "questionInput": true,
+      "askBtn": true,
+      "drawerHead": true
+    },
+    "retiredAbsent": {
+      "allAnalysisBtn": true,
+      "analysisMenu": true,
+      "downloadVttBtn": true,
+      "downloadMdBtn": true,
+      "downloadSrtBtn": true,
+      "analysisCopyBtn": true,
+      "analysisDownloadBtn": true,
+      "emailBtn": true
+    },
+    "downloadOptions": [
+      "txt",
+      "md",
+      "srt"
+    ],
+    "transcriptChars": 2577,
+    "historyOpen": true,
+    "overflowX": false,
+    "visibleButtonText": [
+      "☀",
+      "Get Transcript",
+      "Copy",
+      "Download",
+      "Summary",
+      "Action Items",
+      "Ask",
+      "How do I transcribe a YouTube video to text?⌄",
+      "How do I download a YouTube transcript?⌄",
+      "Is the YouTube transcript machine free?⌄",
+      "What is a YouTube video transcript?⌄",
+      "What are YouTube subtitles?⌄",
+      "What are YouTube closed captions?⌄",
+      "Why can't I download a transcript directly from YouTube?⌄",
+      "Clear history",
+      "×"
+    ]
+  },
+  "mobile": {
+    "requiredPresent": {
+      "transcript": true,
+      "copyBtn": true,
+      "downloadFormat": true,
+      "downloadBtn": true,
+      "summaryBtn": true,
+      "actionsBtn": true,
+      "questionInput": true,
+      "askBtn": true,
+      "drawerHead": true
+    },
+    "retiredAbsent": {
+      "allAnalysisBtn": true,
+      "analysisMenu": true,
+      "downloadVttBtn": true,
+      "downloadMdBtn": true,
+      "downloadSrtBtn": true,
+      "analysisCopyBtn": true,
+      "analysisDownloadBtn": true,
+      "emailBtn": true
+    },
+    "downloadOptions": [
+      "txt",
+      "md",
+      "srt"
+    ],
+    "transcriptChars": 2577,
+    "historyOpen": true,
+    "overflowX": false,
+    "visibleButtonText": [
+      "☀",
+      "Get Transcript",
+      "Copy",
+      "Download",
+      "Summary",
+      "Action Items",
+      "Ask",
+      "How do I transcribe a YouTube video to text?⌄",
+      "How do I download a YouTube transcript?⌄",
+      "Is the YouTube transcript machine free?⌄",
+      "What is a YouTube video transcript?⌄",
+      "What are YouTube subtitles?⌄",
+      "What are YouTube closed captions?⌄",
+      "Why can't I download a transcript directly from YouTube?⌄",
+      "Clear history",
+      "×"
+    ]
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "ok": true,
+  "url": "https://epic-transcript.robyncrane.com/?v=7e02e50",
+  "desktop": {
+    "viewport": {
+      "width": 1440,
+      "height": 1100
+    },
+    "proof": {
+      "requiredPresent": {
+        "transcript": true,
+        "copyBtn": true,
+        "downloadFormat": true,
+        "downloadBtn": true,
+        "summaryBtn": true,
+        "actionsBtn": true,
+        "questionInput": true,
+        "askBtn": true,
+        "drawerHead": true
+      },
+      "retiredAbsent": {
+        "allAnalysisBtn": true,
+        "analysisMenu": true,
+        "downloadVttBtn": true,
+        "downloadMdBtn": true,
+        "downloadSrtBtn": true,
+        "analysisCopyBtn": true,
+        "analysisDownloadBtn": true,
+        "emailBtn": true
+      },
+      "downloadOptions": [
+        "txt",
+        "md",
+        "srt"
+      ],
+      "transcriptChars": 2577,
+      "historyOpen": true,
+      "overflowX": false,
+      "visibleButtonText": [
+        "☀",
+        "Get Transcript",
+        "Copy",
+        "Download",
+        "Summary",
+        "Action Items",
+        "Ask",
+        "How do I transcribe a YouTube video to text?⌄",
+        "How do I download a YouTube transcript?⌄",
+        "Is the YouTube transcript machine free?⌄",
+        "What is a YouTube video transcript?⌄",
+        "What are YouTube subtitles?⌄",
+        "What are YouTube closed captions?⌄",
+        "Why can't I download a transcript directly from YouTube?⌄",
+        "Clear history",
+        "×"
+      ]
+    },
+    "downloads": {
+      "txt": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.txt"
+      },
+      "md": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.md"
+      },
+      "srt": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.srt"
+      }
+    },
+    "outputs": {
+      "summary": "# Executive summary\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never g",
+      "action_items": "# Action items\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never gonna ",
+      "ask": "# Ask the video\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never gonna"
+    },
+    "network": [
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcribe-url-job"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/jobs/8544488458c4"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/jobs/8544488458c4"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/9600a9f5023a/download-link?format=txt"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/VRYRe1StrJbAMD6aOH4MSZ8cEjC-vE7bSVAjzzUO2qk"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/9600a9f5023a/download-link?format=md"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/cV2Wm5jafJcklbDMLeizTaMqR4E8aiifVCqKprXRb0o"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/9600a9f5023a/download-link?format=srt"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/7hEZrjwIzNtgvLcwnrocNOZBGcaObxx2gWU4XsMTCO0"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/9600a9f5023a"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/9600a9f5023a"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/9600a9f5023a"
+      }
+    ]
+  },
+  "mobile": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "proof": {
+      "requiredPresent": {
+        "transcript": true,
+        "copyBtn": true,
+        "downloadFormat": true,
+        "downloadBtn": true,
+        "summaryBtn": true,
+        "actionsBtn": true,
+        "questionInput": true,
+        "askBtn": true,
+        "drawerHead": true
+      },
+      "retiredAbsent": {
+        "allAnalysisBtn": true,
+        "analysisMenu": true,
+        "downloadVttBtn": true,
+        "downloadMdBtn": true,
+        "downloadSrtBtn": true,
+        "analysisCopyBtn": true,
+        "analysisDownloadBtn": true,
+        "emailBtn": true
+      },
+      "downloadOptions": [
+        "txt",
+        "md",
+        "srt"
+      ],
+      "transcriptChars": 2577,
+      "historyOpen": true,
+      "overflowX": false,
+      "visibleButtonText": [
+        "☀",
+        "Get Transcript",
+        "Copy",
+        "Download",
+        "Summary",
+        "Action Items",
+        "Ask",
+        "How do I transcribe a YouTube video to text?⌄",
+        "How do I download a YouTube transcript?⌄",
+        "Is the YouTube transcript machine free?⌄",
+        "What is a YouTube video transcript?⌄",
+        "What are YouTube subtitles?⌄",
+        "What are YouTube closed captions?⌄",
+        "Why can't I download a transcript directly from YouTube?⌄",
+        "Clear history",
+        "×"
+      ]
+    },
+    "downloads": {
+      "txt": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.txt"
+      },
+      "md": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.md"
+      },
+      "srt": {
+        "suggestedFilename": "Rick_Astley_-_Never_Gonna_Give_You_Up_Official_Video_4K_Rema.srt"
+      }
+    },
+    "outputs": {
+      "summary": "# Executive summary\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never g",
+      "action_items": "# Action items\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never gonna ",
+      "ask": "# Ask the video\n\nAI-generated from the transcript. Verify against the timestamped evidence before publishing.\nSource: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)\nWords reviewed: 366\n\n## Transcript evidence\n- [00:01] [♪♪♪]\n- [00:18] ♪ We're no strangers to love ♪\n- [00:22] ♪ You know the rules and so do I ♪\n- [00:27] ♪ A full commitment's what I'm thinking of ♪\n- [01:50] ♪ Never gonna make you cry ♪\n- [01:52] ♪ Never gonna say goodbye ♪\n- [01:54] ♪ Never gonna tell a lie and hurt you ♪\n- [01:59] ♪ (Ooh, give you up) ♪\n- [03:19] ♪ Never gonna run around and desert you ♪\n- [03:23] ♪ Never gonna make you cry ♪\n- [03:25] ♪ Never gonna say goodbye ♪\n- [03:27] ♪ Never gonna"
+    },
+    "network": [
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcribe-url-job"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/jobs/edcd511659a7"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/jobs/edcd511659a7"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/459cb0bce99b/download-link?format=txt"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/s8TjLldzTfuDh1wjv35PHxeVUR50hvyKcahTaleCjok"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/459cb0bce99b/download-link?format=md"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/o6GpJAPlfclWIRtPifznqGynDq4BMW1AJdhAr0iayn8"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/transcripts/459cb0bce99b/download-link?format=srt"
+      },
+      {
+        "method": "GET",
+        "url": "https://epic-transcript.robyncrane.com/api/download/6wYHV6a8ADQO0xliMHPRL4cFXySIRAGUutB4ZfD3K4o"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/459cb0bce99b"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/459cb0bce99b"
+      },
+      {
+        "method": "POST",
+        "url": "https://epic-transcript.robyncrane.com/api/analyze/459cb0bce99b"
+      }
+    ]
+  },
+  "screenshots": {
+    "desktop": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase3-streamlined-desktop.png",
+    "desktop_sha256": "2dac5ac22d7d18af49762a1ed4061b4a60e43838fcd4284ab06534094b5aafa2",
+    "mobile": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase3-streamlined-mobile.png",
+    "mobile_sha256": "4c9526dbf21bcc0e8207a2c531ac120aff701b5947db1e60399983bd8583edc5"
+  }
+}
