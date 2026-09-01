@@ -25,6 +25,7 @@ class Case:
 CASES = [
     Case("regression", "https://youtu.be/v34Eg12mhDM?si=lqfq-8bhlxADDZdD", 700, 5000),
     Case("manual-caption-control", "https://youtu.be/dQw4w9WgXcQ", 20, 100),
+    Case("automatic-caption-control", "https://youtu.be/v34Eg12mhDM", 700, 5000),
 ]
 
 

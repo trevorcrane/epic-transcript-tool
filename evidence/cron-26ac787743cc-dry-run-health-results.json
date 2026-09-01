@@ -1,0 +1,56 @@
+{
+  "base_url": "https://epic-transcript.robyncrane.com",
+  "results": [
+    {
+      "case": "regression",
+      "http_status": 200,
+      "processing_duration": 2.198,
+      "ok": true,
+      "provider_attempted": [
+        "metadata",
+        "native-caption-extractor"
+      ],
+      "provider_succeeded": "native-caption-automatic_captions",
+      "segment_count": 1460,
+      "word_count": 15744,
+      "language": "en",
+      "cache_status": "hit",
+      "error_category": null,
+      "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)"
+    },
+    {
+      "case": "manual-caption-control",
+      "http_status": 200,
+      "processing_duration": 1.538,
+      "ok": true,
+      "provider_attempted": [
+        "metadata",
+        "native-caption-extractor"
+      ],
+      "provider_succeeded": "native-caption-subtitles",
+      "segment_count": 61,
+      "word_count": 366,
+      "language": "en",
+      "cache_status": "hit",
+      "error_category": null,
+      "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)"
+    },
+    {
+      "case": "automatic-caption-control",
+      "http_status": 200,
+      "processing_duration": 1.833,
+      "ok": true,
+      "provider_attempted": [
+        "metadata",
+        "native-caption-extractor"
+      ],
+      "provider_succeeded": "native-caption-automatic_captions",
+      "segment_count": 1460,
+      "word_count": 15744,
+      "language": "en",
+      "cache_status": "hit",
+      "error_category": null,
+      "title": "Sell AI Systems, Not AI Agents (how I made $5,407,902 last year)"
+    }
+  ]
+}
