@@ -739,6 +739,12 @@ def test_uncached_spanish_audio_gets_duration_scaled_whisper_timeout(monkeypatch
     assert seen["timeout"] >= 564
 
 
+def test_youtube_whisper_timeout_ignores_too_low_env_for_medium_audio(monkeypatch):
+    monkeypatch.setenv("YOUTUBE_WHISPER_TIMEOUT_SECONDS", "35")
+
+    assert app.youtube_whisper_timeout_seconds(282) >= 564
+
+
 def test_unsupported_upload_returns_helpful_exact_supported_formats(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()

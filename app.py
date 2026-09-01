@@ -708,11 +708,13 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
 
 def youtube_whisper_timeout_seconds(duration: Optional[float]) -> int:
     configured = os.getenv("YOUTUBE_WHISPER_TIMEOUT_SECONDS")
+    duration_scaled = max(120, min(1200, int(duration * 2))) if duration and duration > 0 else None
     if configured:
-        return int(configured)
-    if duration and duration > 0:
-        return max(120, min(1200, int(duration * 2)))
-    return 120
+        configured_timeout = int(configured)
+        return max(configured_timeout, duration_scaled) if duration_scaled else configured_timeout
+    if duration_scaled:
+        return duration_scaled
+    return int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90"))
 
 
 
