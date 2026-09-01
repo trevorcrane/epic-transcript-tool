@@ -184,7 +184,7 @@
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 7.0s",
+      "method": "browser-whisper-webgpu · onnx-community/whisper-tiny · 9 words · 0:04 · 7.0s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -221,7 +221,7 @@
         "hasTranscript": true,
         "hasTimestamp": true,
         "hasWebVtt": true,
-        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
       },
       {
         "format": "srt",
@@ -421,7 +421,7 @@
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 6.6s",
+      "method": "browser-whisper-webgpu · onnx-community/whisper-tiny · 9 words · 0:04 · 6.6s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -458,7 +458,7 @@
         "hasTranscript": true,
         "hasTimestamp": true,
         "hasWebVtt": true,
-        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
       },
       {
         "format": "srt",
@@ -660,7 +660,7 @@
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-wasm \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 8.1s",
+      "method": "browser-whisper-wasm · onnx-community/whisper-tiny · 9 words · 0:04 · 8.1s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -697,7 +697,7 @@
         "hasTranscript": true,
         "hasTimestamp": true,
         "hasWebVtt": true,
-        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-wasm \u00b7 onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript machin"
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-wasm · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript machin"
       },
       {
         "format": "srt",
@@ -724,28 +724,5 @@
     ],
     "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.png"
   },
-  "preservesOriginalTranscriptIfOneRunFails": true,
-  "fixture": {
-    "filename": "epic-browser-dual-whisper.wav",
-    "sha256": "53e19e82d4fc95bf55efd4696c66b007a9fa6977470b3716b081fd93852ee1f5",
-    "type": "wav",
-    "sample_rate_hz": 16000,
-    "channels": 1,
-    "duration_seconds": 4.149,
-    "language": "en",
-    "expected_phrase": "Browser whisper multilingual timestamp proof for Epic transcript machine."
-  },
-  "production": {
-    "url": "https://epic-transcript.robyncrane.com/",
-    "cache_busted_url": "https://epic-transcript.robyncrane.com/?phase2-webgpu-proof=9ceb8ab",
-    "html_sha256": "b2cdfded5e7c5cb14261c161f249312ba84bac5185949f2804f3d7571783b8ca",
-    "git_head": "9ceb8aba325320ce4e355310130c064250f6dac2"
-  },
-  "runner": {
-    "system": "Darwin",
-    "release": "24.6.0",
-    "machine": "x86_64",
-    "python": "3.14.3",
-    "node": "v25.8.1"
-  }
+  "preservesOriginalTranscriptIfOneRunFails": true
 }
