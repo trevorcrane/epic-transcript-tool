@@ -1,0 +1,33 @@
+{
+  "record": {
+    "id": "7a8c8b848bd0",
+    "words": 366,
+    "segments": 61
+  },
+  "downloads": {
+    "txt": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 2823,
+      "sha256": "4733e24121af026d014b337a3f908220d97effdce3ab009c110d0bf8b4406178",
+      "content_type": "text/plain; charset=utf-8",
+      "has_expected_marker": true
+    },
+    "md": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 3265,
+      "sha256": "aadf998134ee74bafb9db83e15763b3d92bb0aaf78604e9838429d6ed4bd0db5",
+      "content_type": "text/markdown; charset=utf-8",
+      "has_expected_marker": true
+    },
+    "srt": {
+      "link_status": 200,
+      "download_status": 200,
+      "bytes": 4400,
+      "sha256": "6cdb48114b039b33bf091077ddc1af89c8feb19e0a0e3ef93e3c41ab46916c96",
+      "content_type": "application/x-subrip",
+      "has_expected_marker": true
+    }
+  }
+}
