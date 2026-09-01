@@ -714,6 +714,15 @@ def update_url_job(job_id: Optional[str], **fields) -> None:
             URL_JOBS[job_id].update(fields)
 
 
+def visitor_safe_transcription_error(detail: object) -> str:
+    text = str(detail or "")
+    if BLOCKED_MESSAGE in text:
+        return BLOCKED_MESSAGE
+    if "Provider trail" in text or "subprocess" in text or "Command '['" in text or "Long-video queued transcription failed" in text:
+        return BLOCKED_MESSAGE
+    return text
+
+
 def chunk_segments_by_time(segs: list[dict], chunk_seconds: int = 600) -> list[list[dict]]:
     chunks: list[list[dict]] = []
     for seg in segs:
@@ -809,7 +818,8 @@ def transcribe_long_youtube_queued(url: str, video_id: str, started: float, work
     except Exception as e:
         attempts.append({"provider": "chunked-local-whisper", "ok": False, "error": str(e)[:240]})
         detail = json.dumps(attempts[-4:], ensure_ascii=False)
-        raise RuntimeError(f"Long-video queued transcription failed. Provider trail: {detail}")
+        update_url_job(job_id, private_error_detail=f"Long-video queued transcription failed. Provider trail: {detail}")
+        raise RuntimeError(BLOCKED_MESSAGE)
 
 def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str] = None, meta: Optional[dict] = None) -> dict:
     attempts = []
@@ -1470,7 +1480,8 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
             return transcribe_long_youtube_queued(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe, job_id=job_id)
         return transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)
     except RuntimeError as e:
-        raise HTTPException(422, str(e))
+        update_url_job(job_id, private_error_detail=str(e))
+        raise HTTPException(422, visitor_safe_transcription_error(e))
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
@@ -1541,7 +1552,11 @@ def run_url_job(job_id: str, url: str, owner_token: str) -> None:
             URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time(), "percent": 100})
     except HTTPException as e:
         with URL_JOBS_LOCK:
-            URL_JOBS[job_id].update({"status": "error", "error": e.detail, "status_code": e.status_code, "finished_at": time.time()})
+            safe_error = visitor_safe_transcription_error(e.detail)
+            updates = {"status": "error", "error": safe_error, "status_code": e.status_code, "finished_at": time.time()}
+            if safe_error != str(e.detail):
+                updates["private_error_detail"] = str(e.detail)
+            URL_JOBS[job_id].update(updates)
     except Exception as e:
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "error", "error": str(e), "status_code": 500, "finished_at": time.time()})
@@ -1567,6 +1582,7 @@ def api_get_job(job_id: str) -> JSONResponse:
         job = dict(URL_JOBS.get(job_id) or {})
     if not job:
         raise HTTPException(404, "Job not found")
+    job.pop("private_error_detail", None)
     return JSONResponse({"ok": True, "job": job})
 
 

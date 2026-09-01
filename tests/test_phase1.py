@@ -3,8 +3,10 @@ import subprocess
 import time
 from pathlib import Path
 
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from urllib.parse import urlparse
+import pytest
 
 import app
 
@@ -587,6 +589,52 @@ def test_chunked_whisper_offsets_audio_chunks(monkeypatch, tmp_path):
     assert rec["method"] == "queued-chunked-local-whisper"
     assert rec["segments"][1]["start"] == 601
     assert rec["provider_attempts"][-1]["chunks"] == 2
+
+
+def test_chunked_whisper_total_failure_returns_helpful_public_message_and_keeps_private_trail(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    meta = {"id": "nocaptfail1", "title": "No Captions", "duration": 850, "webpage_url": "https://youtu.be/nocaptfail1"}
+    for name in ("fetch_caption_url_segments", "youtube_transcript_api_segments", "yt_dlp_grab_caption_segments"):
+        monkeypatch.setattr(app, name, lambda *a, **k: (_ for _ in ()).throw(RuntimeError("provider blocked details")))
+    audio = tmp_path / "audio.mp3"; audio.write_bytes(b"audio")
+    chunk = tmp_path / "chunk-0000.wav"; chunk.write_bytes(b"chunk")
+    monkeypatch.setattr(app, "yt_dlp_download_audio", lambda url, work_dir: audio)
+    monkeypatch.setattr(app, "split_audio_for_long_transcription", lambda audio_path, work_dir, chunk_seconds: [chunk])
+    monkeypatch.setattr(app, "transcribe_with_local_whisper", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("Command '['/usr/local/bin/whisper'] timed out with raw subprocess args")))
+    with app.URL_JOBS_LOCK:
+        app.URL_JOBS["job1"] = {"id": "job1", "status": "running"}
+
+    with pytest.raises(RuntimeError) as err:
+        app.transcribe_long_youtube_queued("https://youtu.be/nocaptfail1", "nocaptfail1", time.monotonic(), tmp_path, "owner-token-fail-aaaa", meta, job_id="job1")
+
+    public_message = str(err.value)
+    assert public_message == app.BLOCKED_MESSAGE
+    assert "Provider trail" not in public_message
+    assert "subprocess" not in public_message
+    assert app.URL_JOBS["job1"]["private_error_detail"]
+    assert "chunked-local-whisper" in app.URL_JOBS["job1"]["private_error_detail"]
+
+
+def test_async_job_masks_provider_details_from_visitors(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    monkeypatch.setattr(app, "transcribe_youtube_url_to_record", lambda *a, **k: (_ for _ in ()).throw(HTTPException(422, f"{app.BLOCKED_MESSAGE} Provider trail: raw subprocess details")))
+    client = TestClient(app.app)
+
+    res = client.post("/api/transcribe-url-job", data={"url":"https://youtu.be/nocaptfail1", "owner":"owner-token-mask-aaaa"})
+    assert res.status_code == 202
+    job_id = res.json()["job"]["id"]
+    deadline = time.time() + 5
+    while time.time() < deadline:
+        got = client.get(f"/api/jobs/{job_id}").json()["job"]
+        if got["status"] == "error":
+            break
+        time.sleep(0.05)
+    assert got["status"] == "error"
+    assert got["error"] == app.BLOCKED_MESSAGE
+    assert "Provider trail" not in got["error"]
+    assert "private_error_detail" not in got
 
 
 def test_unsupported_upload_returns_helpful_exact_supported_formats(monkeypatch, tmp_path):
