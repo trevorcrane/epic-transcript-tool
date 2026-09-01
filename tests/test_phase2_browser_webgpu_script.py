@@ -22,3 +22,14 @@ def test_webgpu_proof_script_records_adapter_device_and_mobile_wasm_artifact():
     assert "userAgent" in source
     assert "mobileWasm" in source
     assert "desktopWebgpu" in source
+
+
+def test_webgpu_proof_script_records_true_no_webgpu_fallback_without_force_param():
+    source = SCRIPT.read_text()
+
+    assert "noWebgpuMobileFallback" in source
+    assert "webkit.launch" in source
+    assert "label === 'no-webgpu-mobile-fallback'" in source
+    assert "forceBrowserWasm=1" in source
+    no_webgpu_section = source.split("label === 'no-webgpu-mobile-fallback'", 1)[1]
+    assert "base + '/'" in no_webgpu_section

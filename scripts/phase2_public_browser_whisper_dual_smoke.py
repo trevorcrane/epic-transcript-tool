@@ -38,7 +38,7 @@ def make_wav() -> tuple[Path, dict[str, object]]:
     return wav, {"filename": wav.name, "sha256": sha256_file(wav), "type": "wav", "sample_rate_hz": 16000, "channels": 1, "duration_seconds": round(duration, 3), "language": "en", "expected_phrase": phrase}
 
 NODE = r'''
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
 const fs = require('fs');
 const [base, wavPath, outPath] = process.argv.slice(2);
 function increasing(segments){
@@ -95,7 +95,9 @@ async function clickDownload(page, format, outPath, label){
   return {format, path:file, filename:d.suggestedFilename(), bytes:Buffer.byteLength(text), sha256:require('crypto').createHash('sha256').update(text).digest('hex'), hasTranscript:/Browser Whisper|browser whisper|Epic transcript/i.test(text), hasTimestamp:/00:00:00[,.]000 --> 00:00:/.test(text) || format === 'txt' || format === 'md', hasWebVtt:format !== 'vtt' || text.includes('WEBVTT'), head:text.slice(0,180)};
 }
 async function runOne(browser, label, mode, viewport, isMobile){
-  const url = base + '/?phase2-browser-proof=' + label + (mode === 'wasm' ? '&forceBrowserWasm=1' : '');
+  const url = label === 'no-webgpu-mobile-fallback'
+    ? base + '/'
+    : base + '/?phase2-browser-proof=' + label + (mode === 'wasm' ? '&forceBrowserWasm=1' : '');
   const context = await browser.newContext({ viewport, isMobile, acceptDownloads:true });
   const page = await context.newPage();
   const browserVersion = await browser.version();
@@ -156,7 +158,10 @@ async function runOne(browser, label, mode, viewport, isMobile){
   const mobileWebgpu=await runOne(browser,'mobile-webgpu','webgpu',{width:390,height:844},true);
   const mobileWasm=await runOne(browser,'mobile-wasm','wasm',{width:390,height:844},true);
   await browser.close();
-  const report={base, ok:desktopWebgpu.ok && mobileWebgpu.ok && mobileWasm.ok, desktopWebgpu, mobileWebgpu, mobileWasm, preservesOriginalTranscriptIfOneRunFails:Boolean(desktopWebgpu.state?.transcript || mobileWebgpu.state?.transcript || mobileWasm.state?.transcript)};
+  const noGpuBrowser=await webkit.launch({headless:true});
+  const noWebgpuMobileFallback=await runOne(noGpuBrowser,'no-webgpu-mobile-fallback','wasm',{width:390,height:844},true);
+  await noGpuBrowser.close();
+  const report={base, ok:desktopWebgpu.ok && mobileWebgpu.ok && mobileWasm.ok && noWebgpuMobileFallback.ok && noWebgpuMobileFallback.gpuProof.hasNavigatorGpu === false && noWebgpuMobileFallback.selectedDevice === 'wasm' && !noWebgpuMobileFallback.url.includes('forceBrowserWasm'), desktopWebgpu, mobileWebgpu, mobileWasm, noWebgpuMobileFallback, preservesOriginalTranscriptIfOneRunFails:Boolean(desktopWebgpu.state?.transcript || mobileWebgpu.state?.transcript || mobileWasm.state?.transcript || noWebgpuMobileFallback.state?.transcript)};
   fs.writeFileSync(outPath, JSON.stringify(report,null,2));
   console.log(JSON.stringify(report,null,2));
   process.exit(report.ok ? 0 : 2);
