@@ -1,0 +1,10 @@
+{
+  "site_id": "2916df2d-5074-4898-91d2-38afb4241fa8",
+  "site_name": "epic-transcript-machine-review",
+  "deploy_id": "6a96290e52b136491d902afd",
+  "deploy_url": "https://6a96290e52b136491d902afd--epic-transcript-machine-review.netlify.app",
+  "logs": "https://app.netlify.com/projects/epic-transcript-machine-review/deploys/6a96290e52b136491d902afd",
+  "function_logs": "https://app.netlify.com/projects/epic-transcript-machine-review/logs/functions",
+  "edge_function_logs": "https://app.netlify.com/projects/epic-transcript-machine-review/logs/edge-functions",
+  "url": "https://epic-transcript-machine-review.netlify.app"
+}

@@ -54,6 +54,7 @@
       "error": null,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
       "platform": "MacIntel",
+      "gpuType": "object",
       "hardwareConcurrency": 6,
       "deviceMemory": 32,
       "adapterLimits": {
@@ -65,7 +66,7 @@
       "deviceQueueWriteOk": true
     },
     "ok": true,
-    "elapsedSeconds": 7.506,
+    "elapsedSeconds": 6.478,
     "statuses": [
       "Browser model: progress",
       "Transcribing privately in this browser with WEBGPU...",
@@ -78,16 +79,16 @@
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
-      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
       "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
     ],
     "responses": [
@@ -101,10 +102,6 @@
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
-      },
-      {
-        "status": 307,
         "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
       },
       {
@@ -113,11 +110,11 @@
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
       },
       {
-        "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
       },
       {
         "status": 200,
@@ -129,7 +126,15 @@
       },
       {
         "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 200,
         "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
       },
       {
         "status": 307,
@@ -137,23 +142,19 @@
       },
       {
         "status": 302,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
       },
       {
-        "status": 302,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
       },
       {
         "status": 200,
         "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
       },
       {
-        "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
-      },
-      {
-        "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
       },
       {
         "status": 200,
@@ -169,22 +170,22 @@
       "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
       "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
       "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
-      "error: \u001b[0;93m2026-08-31 21:08:46.035200 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:46.037600 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:46.944700 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:46.945100 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:27.352499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:27.355000 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:28.821199 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:28.821799 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
       "warning: No language specified - defaulting to English (en)."
     ],
     "errors": [
-      "\u001b[0;93m2026-08-31 21:08:46.035200 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:46.037600 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:46.944700 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:46.945100 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
+      "\u001b[0;93m2026-08-31 21:22:27.352499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:27.355000 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:28.821199 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:28.821799 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
     ],
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 7.0s",
+      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 6.0s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -301,6 +302,7 @@
       "error": null,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
       "platform": "MacIntel",
+      "gpuType": "object",
       "hardwareConcurrency": 6,
       "deviceMemory": 32,
       "adapterLimits": {
@@ -312,7 +314,7 @@
       "deviceQueueWriteOk": true
     },
     "ok": true,
-    "elapsedSeconds": 7.143,
+    "elapsedSeconds": 6.717,
     "statuses": [
       "Browser model: progress",
       "Transcribing privately in this browser with WEBGPU...",
@@ -325,10 +327,10 @@
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
@@ -346,7 +348,7 @@
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
       },
       {
         "status": 307,
@@ -357,36 +359,36 @@
         "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
       },
       {
-        "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
-      },
-      {
         "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
       },
       {
         "status": 200,
         "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
       },
       {
-        "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
-      },
-      {
         "status": 200,
         "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
       },
       {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
         "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
       },
       {
         "status": 302,
         "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
       },
       {
-        "status": 302,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
       },
       {
         "status": 200,
@@ -406,22 +408,22 @@
       "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
       "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
       "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
-      "error: \u001b[0;93m2026-08-31 21:08:54.158499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:54.160199 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:55.482300 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "error: \u001b[0;93m2026-08-31 21:08:55.482699 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:35.554499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:35.556199 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:36.516999 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:22:36.517698 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
       "warning: No language specified - defaulting to English (en)."
     ],
     "errors": [
-      "\u001b[0;93m2026-08-31 21:08:54.158499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:54.160199 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:55.482300 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
-      "\u001b[0;93m2026-08-31 21:08:55.482699 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
+      "\u001b[0;93m2026-08-31 21:22:35.554499 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:35.556199 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:36.516999 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:22:36.517698 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
     ],
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 6.6s",
+      "method": "browser-whisper-webgpu \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 6.1s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -538,6 +540,7 @@
       "error": null,
       "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
       "platform": "MacIntel",
+      "gpuType": "object",
       "hardwareConcurrency": 6,
       "deviceMemory": 32,
       "adapterLimits": {
@@ -549,10 +552,9 @@
       "deviceQueueWriteOk": true
     },
     "ok": true,
-    "elapsedSeconds": 8.483,
+    "elapsedSeconds": 8.009,
     "statuses": [
       "Browser model: progress",
-      "Browser model: done",
       "Transcribing privately in this browser with WASM...",
       "Done"
     ],
@@ -563,15 +565,17 @@
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
       "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
-      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
       "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
       "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
     ],
@@ -586,11 +590,11 @@
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
       },
       {
         "status": 307,
@@ -598,19 +602,11 @@
       },
       {
         "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
-      },
-      {
-        "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
       },
       {
         "status": 200,
         "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
-      },
-      {
-        "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
       },
       {
         "status": 200,
@@ -619,6 +615,30 @@
       {
         "status": 307,
         "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
       },
       {
         "status": 302,
@@ -627,14 +647,6 @@
       {
         "status": 302,
         "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
-      },
-      {
-        "status": 200,
-        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
-      },
-      {
-        "status": 307,
-        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
       },
       {
         "status": 200,
@@ -660,7 +672,7 @@
     "state": {
       "status": "Done",
       "visible": true,
-      "method": "browser-whisper-wasm \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 8.1s",
+      "method": "browser-whisper-wasm \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 7.7s",
       "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
       "historyCount": 1,
       "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
@@ -724,6 +736,210 @@
     ],
     "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.png"
   },
+  "noWebgpuMobileFallback": {
+    "label": "no-webgpu-mobile-fallback",
+    "mode": "wasm",
+    "url": "https://epic-transcript.robyncrane.com/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "isMobile": true,
+    "browserVersion": "26.5",
+    "selectedDevice": "wasm",
+    "gpuProof": {
+      "hasNavigatorGpu": false,
+      "adapterRequested": false,
+      "adapterAvailable": false,
+      "requestDeviceOk": false,
+      "adapterFeatures": [],
+      "wgslLanguageFeatures": [],
+      "error": null,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "platform": "MacIntel",
+      "gpuType": "undefined",
+      "hardwareConcurrency": 4,
+      "deviceMemory": null
+    },
+    "ok": true,
+    "elapsedSeconds": 7.739,
+    "statuses": [
+      "Browser model: progress",
+      "Transcribing privately in this browser with WASM...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      }
+    ],
+    "consoleMessages": [
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-wasm \u00b7 onnx-community/whisper-tiny \u00b7 9 words \u00b7 0:04 \u00b7 7.5s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "sha256": "aa324a9552aa527e36813f7db051ab9ee30ef920769131c8e35bfcad2122de9f",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 183,
+        "sha256": "b1d958464d8777b8eb9fb09878ec207a4b6eb7b2a658ada9dfc4e57fd47b7dee",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-wasm \u00b7 onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript machin"
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "sha256": "fab6a9e1db67545e622948a52ddad5b2e35c28766325e905398277db63f31d98",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "1\n00:00:00,000 --> 00:00:04,040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "sha256": "6da473ac89f12a4562866ab420b154d37042672e0a68ef0c5a480feaf74eb851",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "WEBVTT\n\n00:00:00.000 --> 00:00:04.040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.png"
+  },
   "preservesOriginalTranscriptIfOneRunFails": true,
   "fixture": {
     "filename": "epic-browser-dual-whisper.wav",
@@ -737,9 +953,9 @@
   },
   "production": {
     "url": "https://epic-transcript.robyncrane.com/",
-    "cache_busted_url": "https://epic-transcript.robyncrane.com/?phase2-webgpu-proof=9ceb8ab",
+    "cache_busted_url": "https://epic-transcript.robyncrane.com/?phase2-webgpu-proof=e09aff6",
     "html_sha256": "b2cdfded5e7c5cb14261c161f249312ba84bac5185949f2804f3d7571783b8ca",
-    "git_head": "9ceb8aba325320ce4e355310130c064250f6dac2"
+    "git_head": "e09aff6a29ea90aa35a876643332e03d0663e712"
   },
   "runner": {
     "system": "Darwin",
