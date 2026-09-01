@@ -1477,6 +1477,9 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
     work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
     try:
         if is_long:
+            single_audio_max = int(os.getenv("YOUTUBE_JOB_SINGLE_AUDIO_MAX_SECONDS", "360"))
+            if allow_long and (meta_probe.get("duration") or 0) <= single_audio_max:
+                return transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)
             return transcribe_long_youtube_queued(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe, job_id=job_id)
         return transcribe_youtube_uncached(url, video_id, started, work_dir, owner_token=owner_token, meta=meta_probe)
     except RuntimeError as e:

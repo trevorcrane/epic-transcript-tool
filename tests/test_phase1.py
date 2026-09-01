@@ -637,6 +637,27 @@ def test_async_job_masks_provider_details_from_visitors(monkeypatch, tmp_path):
     assert "private_error_detail" not in got
 
 
+def test_async_medium_video_uses_single_audio_route_before_chunking(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
+    app.init_db()
+    monkeypatch.setattr(app, "yt_dlp_metadata", lambda url: {"id": "mediumvid12", "title": "Medium", "duration": 281, "webpage_url": url})
+    monkeypatch.setattr(app, "get_cached_transcript", lambda *a, **k: None)
+    monkeypatch.setenv("YOUTUBE_JOB_SINGLE_AUDIO_MAX_SECONDS", "360")
+    calls = []
+
+    def fake_uncached(url, video_id, started, work_dir, owner_token=None, meta=None):
+        calls.append((url, video_id, meta["duration"]))
+        return {"id": "rec1", "transcript": "hola mundo", "segments": [{"start": 0, "end": 1, "text": "hola mundo"}], "method": "local-whisper"}
+
+    monkeypatch.setattr(app, "transcribe_youtube_uncached", fake_uncached)
+    monkeypatch.setattr(app, "transcribe_long_youtube_queued", lambda *a, **k: (_ for _ in ()).throw(AssertionError("chunked route should not run for medium video")))
+
+    rec = app.transcribe_youtube_url_to_record("https://youtu.be/mediumvid12", "owner-token-medium-aaaa", allow_long=True, job_id="job-medium")
+
+    assert rec["id"] == "rec1"
+    assert calls == [("https://youtu.be/mediumvid12", "mediumvid12", 281)]
+
+
 def test_unsupported_upload_returns_helpful_exact_supported_formats(monkeypatch, tmp_path):
     monkeypatch.setattr(app, "DB_PATH", tmp_path / "transcripts.db")
     app.init_db()
