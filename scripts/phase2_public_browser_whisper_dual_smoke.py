@@ -93,7 +93,10 @@ async function runOne(browser, mode){
   return baseResult;
 }
 (async()=>{
-  const browser=await chromium.launch({headless:true});
+  const browser=await chromium.launch({
+    headless:true,
+    args:['--enable-unsafe-webgpu','--use-angle=metal','--ignore-gpu-blocklist']
+  });
   const webgpu=await runOne(browser,'webgpu');
   const wasm=await runOne(browser,'wasm');
   await browser.close();
