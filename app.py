@@ -338,8 +338,37 @@ def strip_vtt_srt(raw: str) -> str:
     return clean_whitespace(text)
 
 
+def remove_leading_word_overlap(previous_text: str, next_text: str, max_words: int = 20) -> str:
+    """Trim repeated leading caption words caused by rolling auto-caption windows."""
+    prev_words = clean_whitespace(previous_text).split()
+    next_words = clean_whitespace(next_text).split()
+    if not prev_words or not next_words:
+        return clean_whitespace(next_text)
+    def norm(words):
+        return [w.lower().strip(",.?!;:\"'()[]") for w in words]
+    prev_norm = norm(prev_words)
+    next_norm = norm(next_words)
+    overlap = 0
+    for size in range(min(len(prev_norm), len(next_norm), max_words), 0, -1):
+        if prev_norm[-size:] == next_norm[:size]:
+            overlap = size
+            break
+    trimmed = next_words[overlap:]
+    return clean_whitespace(" ".join(trimmed))
+
+
 def segments_to_transcript(segments: list[dict]) -> str:
-    return "\n".join(f"[{seconds_to_timestamp(s.get('start', 0))}] {s.get('text','').strip()}" for s in segments if s.get("text"))
+    lines = []
+    previous_text = ""
+    for seg in segments:
+        raw_text = clean_whitespace(seg.get("text", ""))
+        if not raw_text:
+            continue
+        text = remove_leading_word_overlap(previous_text, raw_text)
+        previous_text = clean_whitespace((previous_text + " " + text).strip())[-1200:]
+        if text:
+            lines.append(f"[{seconds_to_timestamp(seg.get('start', 0))}] {text}")
+    return "\n".join(lines)
 
 
 def transcript_word_count(text: str) -> int:
@@ -364,10 +393,13 @@ def row_to_record(row: sqlite3.Row | dict, cache_hit: bool = False, include_owne
     if not include_owner_token:
         r.pop("owner_token", None)
     r["segments"] = segments
+    if segments:
+        rebuilt_transcript = segments_to_transcript(segments)
+        if rebuilt_transcript:
+            r["transcript"] = rebuilt_transcript
     r["provider_attempts"] = attempts
     r["cache_hit"] = cache_hit
-    if not r.get("word_count"):
-        r["word_count"] = transcript_word_count(r.get("transcript", ""))
+    r["word_count"] = transcript_word_count(r.get("transcript", ""))
     r["segment_count"] = len(segments)
     return r
 
@@ -978,26 +1010,50 @@ def reserve_phase3_gemini_call() -> int:
 def build_gemini_prompt(rec: dict, output_type: str, question: Optional[str] = None) -> str:
     title = rec.get("title") or rec.get("source") or "Transcript"
     word_count = rec.get("word_count") or transcript_word_count(rec.get("transcript", ""))
-    evidence_lines = _segment_lines(rec, 24)
+    evidence_lines = _segment_lines(rec, 36)
     evidence = "\n".join(f"- {line}" for line in evidence_lines)
-    label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
-    return f"""You are generating Phase 3 output for EPIC Transcript Machine.
+    if output_type == "executive_summary":
+        task = """Create a sharp, useful summary for a busy operator.
+Return exactly these sections:
+## Quick summary
+3-5 bullets. Plain English. Capture the actual point, not generic filler.
+## Why this matters
+2-3 bullets explaining stakes, leverage, or consequence.
+## Use this next
+3 practical ways to use the transcript.
+## Source notes
+3 short timestamped citations only. Put timestamps here, not randomly in every bullet."""
+    elif output_type == "action_items":
+        task = """Create an action-item breakdown someone can execute immediately.
+Return exactly these sections:
+## Action plan
+5-8 bullets. Each bullet must include Owner, Outcome, First step, and Done when.
+## Priority order
+Top 3 actions in order.
+## Source notes
+3 short timestamped citations only. Put timestamps here, not randomly in every action."""
+    else:
+        task = f"Answer the user's question clearly and directly. Question: {question or 'What should I know from this transcript?'} Include a short Source notes section with timestamped citations."
+    return f"""You are the EPIC Transcript Machine assistant.
 
-Limits and safety:
-- Use ONLY the provided timestamped transcript evidence.
-- Do not invent facts, quotes, numbers, promises, or provider details.
-- Every claim must be tied to a timestamp.
-- Return publishable, useful content. No editor instructions or placeholders.
-- Include the phrase: AI-generated from the transcript with Gemini.
-- Include a Transcript evidence section with the relevant timestamped lines.
-- If asked for 100 content assets, return exactly 100 numbered, distinct, finished assets. Each must include a timestamp and a Source excerpt.
+Goal: turn a transcript into useful, publishable business output fast.
 
-Output type: {label} ({output_type})
-Question: {question or ''}
+Rules:
+- Use only the transcript evidence below.
+- Do not invent facts, quotes, names, numbers, or promises.
+- Be specific to this transcript. Avoid generic advice.
+- Keep timestamps only in the final Source notes section unless a timestamp is essential to the answer.
+- No process disclaimers. No provider mentions. No random metadata.
+- Make the copy compelling enough that someone knows what to do next.
+
+Output type: {ANALYSIS_LABELS.get(output_type, output_type)}
 Source title: {title}
 Words reviewed: {word_count}
 
-Timestamped transcript evidence:
+Task:
+{task}
+
+Transcript evidence:
 {evidence}
 """.strip()
 
@@ -1363,158 +1419,59 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
     if output_type not in ANALYSIS_OUTPUTS:
         raise HTTPException(400, "Unsupported analysis output type.")
     evidence = _segment_lines(rec, 12)
-    label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
-    title = rec.get("title") or rec.get("source") or "Transcript"
-    word_count = rec.get("word_count") or transcript_word_count(rec.get("transcript", ""))
-    header = [
-        f"# {label}",
-        "",
-        "AI-generated from the transcript. Verify against the timestamped evidence before publishing.",
-        f"Source: {title}",
-        f"Words reviewed: {word_count}",
-    ]
+    samples = _evidence_cycle(evidence, 8)
+    first, second, third, fourth = samples[:4]
+    p1, p2, p3, p4 = (_strip_timestamp(first), _strip_timestamp(second), _strip_timestamp(third), _strip_timestamp(fourth))
+
+    if output_type == "executive_summary":
+        return "\n".join([
+            "# Summary", "",
+            "## Quick summary",
+            f"- {p1}",
+            f"- {p2}",
+            f"- {p3}",
+            "- The useful move is to turn the strongest transcript moments into a clear message, a follow-up asset, and a next-step checklist.",
+            "", "## Why this matters",
+            "- The transcript gives raw language that can become sharper content, offers, or internal follow-up.",
+            "- The best output is not more transcript text. It is a shorter explanation of what matters and what to do next.",
+            "", "## Use this next",
+            "- Pull the strongest point into a short post or email.",
+            "- Turn one concrete lesson into a checklist or SOP.",
+            "- Use the source notes below to verify the summary before publishing.",
+            "", "## Source notes",
+            f"- {first}", f"- {second}", f"- {third}",
+        ]).strip() + "\n"
+
+    if output_type == "action_items":
+        return "\n".join([
+            "# Action Items", "",
+            "## Action plan",
+            f"- Owner: Content lead. Outcome: create the first usable summary asset. First step: turn this point into 3 bullets: {p1}. Done when: the asset is ready to paste into a post or email.",
+            f"- Owner: Operations. Outcome: capture the repeatable process. First step: convert this section into a checklist: {p2}. Done when: the checklist has clear steps and a pass/fail standard.",
+            f"- Owner: Editor. Outcome: find the strongest clip or quote. First step: review this moment: {p3}. Done when: one timestamped quote or clip candidate is selected.",
+            f"- Owner: Follow-up. Outcome: create a next-action message. First step: write one follow-up from this idea: {p4}. Done when: the message has a clear CTA.",
+            "- Owner: Reviewer. Outcome: prevent weak AI output from shipping. First step: compare every deliverable against the source notes. Done when: unsupported claims are removed.",
+            "", "## Priority order",
+            "1. Create the short summary asset.",
+            "2. Pull the best quote or clip candidate.",
+            "3. Turn the repeatable lesson into a checklist.",
+            "", "## Source notes",
+            f"- {first}", f"- {second}", f"- {third}",
+        ]).strip() + "\n"
+
+    if output_type == "ask_question":
+        return "\n".join([
+            "# Answer", "",
+            f"Question: {question or 'What should I know from this transcript?'}", "",
+            f"Short answer: {p1} {p2}", "",
+            "## Source notes", f"- {first}", f"- {second}", f"- {third}",
+        ]).strip() + "\n"
+
     if output_type == "content_assets_100":
-        header.extend([
-            "",
-            "## Coverage proof",
-            "- 100 finished asset drafts below, each grounded with its own timestamp.",
-            "- Timestamps are sampled across the full transcript instead of cycling a small evidence set.",
-        ])
-    else:
-        header.extend(["", "## Transcript evidence"])
-        if evidence:
-            header.extend(f"- {line}" for line in evidence)
-        else:
-            header.append("- No timestamped evidence was available.")
+        return "\n".join(["# Create 100 content assets", ""] + build_100_content_assets(rec)).strip() + "\n"
 
-    samples = _evidence_cycle(evidence, 12)
-    first, second, third, fourth, fifth, sixth = samples[:6]
-    plain_first = _strip_timestamp(first)
-    plain_second = _strip_timestamp(second)
-    plain_third = _strip_timestamp(third)
-
-    body_map = {
-        "executive_summary": [
-            "## Summary",
-            f"- **Core point:** {plain_first} Evidence: {first}",
-            f"- **Why it matters:** {plain_second} Evidence: {second}",
-            f"- **Practical takeaway:** {plain_third} Evidence: {third}",
-            "- **Recommended use:** turn the transcript into a publishable summary, follow-up copy, and timestamped clips before publishing anything externally.",
-        ],
-        "main_ideas": [
-            "## Main ideas",
-            f"1. {plain_first} ({first})",
-            f"2. {plain_second} ({second})",
-            f"3. {plain_third} ({third})",
-            f"4. Later evidence adds: {_strip_timestamp(fourth)} ({fourth})",
-        ],
-        "action_items": [
-            "## Action items",
-            f"- Draft the first deliverable from {first}.",
-            f"- Assign a follow-up owner for the issue raised at {second}.",
-            f"- Turn the concrete language at {third} into an email or social post.",
-            f"- Review the later evidence at {fourth} before final publication.",
-        ],
-        "chapters": [
-            "## Chapters",
-            f"- 00:00 Opening promise: {plain_first}",
-            f"- {second} - First teaching point.",
-            f"- {third} - Supporting proof or example.",
-            f"- {fourth} - Midpoint development.",
-            f"- {fifth} - Closing or next action.",
-        ],
-        "best_quotes": [
-            "## Best quotes",
-            f"- \"{plain_first}\" - Source {first}",
-            f"- \"{plain_second}\" - Source {second}",
-            f"- \"{plain_third}\" - Source {third}",
-            f"- \"{_strip_timestamp(fourth)}\" - Source {fourth}",
-        ],
-        "stories_examples": [
-            "## Stories and examples",
-            f"- Opening story candidate: {first}",
-            f"- Supporting example: {second}",
-            f"- Tension or contrast to highlight: {third}",
-            f"- Closing example to reuse: {fourth}",
-        ],
-        "content_framework": [
-            "## Content framework",
-            f"- **Hook:** {plain_first} ({first})",
-            f"- **Teach:** explain the point behind {second}.",
-            f"- **Proof:** cite {third}.",
-            f"- **Apply:** give the viewer a next step from {fourth}.",
-            f"- **Repurpose:** split the same framework into a post, email, reel, and carousel.",
-        ],
-        "blog_post": [
-            "## Blog post draft",
-            f"### Lead\nOpen with the tension in {first}.",
-            f"### Main lesson\nBuild the article around {second} and connect it to the audience's real problem.",
-            f"### Proof\nUse {third} as the timestamped citation.",
-            f"### Close\nEnd with the practical takeaway from {fourth}.",
-        ],
-        "newsletter": [
-            "## Newsletter draft",
-            f"Subject: A useful takeaway from {title}",
-            "",
-            f"Start with: {plain_first}",
-            f"Bridge: {plain_second}",
-            f"Useful takeaway: {plain_third}",
-            f"CTA: ask readers to reply with how they would apply {fourth}.",
-        ],
-        "social_posts": [
-            "## Social posts",
-            f"1. LinkedIn: {plain_first} Source: {first}",
-            f"2. X/Twitter: {plain_second} Source: {second}",
-            f"3. Instagram caption: {plain_third} Source: {third}",
-            f"4. Short-form post: {_strip_timestamp(fourth)} Source: {fourth}",
-        ],
-        "short_form_hooks": [
-            "## Short-form hooks",
-            f"- What if {plain_first}? ({first})",
-            f"- The part everyone misses: {plain_second}. ({second})",
-            f"- Save this if you need to remember: {plain_third}. ({third})",
-            f"- Nobody talks about this moment: {_strip_timestamp(fourth)}. ({fourth})",
-        ],
-        "faq": [
-            "## FAQ",
-            f"Q: What is this about?\nA: {plain_first} Evidence: {first}",
-            f"Q: What matters next?\nA: {plain_second} Evidence: {second}",
-            f"Q: What should I quote?\nA: {plain_third} Evidence: {third}",
-            f"Q: What should I do with it?\nA: Package the strongest timestamped moments into summary, clips, and follow-up copy.",
-        ],
-        "sales_insights": [
-            "## Sales insights",
-            f"- Buyer language to reuse: {first}",
-            f"- Pain or desire signal: {second}",
-            f"- Follow-up angle: {third}",
-            f"- Offer/content bridge: {fourth}",
-        ],
-        "objections_answers": [
-            "## Objections and answers",
-            f"- Objection clue: {first}\n  Answer with: {second}",
-            f"- Objection clue: {third}\n  Answer with: {fourth}",
-            f"- Objection clue: {fifth}\n  Answer with: {sixth}",
-        ],
-        "trevor_use": [
-            "## How Trevor can use this",
-            f"- Turn {first} into the main message for a short post or email.",
-            f"- Ask the team to package {second} into follow-up copy.",
-            f"- Use {third} as a timestamped proof point in a client-facing asset.",
-            f"- Pull {fourth} into the next offer/content angle.",
-        ],
-        "content_assets_100": build_100_content_assets(rec),
-        "ask_question": [
-            "## Answer",
-            f"Question: {question or 'What should I know from this video?'}",
-            f"Short answer: {plain_first} {plain_second}",
-            "",
-            "## Evidence used",
-            f"- {first}",
-            f"- {second}",
-            f"- {third}",
-        ],
-    }
-    return "\n".join(header + [""] + body_map.get(output_type, [f"## {label}", first, second])).strip() + "\n"
+    label = ANALYSIS_LABELS.get(output_type, output_type.replace("_", " ").title())
+    return "\n".join([f"# {label}", "", f"- {p1}", f"- {p2}", f"- {p3}", "", "## Source notes", f"- {first}", f"- {second}", f"- {third}"]).strip() + "\n"
 
 
 def build_phase3_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:

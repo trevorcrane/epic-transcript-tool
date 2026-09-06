@@ -1,6 +1,6 @@
 # EPIC Transcript Machine Version / Phase Status
 
-Updated: 2026-08-31 17:53 EDT
+Updated: 2026-08-31 19:50 EDT
 
 ## Version 1 / Phase 1: Bulletproof YouTube Transcripts
 Status: Release-clear for the current public no-login fixture gate.
@@ -18,7 +18,7 @@ Remaining:
 - Move from iMac plus Cloudflare Tunnel to a hosted durable backend after seeded staging passes.
 
 ## Version 2 / Phase 2: Any Video or Audio
-Status: Release-clear on the current public no-login media gate. Hosted durability remains separate.
+Status: OPEN on the original browser WebGPU gate. Forced no-WebGPU/WASM proof passes, but public WebGPU still lacks rendered timestamped output.
 
 Current evidence:
 - Public generated WAV, MP3, M4A, MP4, MOV, and WebM uploads pass through local Whisper with repeat-cache and TXT/Markdown/SRT download proof.
@@ -43,7 +43,7 @@ Current evidence:
 
 Remaining:
 - Select and approve a free/no-surprise provider path before enabling fuller AI-backed intelligence.
-- Add archived JSON report support to the remaining quote-integrity smoke.
+- Quote-integrity and citation-coverage JSON archives refreshed publicly at 2026-08-31 19:50 EDT.
 
 ## 10-minute loop
 A recurring Hermes cron job is installed:
@@ -52,3 +52,11 @@ A recurring Hermes cron job is installed:
 - Schedule: every 10m active sprint cadence
 - Delivery: back to origin chat
 - Purpose: continue implementation, test, update docs, and post a concise progress report every run.
+
+
+## Latest 2026-08-31 19:50 EDT check
+- Public root: HTTP 200, but protected Call IQ v5 visual markers are missing. This is a design regression against the current protected version.
+- Public `/health`: HTTP 200, ready true, required missing empty.
+- Public PM rules download: HTTP 200 with P2R contract marker.
+- Recovery watchdog: PASS, async control job `13641ac8ffd5` completed with 61 segments / 366 words.
+- Phase 3 refreshed: quote integrity and citation coverage both PASS publicly; `content_assets_100` has 100 matching timestamped assets and combined Markdown download HTTP 200 / 61,078 bytes.

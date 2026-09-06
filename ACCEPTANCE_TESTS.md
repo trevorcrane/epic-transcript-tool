@@ -62,6 +62,11 @@ Credible ending:
 `...hope you enjoyed this and I hope you got value from it. Look forward to seeing you soon.`
 
 ### Fresh production health evidence
+Run time: 2026-08-31 19:25 EDT, Phase 2 public WebGPU diagnostic after WebGPU-ready model change.
+
+- Phase 2 browser WebGPU gate: STILL OPEN. Public root returned HTTP 200 with `@huggingface/transformers@3.7.2`, `onnx-community/whisper-tiny`, `browserWhisperDtype`, `withBrowserWhisperTimeout`, and `actualDevice` markers. Public WebGPU diagnostic selected `webgpu`, loaded the onnx-community model requests, then console reported `No available adapters`; status reached `Browser model: done`, no transcript rendered, no local history item existed, and the forced-failing server upload returned 503. Evidence saved at `evidence/phase2-webgpu-state-latest.json` plus screenshot. Route change: next proof must use non-headless real Chrome/CDP for true WebGPU adapter evidence, or Fizz must explicitly accept WASM fallback as the authorized route.
+- Production watchdog: PASS. Public `/health` returned HTTP 200 with `ready=true`, required `missing=[]`, and async control job `5560ec4849bd` completed with record `bb20db7b0fa4`, method `native-caption-subtitles`, 61 segments, 366 words.
+
 Run time: 2026-08-31 18:54 EDT, Phase 2 public dual browser WebGPU/WASM smoke.
 
 - Phase 2 browser WebGPU/WASM gate: QC FAIL / OPEN. Public root returned HTTP 200 with `Xenova/whisper-small`, `shouldPreferBrowserWhisper(file)`, `return_timestamps: true`, `chunks.map`, and `forceBrowserWasm` markers. Forced no-WebGPU/WASM browser transcription passed on the public URL with method `browser-whisper-wasm · 74 chars`, credible transcript text, and local VTT `WEBVTT` timestamp proof. WebGPU did not clear: after 421.586s, the public browser remained at `Browser model: done`, no result was rendered, no transcript/history item existed, and the forced-failing server upload route was hit. Evidence saved at `evidence/phase2-public-browser-whisper-dual-report.json` plus mode screenshots.

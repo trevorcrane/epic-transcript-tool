@@ -70,6 +70,7 @@
   body[data-theme='light'] .dark-stage { background:linear-gradient(180deg, rgba(247,246,243,.96), #f7f6f3 88%), radial-gradient(circle, rgba(123,47,247,.18), rgba(241,7,163,.07) 42%, transparent 73%); color:#171719; }
   body[data-theme='light'] .page, body[data-theme='light'] .how-stage, body[data-theme='light'] .footer { background:#f7f6f3; color:#171719; }
   body[data-theme='light'] .logo, body[data-theme='light'] .hero, body[data-theme='light'] .theme-toggle { color:#171719; }
+
   body[data-theme='light'] .title::before { color:rgba(23,23,25,.62); }
   body[data-theme='light'] .tagline, body[data-theme='light'] .proof-strip, body[data-theme='light'] .step-card p { color:rgba(23,23,25,.62); }
   body[data-theme='light'] .hero-control { background:rgba(255,255,255,.92); border-color:rgba(0,0,0,.10); }
@@ -129,9 +130,13 @@
   .browser-option input { accent-color:var(--color-pink); }
   .types { display:none; }
 
-  .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:block; text-align:center; color:rgba(255,255,255,.35); font-size:14px; }
-  .proof-strip span { display:none; }
+  .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:block; text-align:center; color:rgba(255,255,255,.35); font-size:14px; min-height:30px; }
+  .proof-strip span:not(.success-wipe) { display:none; }
   .proof-strip::before { content:'Quick and simple. No catch.'; }
+  .proof-strip.success-ready { color:#fff; font-family:var(--font-heading); font-size:clamp(24px,3vw,36px); font-weight:800; letter-spacing:-.04em; }
+  .proof-strip.success-ready::before { content:''; }
+  .success-wipe { display:inline-block; position:relative; overflow:hidden; animation:successWipe .58s ease both; }
+  @keyframes successWipe { 0% { clip-path:inset(0 100% 0 0); transform:translateY(8px); opacity:.3; } 100% { clip-path:inset(0 0 0 0); transform:translateY(0); opacity:1; } }
 
 
   .banner { max-width:var(--form-max); margin:18px auto 0; padding:14px 16px; border-radius:16px; border:1px solid var(--color-error-border); background:var(--color-error-bg); color:var(--color-error-text); font-size:14px; }
@@ -144,12 +149,14 @@
   .status.done .dot { background:var(--color-success); box-shadow:0 0 16px var(--color-success); animation:none; }
   @keyframes pulse { 0%,100% { opacity:.35; transform:scale(.85); } 50% { opacity:1; transform:scale(1.15); } }
   .how-stage { padding:70px 24px 104px; background:#0D0D0F; color:#fff; border-top:1px solid rgba(255,255,255,.05); }
+  .how-stage.hidden-after-result { display:none; }
   .how-stage h2 { font-family:var(--font-heading); margin:0 0 66px; text-align:center; font-size:clamp(38px, 4vw, 50px); line-height:1.05; letter-spacing:-.055em; }
   .step-grid { width:min(var(--page-max), calc(100vw - 48px)); margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:56px; text-align:center; }
   .step-number { width:50px; height:50px; margin:0 auto 28px; display:grid; place-items:center; border-radius:50%; color:#0D0D0F; background:#fff; font-weight:900; font-size:19px; }
   .step-card h3 { margin:0 0 22px; font-size:21px; letter-spacing:-.025em; }
   .step-card p { margin:0 auto; max-width:320px; color:rgba(255,255,255,.42); line-height:1.75; font-size:15px; }
-  .light-stage { background:#f7f6f3; color:var(--color-text-dark); padding:78px 24px 92px; }
+  .light-stage { background:#f7f6f3; color:var(--color-text-dark); padding:78px 24px 92px; transition:padding .35s ease; }
+  .light-stage.compact-after-result { padding-top:16px; }
   .result { display:none; max-width:var(--page-max); margin:0 auto; }
   .result.show { display:block; }
   .result-card { background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:28px; box-shadow:var(--shadow-card); overflow:hidden; }
@@ -158,7 +165,12 @@
   .result-meta .source { max-width:760px; color:var(--color-text-dark); font-size:24px; font-weight:650; letter-spacing:-.03em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .method-chip { align-self:flex-start; color:var(--color-purple); background:rgba(123,47,247,.08); border-radius:999px; padding:8px 10px; font-size:12px; font-weight:800; }
   .transcript-box { margin:0; max-height:520px; overflow:auto; padding:24px; white-space:pre-wrap; word-break:break-word; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.85; background:#fbfaf8; }
-  .actions { display:flex; gap:10px; flex-wrap:wrap; padding:18px 24px 24px; background:#fff; }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; padding:18px 24px 14px; background:#fff; align-items:center; }
+  .download-wrap, .copy-wrap { position:relative; }
+  .download-menu-panel { position:absolute; top:calc(100% + 8px); left:0; min-width:190px; padding:8px; border:1px solid rgba(0,0,0,.1); border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(16,16,20,.16); z-index:20; display:none; }
+  .download-wrap.open .download-menu-panel, .copy-wrap.open .download-menu-panel { display:grid; gap:6px; }
+  .download-option, .copy-option { width:100%; text-align:left; border:0; border-radius:10px; background:#fff; color:#171719; padding:10px 11px; cursor:pointer; font-weight:750; }
+  .download-option:hover, .copy-option:hover { background:rgba(123,47,247,.08); color:#7b2ff7; }
   .btn { height:40px; padding:0 14px; border:1px solid rgba(0,0,0,.1); border-radius:12px; background:#fff; color:var(--color-text-dark); font-weight:750; cursor:pointer; }
   .btn:hover { color:var(--color-purple); border-color:rgba(123,47,247,.35); box-shadow:0 8px 24px rgba(123,47,247,.1); }
   .btn.ai { color:#fff; border-color:transparent; background:linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); }
@@ -169,6 +181,8 @@
   .analysis-tools { display:grid; gap:12px; padding:16px; border-bottom:1px solid rgba(123,47,247,.10); background:#fff; }
   .download-menu { height:40px; border:1px solid rgba(0,0,0,.10); border-radius:12px; padding:0 12px; background:#fff; color:var(--color-text-dark); font-weight:800; }
   .question-row { display:flex; gap:8px; }
+  .ask-row { padding:0 200px 18px 24px; background:#fff; }
+  @media (max-width: 900px) { .ask-row { padding-right:24px; } }
   .question-row input { flex:1; min-width:0; height:42px; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:0 12px; color:var(--color-text-dark); }
   .analysis-box { margin:0; padding:18px; white-space:pre-wrap; color:var(--color-text-body); font-family:var(--font-mono); font-size:13px; line-height:1.75; max-height:420px; overflow:auto; }
   .faq-stage { background:#f7f6f3; color:#171719; padding:96px 24px 108px; }
@@ -286,7 +300,7 @@
           </form>
         </section>
 
-        <div class="proof-strip" aria-label="Transcript promise">
+        <div class="proof-strip" id="successMessage" aria-label="Transcript promise" aria-live="polite">
           <span>Timestamped</span><span>Copyable</span><span>TXT / MD / SRT / VTT</span><span>Cached</span>
         </div>
 
@@ -317,29 +331,35 @@
           </div>
           <div class="method-chip" id="resultMethod"></div>
         </div>
-        <div class="transcript-box" id="transcript"></div>
-        <div class="actions">
-          <button class="btn" id="copyBtn" type="button">Copy</button>
-          <label class="sr-only" for="downloadFormat">Download format</label>
-          <select class="download-menu" id="downloadFormat" aria-label="Download transcript format">
-            <option value="txt">TXT</option>
-            <option value="md">Markdown</option>
-            <option value="srt">SRT</option>
-          </select>
-          <button class="btn" id="downloadBtn" type="button">Download</button>
+        <div class="actions" aria-label="Transcript actions">
+          <div class="copy-wrap" id="copyMenu">
+            <button class="btn" id="copyBtn" type="button" aria-haspopup="true" aria-expanded="false">Copy ▾</button>
+            <div class="download-menu-panel" role="menu" aria-label="Copy transcript">
+              <button class="copy-option" type="button" role="menuitem" data-copy-format="txt">Copy .txt</button>
+              <button class="copy-option" type="button" role="menuitem" data-copy-format="md">Copy .md</button>
+              <button class="copy-option" type="button" role="menuitem" data-copy-format="srt">Copy .srt</button>
+            </div>
+          </div>
+          <div class="download-wrap" id="downloadMenu">
+            <button class="btn" id="downloadBtn" type="button" aria-haspopup="true" aria-expanded="false">Download ▾</button>
+            <div class="download-menu-panel" role="menu" aria-label="Download transcript">
+              <button class="download-option" type="button" role="menuitem" data-format="txt">.txt (Plain Text)</button>
+              <button class="download-option" type="button" role="menuitem" data-format="md">.md (Markdown)</button>
+              <button class="download-option" type="button" role="menuitem" data-format="srt">.srt (Subtitles)</button>
+            </div>
+          </div>
           <button class="btn ai" id="summaryBtn" type="button">Summary</button>
           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
         </div>
+        <div class="question-row ask-row">
+          <input id="questionInput" type="text" placeholder="Ask anything about this transcript... (Quotes · Chapters · Hooks · FAQ)" />
+          <button class="btn ai" id="askBtn" type="button">Ask</button>
+        </div>
         <div class="analysis-panel" id="analysisPanel" aria-live="polite">
-          <div class="analysis-head"><span id="analysisTitle">Video intelligence</span></div>
-          <div class="analysis-tools">
-            <div class="question-row">
-              <input id="questionInput" type="text" placeholder="Ask about this transcript. Examples: Quotes · Chapters · Hooks · FAQ" />
-              <button class="btn ai" id="askBtn" type="button">Ask</button>
-            </div>
-          </div>
+          <div class="analysis-head"><span id="analysisTitle">Video intelligence</span><button class="btn analysis-copy" id="copyAnalysisBtn" type="button" aria-label="Copy analysis result">⧉</button></div>
           <pre class="analysis-box" id="analysisBox"></pre>
         </div>
+        <div class="transcript-box" id="transcript"></div>
       </div>
     </div>
   </section>
@@ -414,11 +434,11 @@
     status: $('status'), statusText: $('statusText'),
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
-    copyBtn: $('copyBtn'), downloadBtn: $('downloadBtn'), downloadFormat: $('downloadFormat'),
-    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'),
+    copyBtn: $('copyBtn'), copyMenu: $('copyMenu'), downloadBtn: $('downloadBtn'), downloadMenu: $('downloadMenu'),
+    summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'), copyAnalysisBtn: $('copyAnalysisBtn'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
-    banner: $('banner'), browserLocal: $('browserLocal'),
+    banner: $('banner'), browserLocal: $('browserLocal'), how: $('how'), lightStage: $('results'), successMessage: $('successMessage'),
   };
   let currentRecord = null;
   let currentAnalysis = null;
@@ -501,6 +521,10 @@
   }
   function clearStatus() { els.status.classList.remove('show', 'error', 'done'); }
 
+  function hideHowAfterTranscriptReady() {
+    if (els.how) els.how.classList.add('hidden-after-result');
+  }
+
   function showToast(msg, isError = false) {
     els.toast.textContent = msg;
     els.toast.classList.toggle('error', !!isError);
@@ -525,6 +549,9 @@
     els.analysisPanel.classList.remove('show');
     els.analysisBox.textContent = '';
     els.result.classList.add('show');
+    hideHowAfterTranscriptReady();
+    if (els.lightStage) els.lightStage.classList.add('compact-after-result');
+    showSuccessMessage();
     saveLocalHistory(rec);
     autoCopy(rec.transcript || '');
   }
@@ -550,12 +577,72 @@
     const s = whole % 60;
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}${decimal}${String(ms).padStart(3,'0')}`;
   }
+  const SUCCESS_MESSAGES = [
+    'Boom! Your transcript is ready. See below.',
+    'Done! Your transcript is below.',
+    'Success! See below.',
+    'Awesomeness! See below.',
+    'Locked in. Transcript ready below.',
+    'Transcript magic handled. See below.'
+  ];
+
+  function showSuccessMessage() {
+    if (!els.successMessage) return;
+    const msg = SUCCESS_MESSAGES[Math.floor(Math.random() * SUCCESS_MESSAGES.length)];
+    els.successMessage.classList.add('success-ready');
+    els.successMessage.innerHTML = `<span class="success-wipe">${msg}</span>`;
+  }
+
+  function formatTranscriptForCopy(format) {
+    if (!currentRecord) return '';
+    const title = currentRecord.title || currentRecord.source || 'Transcript';
+    if (format === 'md') return `# ${title}
+
+## Transcript
+
+${currentRecord.transcript || ''}
+`;
+    if (format === 'srt') return (currentRecord.segments || []).map((seg, i) => `${i + 1}
+${formatSubtitleDuration(seg.start, ',')} --> ${formatSubtitleDuration(seg.end || seg.start + 2, ',')}
+${seg.text || ''}
+`).join('\n').trim() + '\n';
+    return currentRecord.transcript || '';
+  }
+
+  async function copyTextToClipboard(text) {
+    if (!text) return false;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) { /* fallback below */ }
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.left = '-9999px';
+    document.body.appendChild(area);
+    area.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(area);
+    return ok;
+  }
+
+  async function copyCurrent(format) {
+    const body = formatTranscriptForCopy(format);
+    if (!body) return;
+    const ok = await copyTextToClipboard(body);
+    showToast(ok ? `Copied ${format.toUpperCase()} ✓` : 'Copy failed', !ok);
+  }
+
 
   async function autoCopy(text) {
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard ✓');
+      const ok = await copyTextToClipboard(text);
+      if (ok) showToast('Copied to clipboard ✓');
     } catch (e) { /* ignore */ }
   }
 
@@ -796,11 +883,22 @@
   }
 
   // Result actions
-  els.copyBtn.addEventListener('click', async () => {
-    if (!currentRecord) return;
+  els.copyBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = els.copyMenu.classList.toggle('open');
+    els.copyBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  els.copyMenu.querySelectorAll('[data-copy-format]').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    els.copyMenu.classList.remove('open');
+    els.copyBtn.setAttribute('aria-expanded', 'false');
+    copyCurrent(btn.dataset.copyFormat || 'txt');
+  }));
+  els.copyAnalysisBtn.addEventListener('click', async () => {
+    if (!els.analysisBox.textContent) return;
     try {
-      await navigator.clipboard.writeText(currentRecord.transcript || '');
-      showToast('Copied to clipboard ✓');
+      const ok = await copyTextToClipboard(els.analysisBox.textContent || '');
+      showToast(ok ? 'Analysis copied ✓' : 'Copy failed', !ok);
     } catch (e) { showToast('Copy failed', true); }
   });
   function downloadCurrent(format) {
@@ -827,7 +925,23 @@
       .then(data => { window.location.href = data.url; })
       .catch(e => showToast('Download failed: ' + e.message, true));
   }
-  els.downloadBtn.addEventListener('click', () => downloadCurrent(els.downloadFormat.value || 'txt'));
+  els.downloadBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = els.downloadMenu.classList.toggle('open');
+    els.downloadBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  els.downloadMenu.querySelectorAll('[data-format]').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    els.downloadMenu.classList.remove('open');
+    els.downloadBtn.setAttribute('aria-expanded', 'false');
+    downloadCurrent(btn.dataset.format || 'txt');
+  }));
+  document.addEventListener('click', () => {
+    if (els.copyMenu) { els.copyMenu.classList.remove('open'); els.copyBtn.setAttribute('aria-expanded', 'false'); }
+    if (!els.downloadMenu) return;
+    els.downloadMenu.classList.remove('open');
+    els.downloadBtn.setAttribute('aria-expanded', 'false');
+  });
 
   function setAnalysisControlsDisabled(disabled) {
     [els.summaryBtn, els.actionsBtn, els.askBtn].forEach(btn => { if (btn) btn.disabled = disabled; });

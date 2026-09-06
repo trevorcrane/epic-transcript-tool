@@ -58,7 +58,8 @@ def test_phase3_streamlined_outputs_do_not_hide_original_transcript(monkeypatch,
         data = res.json()
         assert data["ok"] is True
         assert data["output_type"] == output_type
-        assert "AI-generated" in data["analysis"]
+        assert "AI-generated" not in data["analysis"]
+        assert "## Source notes" in data["analysis"]
         assert re.search(r"\[00:\d{2}\]", data["analysis"]), output_type
     reread = client.get(f"/api/transcripts/{rec['id']}", headers={"X-Transcript-Owner": OWNER})
     assert reread.status_code == 200
