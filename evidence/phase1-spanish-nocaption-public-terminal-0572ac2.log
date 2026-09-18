@@ -1,0 +1,83 @@
+START spanish https://youtu.be/kJQP7kiw5Fk
+SUBMIT spanish 202 {"ok":true,"job":{"id":"34c8cde39156","status":"running","url":"https://youtu.be/kJQP7kiw5Fk","created_at":1788223773.759176,"started_at":1788223773.760349}}
+POLL spanish {"id": "34c8cde39156", "status": "running", "stage": null, "percent": null, "message": null, "error": null, "status_code": null}
+POLL spanish {"id": "34c8cde39156", "status": "error", "stage": null, "percent": null, "message": null, "error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.", "status_code": 422}
+START real_no_caption_long_cached https://www.youtube.com/watch?v=rwfk91ya81s
+SUBMIT real_no_caption_long_cached 202 {"ok":true,"job":{"id":"483d7ed5f804","status":"running","url":"https://www.youtube.com/watch?v=rwfk91ya81s","created_at":1788223825.388143,"started_at":1788223825.389024}}
+POLL real_no_caption_long_cached {"id": "483d7ed5f804", "status": "running", "stage": null, "percent": null, "message": null, "error": null, "status_code": null}
+POLL real_no_caption_long_cached {"id": "9d3fb8208e1d", "status": "done", "stage": null, "percent": 100, "message": null, "error": null, "status_code": null, "title": "2 Hours of the Craziest Philosophical Theories to Fall Asleep to", "creator": "DeepSleep Theory", "method": "queued-chunked-local-whisper", "language": "en", "duration_seconds": 7244.0, "segment_count": 1446, "word_count": 19298, "cache_hit": true}
+SUMMARY_JSON
+[
+  {
+    "case": "spanish",
+    "url": "https://youtu.be/kJQP7kiw5Fk",
+    "http": 200,
+    "job": "34c8cde39156",
+    "job_status": "error",
+    "public_error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.",
+    "record": {
+      "id": null,
+      "title": null,
+      "creator": null,
+      "method": null,
+      "language": null,
+      "duration_seconds": null,
+      "segment_count": null,
+      "word_count": null,
+      "cache_hit": null,
+      "provider_attempts": null
+    },
+    "head": "",
+    "tail": ""
+  },
+  {
+    "case": "real_no_caption_long_cached",
+    "url": "https://www.youtube.com/watch?v=rwfk91ya81s",
+    "http": 200,
+    "job": "483d7ed5f804",
+    "job_status": "done",
+    "public_error": null,
+    "record": {
+      "id": "9d3fb8208e1d",
+      "title": "2 Hours of the Craziest Philosophical Theories to Fall Asleep to",
+      "creator": "DeepSleep Theory",
+      "method": "queued-chunked-local-whisper",
+      "language": "en",
+      "duration_seconds": 7244.0,
+      "segment_count": 1446,
+      "word_count": 19298,
+      "cache_hit": true,
+      "provider_attempts": [
+        {
+          "provider": "metadata",
+          "ok": true,
+          "duration_seconds": 7244
+        },
+        {
+          "provider": "native-caption-extractor",
+          "ok": false,
+          "error": "No usable native caption track found"
+        },
+        {
+          "provider": "youtube-transcript-api",
+          "ok": false,
+          "error": "\nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=rwfk91ya81s! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too "
+        },
+        {
+          "provider": "yt-dlp-subtitles",
+          "ok": false,
+          "error": "yt-dlp found no captions"
+        },
+        {
+          "provider": "chunked-local-whisper",
+          "ok": true,
+          "segments": 1446,
+          "words": 19298,
+          "chunks": 13
+        }
+      ]
+    },
+    "head": "[00:00] Imagine you're sitting on your couch, munching on popcorn, watching your favorite movie.\n[00:09] Suddenly you pause the screen and look around.\n[00:13] Everything seems normal.\n[00:14] The couch, the walls, your phone nearby, the sound of a fan humming in the background.\n[00:20] You remember",
+    "tail": "ou ever faced a situation where you had to decide whether to tolerate something or not?\n[02:00:32] How did you handle it?\n[02:00:34] I would love to hear your thoughts and stories.\n[02:00:37] After all, understanding the paradox of tolerance helps us all learn how to live better\n[02:00:42] together."
+  }
+]

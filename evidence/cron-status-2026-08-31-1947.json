@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-08-31T19:47:00-04:00",
+  "base": "https://epic-transcript.robyncrane.com",
+  "checks": {
+    "/": {
+      "status": 200,
+      "bytes": 65689,
+      "url": "https://epic-transcript.robyncrane.com/",
+      "call_iq_v5_marker": false,
+      "headline_marker": false,
+      "title": true
+    },
+    "/health": {
+      "status": 200,
+      "bytes": 177,
+      "url": "https://epic-transcript.robyncrane.com/health",
+      "json": {
+        "ok": true,
+        "setup": {
+          "ready": true,
+          "missing": [],
+          "optional_missing": [
+            "SMTP config (Email to Me)",
+            "GEMINI_API_KEY"
+          ],
+          "gemini_configured": false,
+          "local_whisper": true,
+          "owner_email": ""
+        }
+      }
+    },
+    "/static/PROJECT_MGT.md": {
+      "status": 200,
+      "bytes": 5914,
+      "url": "https://epic-transcript.robyncrane.com/static/PROJECT_MGT.md",
+      "p2r_marker": true
+    }
+  }
+}

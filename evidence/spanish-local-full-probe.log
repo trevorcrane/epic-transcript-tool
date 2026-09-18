@@ -1,0 +1,61 @@
+audio /var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/spanish-full-ruvh6pkf/audio.mp3 4515048 281.612
+{
+  "elapsed": 452.7,
+  "lang": "es",
+  "segments": 92,
+  "words": 425,
+  "head": [
+    {
+      "start": 0.0,
+      "end": 16.0,
+      "text": "Quizás siempre voy a la casa opafarte"
+    },
+    {
+      "start": 16.0,
+      "end": 42.02,
+      "text": "Con鉄, la"
+    },
+    {
+      "start": 42.02,
+      "end": 46.02,
+      "text": "¿Sabes que ya llevo un rato mirándote?"
+    },
+    {
+      "start": 46.02,
+      "end": 50.02,
+      "text": "Tengo que valar con ti goi"
+    },
+    {
+      "start": 50.02,
+      "end": 52.02,
+      "text": "Ti goi"
+    }
+  ],
+  "tail": [
+    {
+      "start": 230.02,
+      "end": 231.02,
+      "text": "Pujito"
+    },
+    {
+      "start": 231.02,
+      "end": 232.02,
+      "text": "Suavez va besito"
+    },
+    {
+      "start": 232.02,
+      "end": 235.02,
+      "text": "Conf smelled Merry"
+    },
+    {
+      "start": 265.02,
+      "end": 269.02,
+      "text": "No me sovesido, no me apropregando, o quita o quito"
+    },
+    {
+      "start": 269.02,
+      "end": 273.02,
+      "text": "¡E! ¡E! ¡E!"
+    }
+  ]
+}

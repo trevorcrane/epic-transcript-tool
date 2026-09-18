@@ -1,0 +1,70 @@
+{
+  "base": "https://6a96192a653481266f901dfc--epic-transcript-machine-review.netlify.app",
+  "desktop": {
+    "file": "evidence/v5-light-replacement-desktop.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1100
+    },
+    "bodyTheme": "light",
+    "epicPseudoContent": "\"EPIC\"",
+    "epicPseudoColor": "rgba(23, 23, 25, 0.62)",
+    "footerText": "EPIC Transcript Machine · v5.0.0 · Powered by epic.media",
+    "cards": [
+      "Content Machine",
+      "Clip Machine",
+      "Sales Machine",
+      "Story Machine",
+      "Offer Machine",
+      "Follow-Up Machine"
+    ],
+    "faqs": [
+      "How do I transcribe a YouTube video to text?",
+      "How do I download a YouTube transcript?",
+      "Is the YouTube transcript machine free?",
+      "What is a YouTube video transcript?",
+      "What are YouTube subtitles?",
+      "What are YouTube closed captions?",
+      "Why can't I download a transcript directly from YouTube?"
+    ],
+    "documentHeight": 2599,
+    "viewportHeight": 1100,
+    "footerTop": 2534.75,
+    "footerBottom": 2598.75,
+    "release": "5.0.0"
+  },
+  "mobile": {
+    "file": "evidence/v5-light-replacement-mobile-390.png",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "bodyTheme": "light",
+    "epicPseudoContent": "\"EPIC\"",
+    "epicPseudoColor": "rgba(23, 23, 25, 0.62)",
+    "footerText": "EPIC Transcript Machine · v5.0.0 · Powered by epic.media",
+    "cards": [
+      "Content Machine",
+      "Clip Machine",
+      "Sales Machine",
+      "Story Machine",
+      "Offer Machine",
+      "Follow-Up Machine"
+    ],
+    "faqs": [
+      "How do I transcribe a YouTube video to text?",
+      "How do I download a YouTube transcript?",
+      "Is the YouTube transcript machine free?",
+      "What is a YouTube video transcript?",
+      "What are YouTube subtitles?",
+      "What are YouTube closed captions?",
+      "Why can't I download a transcript directly from YouTube?"
+    ],
+    "documentHeight": 3291,
+    "viewportHeight": 844,
+    "footerTop": 3210.671875,
+    "footerBottom": 3290.671875,
+    "release": "5.0.0"
+  },
+  "ok": true
+}

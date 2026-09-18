@@ -1,0 +1,100 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "ok": true,
+  "desktop": {
+    "file": "evidence/v5-light-full-layout-desktop.png",
+    "viewport": {
+      "width": 1440,
+      "height": 1100
+    },
+    "theme": "light",
+    "epicPseudoContent": "\"EPIC\"",
+    "epicPseudoColor": "rgba(23, 23, 25, 0.62)",
+    "machineHeading": "Unlock All EPIC Machines",
+    "machineCards": [
+      "Content Machine",
+      "Clip Machine",
+      "Sales Machine",
+      "Story Machine",
+      "Offer Machine",
+      "Follow-Up Machine"
+    ],
+    "faqHeading": "Frequently Asked Questions (FAQ)",
+    "faqs": [
+      "How do I transcribe a YouTube video to text?",
+      "How do I download a YouTube transcript?",
+      "Is the YouTube transcript machine free?",
+      "What is a YouTube video transcript?",
+      "What are YouTube subtitles?",
+      "What are YouTube closed captions?",
+      "Why can't I download a transcript directly from YouTube?"
+    ],
+    "footerText": "EPIC Transcript Machine · v5.0.0 · Powered by epic.media",
+    "release": "5.0.0",
+    "docHeight": 2599,
+    "docWidth": 1440,
+    "machineBandRect": {
+      "top": 1427.25,
+      "bottom": 1706.0625,
+      "height": 278.8125
+    },
+    "faqStageRect": {
+      "top": 1706.0625,
+      "bottom": 2534.75,
+      "height": 828.6875
+    },
+    "footerRect": {
+      "top": 2534.75,
+      "bottom": 2598.75,
+      "height": 64
+    }
+  },
+  "mobile": {
+    "file": "evidence/v5-light-full-layout-mobile-390.png",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "theme": "light",
+    "epicPseudoContent": "\"EPIC\"",
+    "epicPseudoColor": "rgba(23, 23, 25, 0.62)",
+    "machineHeading": "Unlock All EPIC Machines",
+    "machineCards": [
+      "Content Machine",
+      "Clip Machine",
+      "Sales Machine",
+      "Story Machine",
+      "Offer Machine",
+      "Follow-Up Machine"
+    ],
+    "faqHeading": "Frequently Asked Questions (FAQ)",
+    "faqs": [
+      "How do I transcribe a YouTube video to text?",
+      "How do I download a YouTube transcript?",
+      "Is the YouTube transcript machine free?",
+      "What is a YouTube video transcript?",
+      "What are YouTube subtitles?",
+      "What are YouTube closed captions?",
+      "Why can't I download a transcript directly from YouTube?"
+    ],
+    "footerText": "EPIC Transcript Machine · v5.0.0 · Powered by epic.media",
+    "release": "5.0.0",
+    "docHeight": 3291,
+    "docWidth": 390,
+    "machineBandRect": {
+      "top": 1693.859375,
+      "bottom": 2294.671875,
+      "height": 600.8125
+    },
+    "faqStageRect": {
+      "top": 2294.671875,
+      "bottom": 3210.671875,
+      "height": 916
+    },
+    "footerRect": {
+      "top": 3210.671875,
+      "bottom": 3290.671875,
+      "height": 80
+    }
+  }
+}

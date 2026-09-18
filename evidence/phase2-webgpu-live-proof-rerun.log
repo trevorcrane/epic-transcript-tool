@@ -1,0 +1,173 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "ok": false,
+  "webgpu": {
+    "mode": "webgpu",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=webgpu",
+    "browserVersion": "151.0.7922.34",
+    "selectedDevice": "webgpu",
+    "ok": false,
+    "elapsedSeconds": 421.438,
+    "statuses": [
+      "Browser model: download",
+      "Browser model: progress",
+      "Browser model: done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "POST https://epic-transcript.robyncrane.com/api/transcribe-upload"
+    ],
+    "consoleMessages": [
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "warning: No available adapters.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "error: Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "errors": [
+      "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+    ],
+    "state": {
+      "status": "Browser model: done",
+      "visible": false,
+      "method": "",
+      "transcript": "",
+      "historyCount": 0,
+      "historyTranscript": "",
+      "segments": [],
+      "language": "",
+      "wordCount": 0,
+      "segmentCount": 0,
+      "increasingTimestamps": false
+    },
+    "downloads": [],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-webgpu.png"
+  },
+  "wasm": {
+    "mode": "wasm",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=wasm&forceBrowserWasm=1",
+    "browserVersion": "151.0.7922.34",
+    "selectedDevice": "wasm",
+    "ok": true,
+    "elapsedSeconds": 9.668,
+    "statuses": [
+      "Browser model: progress",
+      "Transcribing privately in this browser with WASM...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "consoleMessages": [
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "warning: No available adapters.",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-wasm · onnx-community/whisper-tiny · 9 words · 0:04 · 9.3s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 183,
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.png"
+  },
+  "preservesOriginalTranscriptIfOneRunFails": true
+}

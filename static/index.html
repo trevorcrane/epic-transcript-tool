@@ -211,6 +211,9 @@
   .recent-item .del:hover { color:var(--color-coral); border-color:rgba(255,61,107,.3); }
   .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-12px); opacity:0; pointer-events:none; z-index:50; padding:10px 16px; border-radius:999px; background:rgba(5,150,105,.12); border:1px solid rgba(5,150,105,.3); color:#bbf7d0; font-weight:700; transition:.18s ease; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .new-transcript { margin-left:auto; }
+  .tap-copy { width:100%; margin:10px 0 0; padding:14px; border:0; border-radius:12px; background:#7b2ff7; color:#fff; font-weight:800; font-size:16px; cursor:pointer; }
+  .tap-copy:active { transform:scale(.99); }
   .toast.error { background:var(--color-error-bg); color:var(--color-error-text); border-color:var(--color-error-border); }
   .machine-band h2 { font-family:var(--font-heading); color:#171719; }
   .machine-band { padding:34px 20px 18px; background:#f7f6f3; color:#171719; }
@@ -350,7 +353,9 @@
           </div>
           <button class="btn ai" id="summaryBtn" type="button">Summary</button>
           <button class="btn ai" id="actionsBtn" type="button">Action Items</button>
+          <button class="btn new-transcript" id="newBtn" type="button" title="Start another transcript">+ New transcript</button>
         </div>
+        <button class="tap-copy" id="tapCopy" type="button" hidden>Tap to copy transcript to clipboard</button>
         <div class="question-row ask-row">
           <input id="questionInput" type="text" placeholder="Ask anything about this transcript... (Quotes · Chapters · Hooks · FAQ)" />
           <button class="btn ai" id="askBtn" type="button">Ask</button>
@@ -434,7 +439,7 @@
     status: $('status'), statusText: $('statusText'),
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
     transcript: $('transcript'),
-    copyBtn: $('copyBtn'), copyMenu: $('copyMenu'), downloadBtn: $('downloadBtn'), downloadMenu: $('downloadMenu'),
+    copyBtn: $('copyBtn'), copyMenu: $('copyMenu'), newBtn: $('newBtn'), tapCopy: $('tapCopy'), downloadBtn: $('downloadBtn'), downloadMenu: $('downloadMenu'),
     summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'), copyAnalysisBtn: $('copyAnalysisBtn'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
@@ -630,20 +635,51 @@ ${seg.text || ''}
     return ok;
   }
 
+  function getCopyFormat() {
+    try { return localStorage.getItem('etm_copy_format') || 'txt'; } catch (e) { return 'txt'; }
+  }
+  function setCopyFormat(format) {
+    try { localStorage.setItem('etm_copy_format', format); } catch (e) { /* ignore */ }
+    if (els.copyBtn) els.copyBtn.textContent = `Copy .${format} ▾`;
+  }
+
   async function copyCurrent(format) {
+    format = format || getCopyFormat();
     const body = formatTranscriptForCopy(format);
     if (!body) return;
+    setCopyFormat(format);
     const ok = await copyTextToClipboard(body);
     showToast(ok ? `Copied ${format.toUpperCase()} ✓` : 'Copy failed', !ok);
+    if (ok && els.tapCopy) els.tapCopy.hidden = true;
+  }
+
+  function resetForNewTranscript() {
+    currentRecord = null;
+    currentAnalysis = null;
+    els.result.classList.remove('show');
+    if (els.lightStage) els.lightStage.classList.remove('compact-after-result');
+    if (els.analysisPanel) els.analysisPanel.classList.remove('show');
+    if (els.analysisBox) els.analysisBox.textContent = '';
+    if (els.tapCopy) els.tapCopy.hidden = true;
+    els.url.value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => els.url.focus(), 250);
   }
 
 
   async function autoCopy(text) {
     if (!text) return;
-    try {
-      const ok = await copyTextToClipboard(text);
-      if (ok) showToast('Copied to clipboard ✓');
-    } catch (e) { /* ignore */ }
+    const format = getCopyFormat();
+    const body = formatTranscriptForCopy(format) || text;
+    let ok = false;
+    try { ok = await copyTextToClipboard(body); } catch (e) { ok = false; }
+    if (ok) {
+      showToast(`Copied .${format} to clipboard ✓`);
+      if (els.tapCopy) els.tapCopy.hidden = true;
+    } else if (els.tapCopy) {
+      // Phones block clipboard writes that are not from a tap. Give them a tap.
+      els.tapCopy.hidden = false;
+    }
   }
 
   function lockUI(locked) {
@@ -894,6 +930,9 @@ ${seg.text || ''}
     els.copyBtn.setAttribute('aria-expanded', 'false');
     copyCurrent(btn.dataset.copyFormat || 'txt');
   }));
+  if (els.newBtn) els.newBtn.addEventListener('click', resetForNewTranscript);
+  if (els.tapCopy) els.tapCopy.addEventListener('click', () => copyCurrent(getCopyFormat()));
+  setCopyFormat(getCopyFormat());
   els.copyAnalysisBtn.addEventListener('click', async () => {
     if (!els.analysisBox.textContent) return;
     try {

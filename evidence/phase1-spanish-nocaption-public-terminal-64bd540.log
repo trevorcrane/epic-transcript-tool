@@ -1,0 +1,116 @@
+START spanish https://youtu.be/kJQP7kiw5Fk
+SUBMIT spanish 202 {"ok":true,"job":{"id":"ac82b80bd5c5","status":"running","url":"https://youtu.be/kJQP7kiw5Fk","created_at":1788223916.6084118,"started_at":1788223916.6127439}}
+POLL spanish {"id": "ac82b80bd5c5", "status": "running", "stage": null, "percent": null, "message": null, "error": null, "status_code": null}
+POLL spanish {"id": "35a7add1955e", "status": "done", "stage": null, "percent": 100, "message": null, "error": null, "status_code": null, "title": "Luis Fonsi - Despacito ft. Daddy Yankee", "creator": "Luis Fonsi", "method": "local-whisper", "language": "es", "duration_seconds": 282.0, "segment_count": 103, "word_count": 459, "cache_hit": false}
+START real_no_caption_long_cached https://www.youtube.com/watch?v=rwfk91ya81s
+SUBMIT real_no_caption_long_cached 202 {"ok":true,"job":{"id":"df3891d48a20","status":"running","url":"https://www.youtube.com/watch?v=rwfk91ya81s","created_at":1788224216.893756,"started_at":1788224216.898057}}
+POLL real_no_caption_long_cached {"id": "df3891d48a20", "status": "running", "stage": null, "percent": null, "message": null, "error": null, "status_code": null}
+POLL real_no_caption_long_cached {"id": "9f1482355de2", "status": "done", "stage": null, "percent": 100, "message": null, "error": null, "status_code": null, "title": "2 Hours of the Craziest Philosophical Theories to Fall Asleep to", "creator": "DeepSleep Theory", "method": "queued-chunked-local-whisper", "language": "en", "duration_seconds": 7244.0, "segment_count": 1446, "word_count": 19298, "cache_hit": true}
+SUMMARY_JSON
+[
+  {
+    "case": "spanish",
+    "url": "https://youtu.be/kJQP7kiw5Fk",
+    "http": 200,
+    "job": "ac82b80bd5c5",
+    "job_status": "done",
+    "public_error": null,
+    "record": {
+      "id": "35a7add1955e",
+      "title": "Luis Fonsi - Despacito ft. Daddy Yankee",
+      "creator": "Luis Fonsi",
+      "method": "local-whisper",
+      "language": "es",
+      "duration_seconds": 282.0,
+      "segment_count": 103,
+      "word_count": 459,
+      "cache_hit": false,
+      "provider_attempts": [
+        {
+          "provider": "metadata",
+          "ok": true
+        },
+        {
+          "provider": "native-caption-extractor",
+          "ok": false,
+          "error": "skipped to keep non-English public request bounded after YouTube timedtext 429s"
+        },
+        {
+          "provider": "youtube-transcript-api",
+          "ok": false,
+          "error": "skipped for original-language non-English route; default transcript API can return English or stall under IP blocking"
+        },
+        {
+          "provider": "yt-dlp-subtitles",
+          "ok": false,
+          "error": "yt-dlp found no captions"
+        },
+        {
+          "provider": "gemini-youtube",
+          "ok": false,
+          "error": "GEMINI_API_KEY not configured"
+        },
+        {
+          "provider": "local-whisper",
+          "ok": true,
+          "segments": 103,
+          "words": 459
+        }
+      ]
+    },
+    "nondecreasing_timestamps": true,
+    "head": "[00:00] ¡Puesas Ages-\n[00:05] ,\n[00:16] y\n[00:22] m\n[00:28] ¡Ay!\n[00:30] ¡Foxy!\n[00:31] ¡Ti-wa!\n[00:33] ¡Oh!\n[00:34] ¡Oh no!\n[00:35] ¡Oh no!\n[00:37] ¡Oh no!\n[00:38] ¡Ey!\n[00:39] ¡Ey!\n[00:40] ¡Ey!\n[00:41] ¡Coxy!\n[00:42] ¿Sabes que ya llevo un rato mirándote?\n[00:46] ¡Tengo que valar tu tigo!\n[00:50] ¡Ti-wa!\n[00:52] ¡Ví que tu mirada ya estaba llamán",
+    "tail": "04:01] Pujito, pujito\n[04:02] Vamos en un ploco\n[04:04] ¡No, no, no, no, no, no, no, no, no, no, no, no, no...\n[04:05] Ojo, pujito\n[04:06] Quiero desinerte a veces despacito\n[04:12] Xiao las siamo, lo me han armado pegando, tu quita un guido\n[04:19] eh eh eh eh\n[04:23] Quita basidos, lo me ha saltado, lo me han armado esos meses\n[04:30] eh eh eh eh"
+  },
+  {
+    "case": "real_no_caption_long_cached",
+    "url": "https://www.youtube.com/watch?v=rwfk91ya81s",
+    "http": 200,
+    "job": "df3891d48a20",
+    "job_status": "done",
+    "public_error": null,
+    "record": {
+      "id": "9f1482355de2",
+      "title": "2 Hours of the Craziest Philosophical Theories to Fall Asleep to",
+      "creator": "DeepSleep Theory",
+      "method": "queued-chunked-local-whisper",
+      "language": "en",
+      "duration_seconds": 7244.0,
+      "segment_count": 1446,
+      "word_count": 19298,
+      "cache_hit": true,
+      "provider_attempts": [
+        {
+          "provider": "metadata",
+          "ok": true,
+          "duration_seconds": 7244
+        },
+        {
+          "provider": "native-caption-extractor",
+          "ok": false,
+          "error": "No usable native caption track found"
+        },
+        {
+          "provider": "youtube-transcript-api",
+          "ok": false,
+          "error": "\nCould not retrieve a transcript for the video https://www.youtube.com/watch?v=rwfk91ya81s! This is most likely caused by:\n\nYouTube is blocking requests from your IP. This usually is due to one of the following reasons:\n- You have done too "
+        },
+        {
+          "provider": "yt-dlp-subtitles",
+          "ok": false,
+          "error": "yt-dlp found no captions"
+        },
+        {
+          "provider": "chunked-local-whisper",
+          "ok": true,
+          "segments": 1446,
+          "words": 19298,
+          "chunks": 13
+        }
+      ]
+    },
+    "nondecreasing_timestamps": true,
+    "head": "[00:00] Imagine you're sitting on your couch, munching on popcorn, watching your favorite movie.\n[00:09] Suddenly you pause the screen and look around.\n[00:13] Everything seems normal.\n[00:14] The couch, the walls, your phone nearby, the sound of a fan humming in the background.\n[00:20] You remember your name, your birthday, and what you ate for br",
+    "tail": "y.\n[02:00:26] What do you think?\n[02:00:27] Have you ever faced a situation where you had to decide whether to tolerate something or not?\n[02:00:32] How did you handle it?\n[02:00:34] I would love to hear your thoughts and stories.\n[02:00:37] After all, understanding the paradox of tolerance helps us all learn how to live better\n[02:00:42] together."
+  }
+]

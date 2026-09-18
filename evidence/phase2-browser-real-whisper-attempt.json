@@ -9,7 +9,7 @@
     "has_subtitle_formatter": true
   },
   "browser": {
-    "url": "http://127.0.0.1:65163/",
+    "url": "http://127.0.0.1:49513/",
     "ok": true,
     "statuses": [
       "Browser model: initiate",
@@ -22,7 +22,7 @@
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
       "Failed to load resource: the server responded with a status of 404 (Not Found)"
     ],
-    "elapsedSeconds": 72.856,
+    "elapsedSeconds": 88.243,
     "state": {
       "status": "Done",
       "visible": true,

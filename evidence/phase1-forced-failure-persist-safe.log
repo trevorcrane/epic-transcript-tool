@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "job_id": "a00c7f8bee45",
+  "submit_status": 202,
+  "post_restart_status": 200,
+  "public_status": "error",
+  "public_error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.",
+  "public_has_private_error_detail": false,
+  "server_side_private_trail_present": true,
+  "whisper_execution": "not invoked: transcribe_youtube_url_to_record was forced before provider work"
+}

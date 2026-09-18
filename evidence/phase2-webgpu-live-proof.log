@@ -1,0 +1,16 @@
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForEvent: Timeout 15000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+    at clickDownload (/private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/phase2_public_browser_whisper_dual.js:10:18)
+    at runOne (/private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/phase2_public_browser_whisper_dual.js:61:43)
+    at async /private/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/phase2_public_browser_whisper_dual.js:71:14 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.1

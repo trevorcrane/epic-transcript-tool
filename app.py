@@ -9,6 +9,7 @@ import hashlib
 import html
 import json
 import mimetypes
+import logging
 import os
 import re
 import shutil
@@ -79,6 +80,13 @@ WHISPER_BINARY_CANDIDATES = [
 
 BLOCKED_MESSAGE = "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route."
 PHASE3_GEMINI_PUBLIC_ERROR = "Gemini is not configured for Phase 3 yet. The transcript is safe; ask Trevor to add the server-side Gemini key and retry."
+PHASE3_AI_PUBLIC_ERROR = "AI analysis is not configured yet (no Gemini or Groq key on the server). The transcript is safe; add a key and retry."
+PHASE3_TEMPLATE_NOTICE = "> Basic template result. AI analysis is not configured on this server yet, so this was built from transcript keywords only.\n"
+PHASE3_GEMINI_DEFAULT_MODEL = "gemini-3.6-flash"
+PHASE3_GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b"
+PHASE3_MODEL_CACHE: dict[str, tuple[float, str]] = {}
+PHASE3_MODEL_CACHE_SECONDS = 6 * 3600
+PHASE3_GROQ_PREFERRED = ("openai/gpt-oss-120b", "llama-3.3-70b", "llama-4", "llama-3.1-70b", "qwen", "openai/gpt-oss-20b")
 MAX_SYNC_YOUTUBE_DURATION_SECONDS = 2 * 60
 LONG_VIDEO_MESSAGE = "That video is too long for this synchronous public request. Upload the file or use the next async processing version so it can run without timing out."
 ANALYSIS_OUTPUTS = [
@@ -212,13 +220,17 @@ def setup_status() -> dict:
     smtp_keys = ("OWNER_EMAIL", "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS")
     if any(not os.getenv(k) for k in smtp_keys):
         optional_missing.append("SMTP config (Email to Me)")
-    if not os.getenv("GEMINI_API_KEY"):
-        optional_missing.append("GEMINI_API_KEY")
+    if not phase3_ai_configured():
+        optional_missing.append("GEMINI_API_KEY or GROQ_API_KEY")
     return {
         "ready": not missing,
         "missing": missing,
         "optional_missing": optional_missing,
-        "gemini_configured": bool(os.getenv("GEMINI_API_KEY")),
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),
+        "groq_configured": bool(os.getenv("GROQ_API_KEY")),
+        "ai_configured": phase3_ai_configured(),
+        "ai_providers": phase3_ai_provider_order(),
+        "ai_models": {p: (os.getenv("PHASE3_GEMINI_MODEL") if p == "gemini" else os.getenv("PHASE3_GROQ_MODEL")) or _cached_model(p) or "auto" for p in phase3_ai_provider_order()},
         "local_whisper": has_binary("whisper", "WHISPER_BIN", WHISPER_BINARY_CANDIDATES),
         "owner_email": os.getenv("OWNER_EMAIL", ""),
     }
@@ -1058,11 +1070,81 @@ Transcript evidence:
 """.strip()
 
 
+def _cached_model(provider: str) -> Optional[str]:
+    hit = PHASE3_MODEL_CACHE.get(provider)
+    if hit and time.time() - hit[0] < PHASE3_MODEL_CACHE_SECONDS:
+        return hit[1]
+    return None
+
+
+def _remember_model(provider: str, model: str) -> str:
+    PHASE3_MODEL_CACHE[provider] = (time.time(), model)
+    return model
+
+
+def forget_model(provider: str) -> None:
+    PHASE3_MODEL_CACHE.pop(provider, None)
+
+
+def _gemini_rank(name: str) -> tuple:
+    # Prefer newest flash, then non-lite, then non-preview.
+    m = re.search(r"gemini-(\d+)(?:\.(\d+))?", name)
+    major = int(m.group(1)) if m else 0
+    minor = int(m.group(2)) if m and m.group(2) else 0
+    return (major, minor, "lite" not in name, "preview" not in name and "exp" not in name)
+
+
+def discover_gemini_model(key: str) -> str:
+    """Ask Google which models exist. Env override wins. Cached 6h. Falls back to the default name."""
+    forced = os.getenv("PHASE3_GEMINI_MODEL")
+    if forced:
+        return forced
+    cached = _cached_model("gemini")
+    if cached:
+        return cached
+    try:
+        r = requests.get("https://generativelanguage.googleapis.com/v1beta/models", params={"key": key, "pageSize": 200}, timeout=15)
+        names = []
+        for m in (r.json().get("models") or []):
+            n = (m.get("name") or "").split("/")[-1]
+            if "flash" in n and "generateContent" in (m.get("supportedGenerationMethods") or []) and "image" not in n and "tts" not in n and "live" not in n and "audio" not in n:
+                names.append(n)
+        if names:
+            return _remember_model("gemini", sorted(names, key=_gemini_rank, reverse=True)[0])
+    except Exception as exc:
+        logging.warning("gemini model discovery failed: %s", type(exc).__name__)
+    return PHASE3_GEMINI_DEFAULT_MODEL
+
+
+def discover_groq_model(key: str) -> str:
+    """Ask Groq which models exist and pick the best general one we know. Env override wins. Cached 6h."""
+    forced = os.getenv("PHASE3_GROQ_MODEL")
+    if forced:
+        return forced
+    cached = _cached_model("groq")
+    if cached:
+        return cached
+    try:
+        r = requests.get("https://api.groq.com/openai/v1/models", headers={"Authorization": f"Bearer {key}"}, timeout=15)
+        all_ids = [m.get("id", "") for m in (r.json().get("data") or []) if m.get("active", True)]
+        skip = ("guard", "whisper", "tts", "embed", "vision", "safeguard")
+        usable = [i for i in all_ids if i and not any(k in i for k in skip)]
+        for pref in PHASE3_GROQ_PREFERRED:
+            for i in usable:
+                if pref in i:
+                    return _remember_model("groq", i)
+        if usable:
+            return _remember_model("groq", usable[0])
+    except Exception as exc:
+        logging.warning("groq model discovery failed: %s", type(exc).__name__)
+    return PHASE3_GROQ_DEFAULT_MODEL
+
+
 def call_gemini_text(prompt: str) -> str:
     key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not key:
         raise HTTPException(503, PHASE3_GEMINI_PUBLIC_ERROR)
-    model = os.getenv("PHASE3_GEMINI_MODEL", "gemini-1.5-flash")
+    model = discover_gemini_model(key)
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     try:
         response = requests.post(
@@ -1074,9 +1156,15 @@ def call_gemini_text(prompt: str) -> str:
             },
             timeout=int(os.getenv("PHASE3_GEMINI_TIMEOUT_SECONDS", "45")),
         )
-    except Exception:
+    except Exception as exc:
+        logging.warning("phase3 gemini request failed: %s", type(exc).__name__)
         raise HTTPException(502, "Phase 3 Gemini request failed safely. No key or provider detail was exposed.")
+    if response.status_code == 404 and _cached_model("gemini"):
+        logging.warning("phase3 gemini model %s gone, rediscovering", model)
+        forget_model("gemini")
+        return call_gemini_text(prompt)
     if response.status_code != 200:
+        logging.warning("phase3 gemini upstream status=%s model=%s", response.status_code, model)
         raise HTTPException(502, "Phase 3 Gemini returned a safe upstream error. No key or provider detail was exposed.")
     try:
         data = response.json()
@@ -1089,13 +1177,96 @@ def call_gemini_text(prompt: str) -> str:
     return text
 
 
+def call_groq_text(prompt: str) -> str:
+    """Backup provider: Groq free tier via its OpenAI-compatible chat endpoint."""
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        raise HTTPException(503, PHASE3_AI_PUBLIC_ERROR)
+    model = discover_groq_model(key)
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.4,
+                "max_tokens": int(os.getenv("PHASE3_GROQ_MAX_OUTPUT_TOKENS", "8192")),
+            },
+            timeout=int(os.getenv("PHASE3_GROQ_TIMEOUT_SECONDS", "45")),
+        )
+    except Exception as exc:
+        logging.warning("phase3 groq request failed: %s", type(exc).__name__)
+        raise HTTPException(502, "Phase 3 Groq request failed safely. No key or provider detail was exposed.")
+    if response.status_code in (400, 404) and _cached_model("groq") and "model" in (response.text or "").lower():
+        logging.warning("phase3 groq model %s gone, rediscovering", model)
+        forget_model("groq")
+        return call_groq_text(prompt)
+    if response.status_code != 200:
+        logging.warning("phase3 groq upstream status=%s model=%s", response.status_code, model)
+        raise HTTPException(502, "Phase 3 Groq returned a safe upstream error. No key or provider detail was exposed.")
+    try:
+        text = (response.json()["choices"][0]["message"]["content"] or "").strip()
+    except Exception:
+        text = ""
+    if not text:
+        raise HTTPException(502, "Phase 3 Groq returned empty output. No key or provider detail was exposed.")
+    return text
+
+
+def phase3_ai_provider_order() -> list[str]:
+    """Gemini is primary, Groq is backup. Override with PHASE3_AI_PROVIDERS=groq,gemini."""
+    configured = {
+        "gemini": bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),
+        "groq": bool(os.getenv("GROQ_API_KEY")),
+    }
+    wanted = [p.strip().lower() for p in os.getenv("PHASE3_AI_PROVIDERS", "gemini,groq").split(",") if p.strip()]
+    return [p for p in wanted if configured.get(p)]
+
+
+def phase3_ai_configured() -> bool:
+    return bool(phase3_ai_provider_order())
+
+
+def phase3_ai_allowed_for_record(rec: dict) -> bool:
+    """Public YouTube always OK. Other URL sources only when PHASE3_AI_ALL_SOURCES=1. Uploads never leave the server."""
+    if is_public_youtube_record(rec):
+        return True
+    if rec.get("source_kind") == "upload":
+        return False
+    return os.getenv("PHASE3_AI_ALL_SOURCES", "0").strip().lower() in {"1", "true", "yes"}
+
+
+def call_ai_text(prompt: str) -> str:
+    """Try each configured provider in order; fall through on quota or upstream failure."""
+    providers = phase3_ai_provider_order()
+    if not providers:
+        raise HTTPException(503, PHASE3_AI_PUBLIC_ERROR)
+    last_error: Optional[HTTPException] = None
+    for name in providers:
+        try:
+            if name == "gemini":
+                reserve_phase3_gemini_call()
+                return call_gemini_text(prompt)
+            if name == "groq":
+                return call_groq_text(prompt)
+        except HTTPException as exc:
+            logging.warning("phase3 provider %s failed with %s, trying next", name, exc.status_code)
+            last_error = exc
+            continue
+    raise last_error or HTTPException(502, "Phase 3 AI analysis failed safely. No key or provider detail was exposed.")
+
+
 def build_gemini_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
+    """Kept under its historical name; now runs the Gemini -> Groq chain."""
     if output_type not in ANALYSIS_OUTPUTS:
         raise HTTPException(400, "Unsupported analysis output type.")
-    if not is_public_youtube_record(rec):
-        raise HTTPException(400, "Gemini Phase 3 is limited to public YouTube transcripts only.")
-    reserve_phase3_gemini_call()
-    return call_gemini_text(build_gemini_prompt(rec, output_type, question=question))
+    if not phase3_ai_allowed_for_record(rec):
+        raise HTTPException(400, "Phase 3 AI analysis is limited to public YouTube transcripts unless PHASE3_AI_ALL_SOURCES is enabled. Uploads never leave the server.")
+    return call_ai_text(build_gemini_prompt(rec, output_type, question=question))
+
+
+build_ai_analysis_text = build_gemini_analysis_text
 
 
 def _evidence_cycle(evidence: list[str], count: int) -> list[str]:
@@ -1475,9 +1646,13 @@ def build_analysis_text(rec: dict, output_type: str, question: Optional[str] = N
 
 
 def build_phase3_analysis_text(rec: dict, output_type: str, question: Optional[str] = None) -> str:
-    if is_public_youtube_record(rec) and (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+    if phase3_ai_allowed_for_record(rec) and phase3_ai_configured():
         return build_gemini_analysis_text(rec, output_type, question=question)
-    return build_analysis_text(rec, output_type, question=question)
+    text = build_analysis_text(rec, output_type, question=question)
+    if not phase3_ai_configured():
+        # Label template output so nobody mistakes it for AI analysis.
+        return text.replace("\n", "\n" + PHASE3_TEMPLATE_NOTICE + "\n", 1) if "\n" in text else text
+    return text
 
 
 def save_analysis(*, transcript_id: str, output_type: str, question: Optional[str], analysis: str, owner_token: str) -> dict:

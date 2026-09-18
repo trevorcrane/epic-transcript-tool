@@ -1,0 +1,931 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "ok": true,
+  "desktopWebgpu": {
+    "label": "desktop-webgpu",
+    "mode": "webgpu",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=desktop-webgpu",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "isMobile": false,
+    "browserVersion": "151.0.7922.34",
+    "selectedDevice": "webgpu",
+    "gpuProof": {
+      "hasNavigatorGpu": true,
+      "adapterRequested": true,
+      "adapterAvailable": true,
+      "requestDeviceOk": true,
+      "adapterFeatures": [
+        "bgra8unorm-storage",
+        "chromium-experimental-timestamp-query-inside-passes",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "wgslLanguageFeatures": [
+        "packed_4x8_integer_dot_product",
+        "subgroup_uniformity",
+        "immediate_address_space",
+        "subgroup_id",
+        "linear_indexing",
+        "readonly_and_readwrite_storage_textures",
+        "swizzle_assignment",
+        "unrestricted_pointer_parameters",
+        "pointer_composite_access",
+        "texture_and_sampler_let",
+        "uniform_buffer_standard_layout"
+      ],
+      "error": null,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "platform": "MacIntel",
+      "hardwareConcurrency": 6,
+      "deviceMemory": 32,
+      "adapterLimits": {
+        "maxTextureDimension2D": 16384,
+        "maxBufferSize": 2147483648,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeInvocationsPerWorkgroup": 1024
+      },
+      "deviceQueueWriteOk": true
+    },
+    "ok": true,
+    "elapsedSeconds": 7.197,
+    "statuses": [
+      "Browser model: progress",
+      "Transcribing privately in this browser with WEBGPU...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      }
+    ],
+    "consoleMessages": [
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "error: \u001b[0;93m2026-08-31 21:20:54.335400 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:20:54.337099 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:20:55.657299 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:20:55.657900 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [
+      "\u001b[0;93m2026-08-31 21:20:54.335400 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:20:54.337099 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:20:55.657299 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:20:55.657900 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
+    ],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-webgpu · onnx-community/whisper-tiny · 9 words · 0:04 · 6.7s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-desktop-webgpu.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "sha256": "aa324a9552aa527e36813f7db051ab9ee30ef920769131c8e35bfcad2122de9f",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-desktop-webgpu.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 185,
+        "sha256": "77146e4863c7826a2dbf704d9b4ce1b4788c02538d2d4a2073818dd0ccda46ec",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-desktop-webgpu.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "sha256": "fab6a9e1db67545e622948a52ddad5b2e35c28766325e905398277db63f31d98",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "1\n00:00:00,000 --> 00:00:04,040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-desktop-webgpu.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "sha256": "6da473ac89f12a4562866ab420b154d37042672e0a68ef0c5a480feaf74eb851",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "WEBVTT\n\n00:00:00.000 --> 00:00:04.040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-desktop-webgpu.png"
+  },
+  "mobileWebgpu": {
+    "label": "mobile-webgpu",
+    "mode": "webgpu",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=mobile-webgpu",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "isMobile": true,
+    "browserVersion": "151.0.7922.34",
+    "selectedDevice": "webgpu",
+    "gpuProof": {
+      "hasNavigatorGpu": true,
+      "adapterRequested": true,
+      "adapterAvailable": true,
+      "requestDeviceOk": true,
+      "adapterFeatures": [
+        "bgra8unorm-storage",
+        "chromium-experimental-timestamp-query-inside-passes",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "wgslLanguageFeatures": [
+        "packed_4x8_integer_dot_product",
+        "subgroup_uniformity",
+        "immediate_address_space",
+        "subgroup_id",
+        "linear_indexing",
+        "readonly_and_readwrite_storage_textures",
+        "swizzle_assignment",
+        "unrestricted_pointer_parameters",
+        "pointer_composite_access",
+        "texture_and_sampler_let",
+        "uniform_buffer_standard_layout"
+      ],
+      "error": null,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "platform": "MacIntel",
+      "hardwareConcurrency": 6,
+      "deviceMemory": 32,
+      "adapterLimits": {
+        "maxTextureDimension2D": 16384,
+        "maxBufferSize": 2147483648,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeInvocationsPerWorkgroup": 1024
+      },
+      "deviceQueueWriteOk": true
+    },
+    "ok": true,
+    "elapsedSeconds": 7.108,
+    "statuses": [
+      "Browser model: progress",
+      "Transcribing privately in this browser with WEBGPU...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      }
+    ],
+    "consoleMessages": [
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "error: \u001b[0;93m2026-08-31 21:21:02.939599 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:21:02.941700 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:21:03.847599 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "error: \u001b[0;93m2026-08-31 21:21:03.847999 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [
+      "\u001b[0;93m2026-08-31 21:21:02.939599 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:21:02.941700 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:21:03.847599 [W:onnxruntime:, session_state.cc:1280 VerifyEachNodeIsAssignedToAnEp] Some nodes were not assigned to the preferred execution providers which may or may not have an negative impact on performance. e.g. ORT explicitly assigns shape related ops to CPU to improve perf.\u001b[m",
+      "\u001b[0;93m2026-08-31 21:21:03.847999 [W:onnxruntime:, session_state.cc:1282 VerifyEachNodeIsAssignedToAnEp] Rerunning with verbose output on a non-minimal build will show node assignments.\u001b[m"
+    ],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-webgpu · onnx-community/whisper-tiny · 9 words · 0:04 · 6.3s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-webgpu.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "sha256": "aa324a9552aa527e36813f7db051ab9ee30ef920769131c8e35bfcad2122de9f",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-webgpu.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 185,
+        "sha256": "77146e4863c7826a2dbf704d9b4ce1b4788c02538d2d4a2073818dd0ccda46ec",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-webgpu · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript mach"
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-webgpu.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "sha256": "fab6a9e1db67545e622948a52ddad5b2e35c28766325e905398277db63f31d98",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "1\n00:00:00,000 --> 00:00:04,040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-webgpu.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "sha256": "6da473ac89f12a4562866ab420b154d37042672e0a68ef0c5a480feaf74eb851",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "WEBVTT\n\n00:00:00.000 --> 00:00:04.040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-webgpu.png"
+  },
+  "mobileWasm": {
+    "label": "mobile-wasm",
+    "mode": "wasm",
+    "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=mobile-wasm&forceBrowserWasm=1",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "isMobile": true,
+    "browserVersion": "151.0.7922.34",
+    "selectedDevice": "wasm",
+    "gpuProof": {
+      "hasNavigatorGpu": true,
+      "adapterRequested": true,
+      "adapterAvailable": true,
+      "requestDeviceOk": true,
+      "adapterFeatures": [
+        "bgra8unorm-storage",
+        "chromium-experimental-timestamp-query-inside-passes",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "wgslLanguageFeatures": [
+        "packed_4x8_integer_dot_product",
+        "subgroup_uniformity",
+        "immediate_address_space",
+        "subgroup_id",
+        "linear_indexing",
+        "readonly_and_readwrite_storage_textures",
+        "swizzle_assignment",
+        "unrestricted_pointer_parameters",
+        "pointer_composite_access",
+        "texture_and_sampler_let",
+        "uniform_buffer_standard_layout"
+      ],
+      "error": null,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.7922.34 Safari/537.36",
+      "platform": "MacIntel",
+      "hardwareConcurrency": 6,
+      "deviceMemory": 32,
+      "adapterLimits": {
+        "maxTextureDimension2D": 16384,
+        "maxBufferSize": 2147483648,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeInvocationsPerWorkgroup": 1024
+      },
+      "deviceQueueWriteOk": true
+    },
+    "ok": true,
+    "elapsedSeconds": 7.788,
+    "statuses": [
+      "Browser model: progress",
+      "Transcribing privately in this browser with WASM...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      }
+    ],
+    "consoleMessages": [
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: Unable to determine content-length from response headers. Will expand buffer when needed.",
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-wasm · onnx-community/whisper-tiny · 9 words · 0:04 · 7.6s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "sha256": "aa324a9552aa527e36813f7db051ab9ee30ef920769131c8e35bfcad2122de9f",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 183,
+        "sha256": "b1d958464d8777b8eb9fb09878ec207a4b6eb7b2a658ada9dfc4e57fd47b7dee",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-wasm · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript machin"
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "sha256": "fab6a9e1db67545e622948a52ddad5b2e35c28766325e905398277db63f31d98",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "1\n00:00:00,000 --> 00:00:04,040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "sha256": "6da473ac89f12a4562866ab420b154d37042672e0a68ef0c5a480feaf74eb851",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "WEBVTT\n\n00:00:00.000 --> 00:00:04.040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-mobile-wasm.png"
+  },
+  "noWebgpuMobileFallback": {
+    "label": "no-webgpu-mobile-fallback",
+    "mode": "wasm",
+    "url": "https://epic-transcript.robyncrane.com/",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "isMobile": true,
+    "browserVersion": "26.5",
+    "selectedDevice": "wasm",
+    "gpuProof": {
+      "hasNavigatorGpu": false,
+      "adapterRequested": false,
+      "adapterAvailable": false,
+      "requestDeviceOk": false,
+      "adapterFeatures": [],
+      "wgslLanguageFeatures": [],
+      "error": null,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.5 Safari/605.1.15",
+      "platform": "MacIntel",
+      "hardwareConcurrency": 4,
+      "deviceMemory": null
+    },
+    "ok": true,
+    "elapsedSeconds": 8.159,
+    "statuses": [
+      "Browser model: download",
+      "Browser model: progress",
+      "Transcribing privately in this browser with WASM...",
+      "Done"
+    ],
+    "requests": [
+      "GET https://epic-transcript.robyncrane.com/api/setup",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json",
+      "GET https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+      "GET https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+      "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+    ],
+    "responses": [
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/setup"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/preprocessor_config.json"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fconfig.json=&etag=%224497848d6f637bd64ee2105fe92e67721e412c98%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/preprocessor_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/generation_config.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer.json"
+      },
+      {
+        "status": 307,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/tokenizer_config.json"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/decoder_model_merged_q4.onnx"
+      },
+      {
+        "status": 302,
+        "url": "https://huggingface.co/onnx-community/whisper-tiny/resolve/main/onnx/encoder_model.onnx"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/tokenizer.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22"
+      },
+      {
+        "status": 200,
+        "url": "https://huggingface.co/api/resolve-cache/models/onnx-community/whisper-tiny/ff4177021cc41f7db950912b73ea4fdf7d01d8e7/generation_config.json?%2Fonnx-community%2Fwhisper-tiny%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%223f732b9ea02e0199280d759824e51b6a150de9f9%22"
+      },
+      {
+        "status": 200,
+        "url": "https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      }
+    ],
+    "consoleMessages": [
+      "warning: env.wasm.numThreads is set to 4, but this will not work unless you enable crossOriginIsolated mode. See https://web.dev/cross-origin-isolation-guide/ for more info.",
+      "warning: WebAssembly multi-threading is not supported in the current environment. Falling back to single-threading.",
+      "warning: No language specified - defaulting to English (en)."
+    ],
+    "errors": [],
+    "state": {
+      "status": "Done",
+      "visible": true,
+      "method": "browser-whisper-wasm · onnx-community/whisper-tiny · 9 words · 0:04 · 8.0s",
+      "transcript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "historyCount": 1,
+      "historyTranscript": "Browser whisper multi-lingual timestamp proof for epic transcript machine",
+      "segments": [
+        {
+          "start": 0,
+          "end": 4.04,
+          "text": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+        }
+      ],
+      "language": "multilingual",
+      "wordCount": 9,
+      "segmentCount": 1,
+      "increasingTimestamps": true
+    },
+    "downloads": [
+      {
+        "format": "txt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.txt",
+        "filename": "epic-transcript-browser.txt",
+        "bytes": 73,
+        "sha256": "aa324a9552aa527e36813f7db051ab9ee30ef920769131c8e35bfcad2122de9f",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "Browser whisper multi-lingual timestamp proof for epic transcript machine"
+      },
+      {
+        "format": "md",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.md",
+        "filename": "epic-transcript-browser.md",
+        "bytes": 183,
+        "sha256": "b1d958464d8777b8eb9fb09878ec207a4b6eb7b2a658ada9dfc4e57fd47b7dee",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "# epic-browser-dual-whisper.wav\n\nMethod: browser-whisper-wasm · onnx-community/whisper-tiny\n\n## Transcript\n\nBrowser whisper multi-lingual timestamp proof for epic transcript machin"
+      },
+      {
+        "format": "srt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.srt",
+        "filename": "epic-transcript-browser.srt",
+        "bytes": 106,
+        "sha256": "fab6a9e1db67545e622948a52ddad5b2e35c28766325e905398277db63f31d98",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "1\n00:00:00,000 --> 00:00:04,040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      },
+      {
+        "format": "vtt",
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.vtt",
+        "filename": "epic-transcript-browser.vtt",
+        "bytes": 112,
+        "sha256": "6da473ac89f12a4562866ab420b154d37042672e0a68ef0c5a480feaf74eb851",
+        "hasTranscript": true,
+        "hasTimestamp": true,
+        "hasWebVtt": true,
+        "head": "WEBVTT\n\n00:00:00.000 --> 00:00:04.040\nBrowser whisper multi-lingual timestamp proof for epic transcript machine\n"
+      }
+    ],
+    "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-no-webgpu-mobile-fallback.png"
+  },
+  "preservesOriginalTranscriptIfOneRunFails": true
+}

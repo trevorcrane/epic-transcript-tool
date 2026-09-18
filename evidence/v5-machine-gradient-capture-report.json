@@ -1,0 +1,82 @@
+{
+  "base": "https://epic-transcript.robyncrane.com",
+  "shots": {
+    "desktopDark": {
+      "file": "evidence/v5-machine-gradient-desktop-dark.png",
+      "theme": "dark",
+      "h1": "Free Video Transcript MACHINE",
+      "machineText": "MACHINE",
+      "machineBackgroundImage": "linear-gradient(105deg, rgb(123, 47, 247) 0%, rgb(194, 47, 252) 45%, rgb(241, 7, 163) 100%)",
+      "machineColor": "rgba(0, 0, 0, 0)",
+      "release": "5.0.0",
+      "machineRect": {
+        "x": 340,
+        "y": 207.671875,
+        "width": 760,
+        "height": 85.671875
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "desktopLight": {
+      "file": "evidence/v5-machine-gradient-desktop-light.png",
+      "theme": "light",
+      "h1": "Free Video Transcript MACHINE",
+      "machineText": "MACHINE",
+      "machineBackgroundImage": "linear-gradient(105deg, rgb(123, 47, 247) 0%, rgb(194, 47, 252) 45%, rgb(241, 7, 163) 100%)",
+      "machineColor": "rgba(0, 0, 0, 0)",
+      "release": "5.0.0",
+      "machineRect": {
+        "x": 340,
+        "y": 207.671875,
+        "width": 760,
+        "height": 85.671875
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobileDark": {
+      "file": "evidence/v5-machine-gradient-mobile-390-dark.png",
+      "theme": "dark",
+      "h1": "Free Video Transcript MACHINE",
+      "machineText": "MACHINE",
+      "machineBackgroundImage": "linear-gradient(105deg, rgb(123, 47, 247) 0%, rgb(194, 47, 252) 45%, rgb(241, 7, 163) 100%)",
+      "machineColor": "rgba(0, 0, 0, 0)",
+      "release": "5.0.0",
+      "machineRect": {
+        "x": 12,
+        "y": 138.71875,
+        "width": 366,
+        "height": 44.71875
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    },
+    "mobileLight": {
+      "file": "evidence/v5-machine-gradient-mobile-390-light.png",
+      "theme": "light",
+      "h1": "Free Video Transcript MACHINE",
+      "machineText": "MACHINE",
+      "machineBackgroundImage": "linear-gradient(105deg, rgb(123, 47, 247) 0%, rgb(194, 47, 252) 45%, rgb(241, 7, 163) 100%)",
+      "machineColor": "rgba(0, 0, 0, 0)",
+      "release": "5.0.0",
+      "machineRect": {
+        "x": 12,
+        "y": 138.71875,
+        "width": 366,
+        "height": 44.71875
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "ok": true
+}

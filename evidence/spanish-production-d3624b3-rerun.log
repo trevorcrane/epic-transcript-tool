@@ -1,0 +1,6 @@
+submit 202 {"ok":true,"job":{"id":"2273efc4bd6d","status":"running","url":"https://youtu.be/kJQP7kiw5Fk","created_at":1788222462.501657,"started_at":1788222462.502399}}
+job_id 2273efc4bd6d
+poll {"http": 200, "job": "2273efc4bd6d", "status": "running", "stage": null, "percent": null, "message": null, "error": null, "record_id": null}
+poll {"http": 200, "job": "2273efc4bd6d", "status": "error", "stage": null, "percent": null, "message": null, "error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.", "record_id": null}
+FINAL_HTTP 200
+{"ok": true, "job": {"id": "2273efc4bd6d", "status": "error", "url": "https://youtu.be/kJQP7kiw5Fk", "created_at": 1788222462.501657, "started_at": 1788222462.502399, "error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.", "status_code": 422, "finished_at": 1788222509.6854029}}

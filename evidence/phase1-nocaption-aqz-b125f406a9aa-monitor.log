@@ -1,0 +1,25 @@
+{"http": 200, "job": {"id": "b125f406a9aa", "status": "running", "stage": "transcribing", "message": "Transcribing chunk 1 of 2", "percent": 50, "duration_seconds": 635, "chunks_total": 2, "chunks_done": 0, "error": null, "status_code": null}}
+{"http": 200, "job": {"id": "b125f406a9aa", "status": "running", "stage": "transcribing", "message": "Transcribing chunk 2 of 2", "percent": 90, "duration_seconds": 635, "chunks_total": 2, "chunks_done": 1, "error": null, "status_code": null}}
+{"http": 200, "job": {"id": "b125f406a9aa", "status": "error", "stage": "transcribing", "message": "Transcribing chunk 2 of 2", "percent": 90, "duration_seconds": 635, "chunks_total": 2, "chunks_done": 1, "error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.", "status_code": 422}}
+SUMMARY_JSON
+{
+  "http": 200,
+  "job_id": "b125f406a9aa",
+  "status": "error",
+  "public_error": "That video is blocking automatic transcription. If you have the video or audio file, upload it here and we’ll take another route.",
+  "record": {
+    "id": null,
+    "title": null,
+    "creator": null,
+    "method": null,
+    "language": null,
+    "duration_seconds": null,
+    "segment_count": null,
+    "word_count": null,
+    "cache_hit": null,
+    "provider_attempts": null
+  },
+  "nondecreasing_timestamps": false,
+  "head": "",
+  "tail": ""
+}

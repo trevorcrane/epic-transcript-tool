@@ -1,0 +1,244 @@
+{
+  "checked_at": "2026-08-31 19:39 EDT",
+  "base": "https://epic-transcript.robyncrane.com",
+  "/": {
+    "status": 200,
+    "bytes": 65962,
+    "content_type": "text/html; charset=utf-8",
+    "markers": {
+      "data-design-version=\"call-iq-v5\"": false,
+      "Record. Transcribe. Repurpose.": false,
+      "Free Video Transcript MACHINE": true,
+      "Get Transcript": true
+    },
+    "headline_html": "Free Video Transcript <span class=\"accent-machine\">MACHINE</span>"
+  },
+  "/health": {
+    "status": 200,
+    "bytes": 177,
+    "content_type": "application/json",
+    "json": {
+      "ok": true,
+      "setup": {
+        "ready": true,
+        "missing": [],
+        "optional_missing": [
+          "SMTP config (Email to Me)",
+          "GEMINI_API_KEY"
+        ],
+        "gemini_configured": false,
+        "local_whisper": true,
+        "owner_email": ""
+      }
+    }
+  },
+  "/static/PROJECT_MGT.md": {
+    "status": 200,
+    "bytes": 5914,
+    "content_type": "text/markdown; charset=utf-8",
+    "has_project_mgt_marker": true
+  },
+  "public-recovery-watchdog-report.json": {
+    "async_before": {
+      "failure": null,
+      "job_id": "e58d552550d5",
+      "job_status": "done",
+      "ok": true,
+      "payload": {
+        "job": {
+          "created_at": 1788219447.4494479,
+          "id": "e58d552550d5",
+          "started_at": 1788219447.4495842,
+          "status": "running",
+          "url": "https://youtu.be/dQw4w9WgXcQ"
+        },
+        "ok": true
+      },
+      "poll_payload": {
+        "job": {
+          "created_at": 1788219447.4494479,
+          "finished_at": 1788219448.929966,
+          "id": "e58d552550d5",
+          "percent": 100,
+          "record": {
+            "cache_hit": true,
+            "id": "26ae835226b1",
+            "language": "en",
+            "method": "native-caption-subtitles",
+            "segment_count": 61,
+            "word_count": 366
+          },
+          "started_at": 1788219447.4495842,
+          "status": "done",
+          "url": "https://youtu.be/dQw4w9WgXcQ"
+        },
+        "ok": true
+      },
+      "poll_status": 200,
+      "record": {
+        "cache_hit": true,
+        "id": "26ae835226b1",
+        "method": "native-caption-subtitles",
+        "segment_count": 61,
+        "word_count": 366
+      },
+      "start_status": 202
+    },
+    "base_url": "https://epic-transcript.robyncrane.com",
+    "health_before": {
+      "failure": null,
+      "ok": true,
+      "payload": {
+        "ok": true,
+        "setup": {
+          "gemini_configured": false,
+          "local_whisper": true,
+          "missing": [],
+          "optional_missing": [
+            "SMTP config (Email to Me)",
+            "GEMINI_API_KEY"
+          ],
+          "owner_email": "",
+          "ready": true
+        }
+      },
+      "status": 200
+    },
+    "ok": true,
+    "restarted": false,
+    "started": "2026-08-31 19:37:27 EDT",
+    "video_url": "https://youtu.be/dQw4w9WgXcQ"
+  },
+  "phase2-public-browser-whisper-dual-report.json": {
+    "base": "https://epic-transcript.robyncrane.com",
+    "ok": false,
+    "webgpu": {
+      "mode": "webgpu",
+      "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=webgpu",
+      "ok": false,
+      "elapsedSeconds": 421.648,
+      "statuses": [
+        "Browser model: initiate",
+        "Browser model: progress",
+        "Browser model: done"
+      ],
+      "requests": [
+        "GET https://epic-transcript.robyncrane.com/api/setup",
+        "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fconfig.json=&etag=%22a239fdd538b77d3c496d13d085848eca67fe993a%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/preprocessor_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/generation_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%2266f96818620f7b67c276aed4a35bedc4f6986dc3%22",
+        "POST https://epic-transcript.robyncrane.com/api/transcribe-upload"
+      ],
+      "errors": [
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ],
+      "state": {
+        "status": "Browser model: done",
+        "visible": false,
+        "method": "",
+        "transcript": "",
+        "historyCount": 0,
+        "segments": 0
+      },
+      "vtt": {
+        "path": null,
+        "bytes": 0,
+        "hasWebVtt": false,
+        "hasTimestamp": false
+      },
+      "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-webgpu.png"
+    },
+    "wasm": {
+      "mode": "wasm",
+      "url": "https://epic-transcript.robyncrane.com/?phase2-browser-proof=wasm&forceBrowserWasm=1",
+      "ok": true,
+      "elapsedSeconds": 42.997,
+      "statuses": [
+        "Browser model: download",
+        "Browser model: progress",
+        "Transcribing privately in this browser with WASM...",
+        "Done"
+      ],
+      "requests": [
+        "GET https://epic-transcript.robyncrane.com/api/setup",
+        "GET https://epic-transcript.robyncrane.com/api/recent?limit=20",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/preprocessor_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fpreprocessor_config.json=&etag=%2291876762a536a746d268353c5cba57286e76b058%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fconfig.json=&etag=%22a239fdd538b77d3c496d13d085848eca67fe993a%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer_config.json=&etag=%22d13b786c04765fb1a06492b53587752cd67665ea%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/tokenizer.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Ftokenizer.json=&etag=%221e95340ff836fad1b5932e800fb7b8c5e6d78a74%22",
+        "GET https://huggingface.co/api/resolve-cache/models/Xenova/whisper-small/2d67713f236afa48a18992566e7647f6ca848e13/generation_config.json?%2FXenova%2Fwhisper-small%2Fresolve%2Fmain%2Fgeneration_config.json=&etag=%2266f96818620f7b67c276aed4a35bedc4f6986dc3%22",
+        "GET https://epic-transcript.robyncrane.com/api/recent?limit=20"
+      ],
+      "errors": [],
+      "state": {
+        "status": "Done",
+        "visible": true,
+        "method": "browser-whisper-wasm \u00b7 74 chars",
+        "transcript": "Browser Whisper Multi-Lingual Time Stamp Proof for Epic Transcript Machine",
+        "historyCount": 1,
+        "segments": 0
+      },
+      "vtt": {
+        "path": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.vtt",
+        "bytes": 113,
+        "hasWebVtt": true,
+        "hasTimestamp": true
+      },
+      "screenshot": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/evidence/phase2-public-browser-whisper-dual-report-wasm.png"
+    },
+    "fixture": {
+      "path": "/var/folders/lr/cx83xmsn07q_dbxr0scq7cv80000gn/T/epic-browser-dual-whisper.wav",
+      "type": "wav",
+      "duration_seconds": 4.149,
+      "language": "en",
+      "expected_phrase": "Browser whisper multilingual timestamp proof for Epic transcript machine."
+    }
+  },
+  "phase3-quote-integrity-report.json": {
+    "ok": true,
+    "base": "https://epic-transcript.robyncrane.com",
+    "video_url": "https://youtu.be/dQw4w9WgXcQ",
+    "elapsed_seconds": 2.51,
+    "record": {
+      "id": "7f251a1824a1",
+      "title": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+      "method": "native-caption-subtitles",
+      "language": "en",
+      "word_count": 366,
+      "segment_count": 61,
+      "cache_hit": true
+    },
+    "analysis_id": "d04f71fef7e3",
+    "quote_count_checked": 4,
+    "all_quotes_exact_source_matches": true,
+    "all_sources_found_in_transcript": true,
+    "download": {
+      "status": 200,
+      "bytes": 1145,
+      "content_type": "text/markdown; charset=utf-8"
+    },
+    "checked_quotes": [
+      {
+        "quote": "[\u266a\u266a\u266a]",
+        "source": "[00:01] [\u266a\u266a\u266a]"
+      },
+      {
+        "quote": "\u266a We're no strangers to love \u266a",
+        "source": "[00:18] \u266a We're no strangers to love \u266a"
+      },
+      {
+        "quote": "\u266a You know the rules and so do I \u266a",
+        "source": "[00:22] \u266a You know the rules and so do I \u266a"
+      },
+      {
+        "quote": "\u266a A full commitment's what I'm thinking of \u266a",
+        "source": "[00:27] \u266a A full commitment's what I'm thinking of \u266a"
+      }
+    ]
+  }
+}
