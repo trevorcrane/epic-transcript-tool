@@ -14,6 +14,12 @@ import time
 from dataclasses import dataclass
 from urllib import request, parse
 
+def _auth_headers() -> dict:
+    """Bearer token for guarded routes, from env TRANSCRIPT_API_TOKEN only (never printed)."""
+    token = (os.getenv("TRANSCRIPT_API_TOKEN") or "").strip()
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+
 BASE_URL = (sys.argv[1] if len(sys.argv) > 1 else os.getenv("EPIC_TRANSCRIPT_BASE_URL", "http://localhost:8090")).rstrip("/")
 
 @dataclass
@@ -41,7 +47,7 @@ PUBLIC_HEADERS = {
 
 def post_form(url: str, data: dict, timeout: int = 180) -> tuple[int, str]:
     body = parse.urlencode(data).encode()
-    req = request.Request(url, data=body, headers={**PUBLIC_HEADERS, "Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    req = request.Request(url, data=body, headers={**PUBLIC_HEADERS, **_auth_headers(), "Content-Type": "application/x-www-form-urlencoded"}, method="POST")
     try:
         with request.urlopen(req, timeout=timeout) as resp:
             return resp.status, resp.read().decode("utf-8", "replace")
