@@ -180,9 +180,53 @@ def parse_session(value: Optional[str]) -> Optional[tuple[str, int]]:
     return parts[0], int(parts[1])
 
 
+def trusted_proxy_hosts() -> set:
+    """Socket peers whose forwarding headers we believe. Default: loopback only (cloudflared
+    connects from 127.0.0.1 per cloudflared.yml). Any other peer could forge the headers."""
+    raw = os.getenv("TRUSTED_PROXY_IPS", "127.0.0.1,::1")
+    return {h.strip() for h in raw.split(",") if h.strip()}
+
+
 def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("cf-connecting-ip") or (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
-    return forwarded or (request.client.host if request.client else "unknown")
+    """Client IP for the per-IP page cap.
+
+    Forwarding headers count only when the socket peer is a trusted proxy (loopback =
+    cloudflared): CF-Connecting-IP first (Cloudflare overwrites it at the edge), then the
+    first X-Forwarded-For entry. From any other peer both headers are ignored and the
+    socket IP is used, so a direct caller can't rotate a spoofed header to dodge the cap.
+    """
+    sock = request.client.host if request.client else "unknown"
+    if sock in trusted_proxy_hosts():
+        cf = (request.headers.get("cf-connecting-ip") or "").strip()
+        if cf:
+            return cf
+        xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+        if xff:
+            return xff
+    return sock
+
+
+# Log-mode visibility (Reviewer PR-BUILT fix 3): how many distinct client keys the page
+# tier sees, and whether CF-Connecting-IP arrives through the Worker. Counts only; the
+# keys themselves are never exposed. If the Worker collapses every visitor onto one IP,
+# distinct_ip_keys stays at 1 while page requests climb, which shows up before enforce.
+SEEN_IP_KEYS: set = set()
+SEEN_IP_KEYS_MAX = 10000
+
+
+def note_client_key(request: Request, ip_key: str) -> None:
+    has_cf = bool((request.headers.get("cf-connecting-ip") or "").strip())
+    new_key = False
+    with AUTH_STATS_LOCK:
+        AUTH_STATS["page_requests_with_cf_ip" if has_cf else "page_requests_without_cf_ip"] = \
+            AUTH_STATS.get("page_requests_with_cf_ip" if has_cf else "page_requests_without_cf_ip", 0) + 1
+        if ip_key not in SEEN_IP_KEYS and len(SEEN_IP_KEYS) < SEEN_IP_KEYS_MAX:
+            SEEN_IP_KEYS.add(ip_key)
+            new_key = True
+        AUTH_STATS["distinct_ip_keys"] = len(SEEN_IP_KEYS)
+        count = len(SEEN_IP_KEYS)
+    if new_key and auth_mode() == "log":
+        AUTH_LOG.warning("auth log-mode: distinct page ip_keys=%d cf_connecting_ip=%s", count, "yes" if has_cf else "no")
 
 
 def _ip_key(ip: str) -> str:
@@ -212,11 +256,13 @@ def require_api_access(request: Request,
         parsed = parse_session(x_transcript_session)
         if parsed and parsed[1] >= time.time():
             _bump("auth_ok_session")
+            note_client_key(request, ip_key)
             return {"kind": "session", "id": "session:" + parsed[0], "ip_key": ip_key}
     stat = "auth_invalid" if (supplied or x_transcript_session) else "auth_missing"
     _bump(stat)
     AUTH_LOG.warning("%s route=%s mode=%s", stat, request.url.path, auth_mode())
     if auth_mode() == "log":
+        note_client_key(request, ip_key)
         return {"kind": "anonymous", "id": "anon:" + ip_key, "ip_key": ip_key}
     raise HTTPException(401, AUTH_REQUIRED_MESSAGE)
 
@@ -2376,4 +2422,5 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8090"))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
+    # proxy_headers=False: client_ip() decides which forwarding headers to trust (loopback only).
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False, proxy_headers=False)

@@ -500,9 +500,25 @@
     try { data = await r.json(); } catch (_) { /* non-json */ }
     if (!r.ok) {
       const msg = (data && (data.detail || data.error)) || r.statusText || 'Request failed';
-      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const err = new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      err.status = r.status;
+      throw err;
     }
     return data;
+  }
+  // A long job can poll for hours; one dropped request (network blip, Cloudflare 502/503/504,
+  // 429) must not end the wait. Retry a failed poll up to 3 times, then give up.
+  const POLL_RETRIES = 3;
+  const isTransientPollError = (e) => !e.status || e.status >= 500 || e.status === 429;
+  async function pollJob(jobId) {
+    for (let failures = 0; ; failures += 1) {
+      try {
+        return await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      } catch (e) {
+        if (failures >= POLL_RETRIES || !isTransientPollError(e)) throw e;
+        await sleep(2000 * (failures + 1));
+      }
+    }
   }
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -530,7 +546,7 @@
       const stage = stages[Math.min(Math.floor(elapsed / 12), stages.length - 1)];
       setStatus(`${stage} ${elapsed}s`);
       await sleep(attempt < 6 ? 1000 : (elapsed < 60 ? 2000 : 5000));
-      const data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      const data = await pollJob(jobId);
       const job = data.job || {};
       if (job.status === 'done' && job.record) return job.record;
       if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');

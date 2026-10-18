@@ -235,7 +235,7 @@ def test_long_job_slot_queues_second_job(db, monkeypatch):
 def test_page_tier_limits(db, monkeypatch):
     release = threading.Event()
     monkeypatch.setattr(app, "transcribe_public_media_url_to_record", lambda url, owner_token, started=None: (release.wait(10), {"id": "r", "transcript": "x", "segments": []})[1])
-    client = TestClient(app.app)
+    client = TestClient(app.app, client=("127.0.0.1", 50000))   # cloudflared peer: CF-Connecting-IP is trusted
     s1 = {"X-Transcript-Session": client.post("/api/session").json()["session"]}
     s2 = {"X-Transcript-Session": client.post("/api/session").json()["session"]}
     try:
@@ -313,3 +313,83 @@ def test_youtube_job_unknown_duration_chunks(db, monkeypatch):
     rec = app.transcribe_youtube_url_to_record("https://youtu.be/dQw4w9WgXcQ", "o" * 40, allow_long=True, job_id=None)
     assert rec["method"] == "chunked-local-whisper"
     assert len(calls["whisper"]) == 3 and all(t >= 1800 for t in calls["whisper"])
+
+
+# T13 (Reviewer PR-BUILT fix 3): per-IP key trusts forwarding headers only from loopback
+def _hold_jobs(monkeypatch):
+    release = threading.Event()
+    monkeypatch.setattr(app, "transcribe_public_media_url_to_record", lambda url, owner_token, started=None: (release.wait(10), {"id": "r", "transcript": "x", "segments": []})[1])
+    return release
+
+
+def _drain_jobs(release):
+    release.set()
+    deadline = time.time() + 10
+    while time.time() < deadline:
+        with app.URL_JOBS_LOCK:
+            if not any(j.get("status") in app.ACTIVE_JOB_STATES for j in app.URL_JOBS.values()):
+                return
+        time.sleep(0.05)
+
+
+def test_client_ip_trust_rules():
+    from starlette.requests import Request
+
+    def req(peer, headers):
+        return Request({"type": "http", "client": (peer, 1234), "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()]})
+    spoof = {"CF-Connecting-IP": "9.9.9.9", "X-Forwarded-For": "8.8.8.8, 7.7.7.7"}
+    assert app.client_ip(req("203.0.113.9", spoof)) == "203.0.113.9"           # non-loopback: headers ignored
+    assert app.client_ip(req("127.0.0.1", spoof)) == "9.9.9.9"                 # cloudflared: CF header first
+    assert app.client_ip(req("::1", {"X-Forwarded-For": "8.8.8.8, 7.7.7.7"})) == "8.8.8.8"
+    assert app.client_ip(req("127.0.0.1", {})) == "127.0.0.1"
+
+
+@pytest.mark.auth_enforce
+def test_spoofed_forward_headers_from_non_loopback_are_keyed_by_socket_ip(db, monkeypatch):
+    release = _hold_jobs(monkeypatch)
+    client = TestClient(app.app, client=("203.0.113.9", 40000))
+    sessions = [{"X-Transcript-Session": client.post("/api/session").json()["session"]} for _ in range(3)]
+    try:
+        codes = [client.post("/api/transcribe-url-job", data={"url": "https://example.com/a.mp3"},
+                             headers={**h, "CF-Connecting-IP": f"10.0.0.{i}", "X-Forwarded-For": f"10.1.0.{i}"}).status_code
+                 for i, h in enumerate(sessions)]
+        assert codes == [202, 202, 429]       # rotating spoofed headers does not dodge the 2-per-IP cap
+        with app.URL_JOBS_LOCK:
+            keys = {j.get("ip_key") for j in app.URL_JOBS.values()}
+        assert keys == {app._ip_key("203.0.113.9")}
+    finally:
+        _drain_jobs(release)
+
+
+@pytest.mark.auth_enforce
+def test_two_cloudflare_ips_get_separate_caps(db, monkeypatch):
+    release = _hold_jobs(monkeypatch)
+    client = TestClient(app.app, client=("127.0.0.1", 40001))
+    s = {"X-Transcript-Session": client.post("/api/session").json()["session"]}
+    post = lambda ip: client.post("/api/transcribe-url-job", data={"url": "https://example.com/a.mp3"}, headers={**s, "CF-Connecting-IP": ip}).status_code
+    try:
+        assert [post("198.51.100.1"), post("198.51.100.1"), post("198.51.100.1")] == [202, 202, 429]
+        assert [post("198.51.100.2"), post("198.51.100.2")] == [202, 202]   # second visitor has its own cap
+    finally:
+        _drain_jobs(release)
+
+
+def test_log_mode_counts_distinct_ip_keys(db, monkeypatch, caplog):
+    monkeypatch.setattr(app, "SEEN_IP_KEYS", set())
+    client = TestClient(app.app, client=("127.0.0.1", 40002))
+    with caplog.at_level("WARNING", logger=app.AUTH_LOG.name):
+        for ip in ("192.0.2.1", "192.0.2.1", "192.0.2.2"):
+            client.get("/api/jobs/nope", headers={"CF-Connecting-IP": ip})
+        client.get("/api/jobs/nope")          # no CF header through the proxy
+    auth = client.get("/health").json()["auth"]
+    assert auth["distinct_ip_keys"] == 3      # 2 CF IPs + the loopback peer
+    assert auth["page_requests_with_cf_ip"] >= 3 and auth["page_requests_without_cf_ip"] >= 1
+    assert "distinct page ip_keys=3" in caplog.text
+    assert "192.0.2." not in caplog.text and "192.0.2." not in str(auth)   # counts only, never raw IPs
+
+
+def test_page_poll_retries_transient_failures():
+    html = (app.STATIC_DIR / "index.html").read_text()
+    assert "const POLL_RETRIES = 3;" in html
+    assert "const data = await pollJob(jobId);" in html
+    assert "e.status >= 500 || e.status === 429" in html

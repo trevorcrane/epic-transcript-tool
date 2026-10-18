@@ -54,3 +54,32 @@ def test_recall_against_reference():
 def test_loop_is_caught_by_gate():
     m = e2e.text_metrics(" ".join(["same six words in a loop"] * 40), 600)
     assert "hallucination loop" in e2e.gate_failures(m, 600)
+
+
+def test_main_saves_transcript_and_commit(tmp_path, monkeypatch):
+    """Reviewer PR-BUILT fix 1: --transcript-out keeps the text and the JSON names the commit."""
+    j = job(14000, 4290)
+    j["record"]["transcript"] = "\n".join(f"[{i // 60:02d}:{i % 60:02d}] {s['text']}" for i, s in enumerate(j["record"]["segments"]))
+    j["record"]["id"] = "rec1"
+    calls = []
+
+    def fake_http(method, url, headers, data=None, timeout=60):
+        calls.append((method, url))
+        if url.endswith("/api/session"):
+            return 200, {"session": "s"}
+        if url.endswith("/api/transcribe-url-job"):
+            return 202, {"job": {"id": "j1"}}
+        if "/api/jobs/" in url:
+            return 200, {"job": j}
+        return 200, {}
+    monkeypatch.setattr(e2e, "http", fake_http)
+    monkeypatch.setattr(e2e.time, "sleep", lambda s: None)
+    monkeypatch.delenv("TRANSCRIPT_API_TOKEN", raising=False)
+    out, txt = tmp_path / "ev.json", tmp_path / "t.txt"
+    rc = e2e.main(["http://x", "--out", str(out), "--transcript-out", str(txt), "--commit", "abc123", "--min-last-start", "4200"])
+    assert rc == 0
+    ev = __import__("json").loads(out.read_text())
+    assert ev["commit"] == "abc123" and ev["transcript_file"] == str(txt) and ev["pass"]
+    plain = txt.read_text()
+    assert "[00:" not in plain and len(plain.split()) == ev["metrics"]["words"]
+    assert (tmp_path / "t.txt.timestamped.txt").read_text().startswith("[00:00]")

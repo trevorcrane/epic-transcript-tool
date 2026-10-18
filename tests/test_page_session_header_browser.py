@@ -41,6 +41,7 @@ def test_page_sends_session_header_in_real_browser(tmp_path):
         assert proc.returncode == 0, proc.stdout + proc.stderr
         result = json.loads(proc.stdout)
         assert result["all_have_session"] and result["retried_after_401"]
+        assert result["poll_survived_502"], result   # one 502 does not end the page wait
         health = json.loads(request.urlopen(f"http://127.0.0.1:{port}/health").read())
         assert health["auth"]["auth_missing"] == 0, health["auth"]   # deploy step 8.3-4 rule
     finally:

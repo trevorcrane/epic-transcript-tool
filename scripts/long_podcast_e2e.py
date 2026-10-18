@@ -25,6 +25,7 @@ import json
 import os
 import re
 import secrets
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -139,6 +140,9 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--max-wait", type=int, default=14400)
     ap.add_argument("--out", default=None)
     ap.add_argument("--keep-record", action="store_true")
+    ap.add_argument("--transcript-out", default=None,
+                    help="save the transcript: PATH gets plain text (timestamps stripped, for check_gate.py), PATH.timestamped.txt the raw text")
+    ap.add_argument("--commit", default=None, help="commit sha of the server build (default: git HEAD of this checkout)")
     a = ap.parse_args(argv)
     base = a.base.rstrip("/")
     token = (os.getenv("TRANSCRIPT_API_TOKEN") or "").strip()
@@ -173,7 +177,24 @@ def main(argv: list[str]) -> int:
     result = evaluate(job, expect_duration=a.expect_duration, min_words=a.min_words, min_last_start=a.min_last_start,
                       max_gap=a.max_gap, reference=reference, min_recall=a.min_recall, baseline_words=a.baseline_words)
     rec = job.get("record") or {}
+    commit, tree_clean = a.commit, None
+    if not commit:
+        repo = Path(__file__).resolve().parents[1]
+        try:
+            commit = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10).stdout.strip() or None
+            tree_clean = subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no"],
+                                        capture_output=True, text=True, timeout=10).stdout.strip() == ""
+        except Exception:
+            commit = None
+    if a.transcript_out and rec.get("transcript"):
+        raw = rec["transcript"]
+        plain = re.sub(r"^\[\d{1,2}:\d{2}(?::\d{2})?\]\s*", "", raw, flags=re.M)
+        Path(a.transcript_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.transcript_out).write_text(plain, encoding="utf-8")
+        Path(str(a.transcript_out) + ".timestamped.txt").write_text(raw, encoding="utf-8")
     evidence = {
+        "commit": commit, "tracked_tree_clean": tree_clean,
+        "transcript_file": a.transcript_out if (a.transcript_out and rec.get("transcript")) else None,
         "base_url": base, "source_url": a.url, "job_id": job_id, "auth": auth,
         "status": job.get("status"), "error": job.get("error"),
         "record_id": rec.get("id"), "method": rec.get("method"), "title": rec.get("title"),
