@@ -465,15 +465,60 @@
 
   const apiUrl = (path) => API + path;
 
+  // Page session (PR fix/long-media-jobs): a short-lived signed token minted by
+  // POST /api/session, kept in memory only and sent on every API call as
+  // X-Transcript-Session. No API token or secret ever lives in this page.
+  let pageSession = null;
+  let minting = null;
+  function mintSession() {
+    // One mint at a time: parallel calls on page load share the same request.
+    if (minting) return minting;
+    const headers = pageSession ? { 'X-Transcript-Session': pageSession } : {};
+    minting = fetch(apiUrl('/api/session'), { method: 'POST', headers })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok || !data || !data.session) throw new Error('Could not start a page session. Please reload.');
+        pageSession = data.session;
+        return pageSession;
+      })
+      .finally(() => { minting = null; });
+    return minting;
+  }
+  async function sessionFetch(path, opts) {
+    if (!pageSession) await mintSession();
+    const withSession = () => ({ ...opts, headers: { ...(opts.headers || {}), 'X-Transcript-Session': pageSession } });
+    let r = await fetch(apiUrl(path), withSession());
+    if (r.status === 401) {
+      await mintSession();
+      r = await fetch(apiUrl(path), withSession());
+    }
+    return r;
+  }
   async function jfetch(path, opts = {}) {
-    const r = await fetch(apiUrl(path), opts);
+    const r = await sessionFetch(path, opts);
     let data = null;
     try { data = await r.json(); } catch (_) { /* non-json */ }
     if (!r.ok) {
       const msg = (data && (data.detail || data.error)) || r.statusText || 'Request failed';
-      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      const err = new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      err.status = r.status;
+      throw err;
     }
     return data;
+  }
+  // A long job can poll for hours; one dropped request (network blip, Cloudflare 502/503/504,
+  // 429) must not end the wait. Retry a failed poll up to 3 times, then give up.
+  const POLL_RETRIES = 3;
+  const isTransientPollError = (e) => !e.status || e.status >= 500 || e.status === 429;
+  async function pollJob(jobId) {
+    for (let failures = 0; ; failures += 1) {
+      try {
+        return await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      } catch (e) {
+        if (failures >= POLL_RETRIES || !isTransientPollError(e)) throw e;
+        await sleep(2000 * (failures + 1));
+      }
+    }
   }
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -495,12 +540,13 @@
       'Finishing transcript...'
     ];
     const startedAt = Date.now();
-    for (let attempt = 0; attempt < 150; attempt += 1) {
+    const maxWaitMs = 4 * 60 * 60 * 1000; // long podcasts run as chunked background jobs (up to 4 h)
+    for (let attempt = 0; Date.now() - startedAt < maxWaitMs; attempt += 1) {
       const elapsed = Math.round((Date.now() - startedAt) / 1000);
       const stage = stages[Math.min(Math.floor(elapsed / 12), stages.length - 1)];
       setStatus(`${stage} ${elapsed}s`);
-      await sleep(attempt < 6 ? 1000 : 2000);
-      const data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      await sleep(attempt < 6 ? 1000 : (elapsed < 60 ? 2000 : 5000));
+      const data = await pollJob(jobId);
       const job = data.job || {};
       if (job.status === 'done' && job.record) return job.record;
       if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');

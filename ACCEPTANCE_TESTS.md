@@ -495,3 +495,21 @@ Current status: in progress.
 - Browser/mobile screenshots: `evidence/visual-correction-gate/desktop-dark.png`, `desktop-light.png`, `desktop-light-result.png`, `mobile-dark.png`, `mobile-light.png`; report `evidence/visual-correction-gate/report.json` returned `ok=true`.
 - Regression-video proof: public CDP run submitted French regression video `vgIle-XrvQI`, got status `Done`, method `local-whisper`, transcript length `1,578`, and result/transcript dark text in light mode. Browser-mobile acceptance rerun also passed desktop French copy and mobile Shorts copy with no horizontal overflow.
 - Full suite: `53 passed in 5.71s` during post-deploy verification. Phase 1 DOM/mobile/a11y smoke passed, including VTT signed downloads.
+
+
+## Long podcast gate (PR fix/long-media-jobs)
+
+Source: The Changelog #600, `https://cdn.changelog.com/uploads/podcast/600/the-changelog-600.mp3`
+(4,323.9 s, no captions, so local Whisper runs in 600 s chunks). Human reference transcript:
+`thechangelog/transcripts` `podcast/the-changelog-600.md` (11,738 spoken words).
+Box baseline (faster-whisper base.en float32): 14,892 words, recall 0.987.
+
+Run: `TRANSCRIPT_API_TOKEN=... python scripts/long_podcast_e2e.py BASE_URL --reference the-changelog-600.md --min-last-start 4200 --out evidence/long-podcast-e2e.json`
+
+Pass criteria (all):
+- Job `done`, method `chunked-local-whisper`, duration 4,319 to 4,329 s.
+- At least 11,900 words (80% of the box baseline).
+- Fleet quality gate: wpm ≥ 100, 6-gram loop < 15, token run < 25, glued < 7 per 1k, U+FFFD < 0.5 per 1k.
+- Last segment starts at ≥ 4,200 s, no gap over 120 s, timestamps increase.
+- Content recall ≥ 0.90 against the human reference (distinct words of 6+ letters that occur 3+ times).
+- No credentials: `POST /api/transcribe-url-job` returns 401 (enforce mode). The page still works with no visitor login.

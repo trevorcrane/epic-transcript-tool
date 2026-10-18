@@ -1,11 +1,14 @@
 """Epic Transcript Machine - FastAPI backend.
 
-Public, no-login transcript pipeline with YouTube cache, caption fallbacks,
+Public, no-visitor-login transcript pipeline (bots use an API token, the page a signed session) with YouTube cache, caption fallbacks,
 timestamped segments, and downloadable transcript formats.
 """
 from __future__ import annotations
 
+import base64
+import contextvars
 import hashlib
+import hmac
 import html
 import json
 import mimetypes
@@ -28,7 +31,7 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
@@ -109,8 +112,203 @@ app.add_middleware(
         "http://localhost:8090",
     ],
     allow_methods=["GET", "POST", "DELETE"],
-    allow_headers=["Content-Type", "X-Transcript-Owner"],
+    allow_headers=["Content-Type", "X-Transcript-Owner", "Authorization", "X-Transcript-Session", "X-Transcript-Api-Token"],
 )
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+# ---------------------------------------------------------------------------
+# Job API access (PR fix/long-media-jobs, C7)
+# Bots send Authorization: Bearer <token> (or X-Transcript-Api-Token); the
+# public page mints a short-lived signed session via POST /api/session and
+# sends it as X-Transcript-Session. TRANSCRIPT_AUTH_MODE=log lets requests
+# without credentials through and only counts them (first deploy hour).
+# ---------------------------------------------------------------------------
+AUTH_LOG = logging.getLogger("epic.transcript.auth")
+AUTH_STATS_LOCK = threading.Lock()
+AUTH_STATS: dict[str, int] = {"auth_missing": 0, "auth_invalid": 0, "auth_ok_token": 0, "auth_ok_session": 0}
+_PROCESS_SESSION_SECRET = secrets.token_bytes(32)
+SESSION_TTL_SECONDS = 12 * 3600
+SESSION_RENEW_WINDOW_SECONDS = 24 * 3600
+PAGE_TIER_MESSAGE_PER_IP = "You already have 2 transcripts running. Please wait for one to finish."
+PAGE_TIER_MESSAGE_QUEUE = "The transcript machine is busy right now. Please try again in a few minutes."
+AUTH_REQUIRED_MESSAGE = "This request needs a page session or an API token. Reload the page and try again."
+
+
+def auth_mode() -> str:
+    mode = (os.getenv("TRANSCRIPT_AUTH_MODE") or "enforce").strip().lower()
+    return mode if mode in {"enforce", "log"} else "enforce"
+
+
+def api_tokens() -> list[str]:
+    return [t.strip() for t in (os.getenv("TRANSCRIPT_API_TOKENS") or "").split(",") if len(t.strip()) >= 24]
+
+
+def session_secret() -> bytes:
+    configured = os.getenv("TRANSCRIPT_SESSION_SECRET")
+    return configured.encode() if configured else _PROCESS_SESSION_SECRET
+
+
+def _b64(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode().rstrip("=")
+
+
+def _sign(payload: str) -> str:
+    return _b64(hmac.new(session_secret(), payload.encode(), hashlib.sha256).digest())
+
+
+def mint_session(sid: Optional[str] = None, now: Optional[float] = None) -> str:
+    sid = sid or secrets.token_hex(12)
+    exp = int((now or time.time()) + SESSION_TTL_SECONDS)
+    payload = f"{sid}.{exp}"
+    return f"{payload}.{_sign(payload)}"
+
+
+def parse_session(value: Optional[str]) -> Optional[tuple[str, int]]:
+    """Return (sid, exp) when the signature is valid (expired or not), else None."""
+    parts = (value or "").strip().split(".")
+    if len(parts) != 3 or not re.fullmatch(r"[0-9a-f]{24}", parts[0]) or not parts[1].isdigit():
+        return None
+    if not hmac.compare_digest(_sign(f"{parts[0]}.{parts[1]}"), parts[2]):
+        return None
+    return parts[0], int(parts[1])
+
+
+def trusted_proxy_hosts() -> set:
+    """Socket peers whose forwarding headers we believe. Default: loopback only (cloudflared
+    connects from 127.0.0.1 per cloudflared.yml). Any other peer could forge the headers."""
+    raw = os.getenv("TRUSTED_PROXY_IPS", "127.0.0.1,::1")
+    return {h.strip() for h in raw.split(",") if h.strip()}
+
+
+def client_ip(request: Request) -> str:
+    """Client IP for the per-IP page cap.
+
+    Forwarding headers count only when the socket peer is a trusted proxy (loopback =
+    cloudflared): CF-Connecting-IP first (Cloudflare overwrites it at the edge), then the
+    first X-Forwarded-For entry. From any other peer both headers are ignored and the
+    socket IP is used, so a direct caller can't rotate a spoofed header to dodge the cap.
+    """
+    sock = request.client.host if request.client else "unknown"
+    if sock in trusted_proxy_hosts():
+        cf = (request.headers.get("cf-connecting-ip") or "").strip()
+        if cf:
+            return cf
+        xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+        if xff:
+            return xff
+    return sock
+
+
+# Log-mode visibility (Reviewer PR-BUILT fix 3): how many distinct client keys the page
+# tier sees, and whether CF-Connecting-IP arrives through the Worker. Counts only; the
+# keys themselves are never exposed. If the Worker collapses every visitor onto one IP,
+# distinct_ip_keys stays at 1 while page requests climb, which shows up before enforce.
+SEEN_IP_KEYS: set = set()
+SEEN_IP_KEYS_MAX = 10000
+
+
+def note_client_key(request: Request, ip_key: str) -> None:
+    has_cf = bool((request.headers.get("cf-connecting-ip") or "").strip())
+    new_key = False
+    with AUTH_STATS_LOCK:
+        AUTH_STATS["page_requests_with_cf_ip" if has_cf else "page_requests_without_cf_ip"] = \
+            AUTH_STATS.get("page_requests_with_cf_ip" if has_cf else "page_requests_without_cf_ip", 0) + 1
+        if ip_key not in SEEN_IP_KEYS and len(SEEN_IP_KEYS) < SEEN_IP_KEYS_MAX:
+            SEEN_IP_KEYS.add(ip_key)
+            new_key = True
+        AUTH_STATS["distinct_ip_keys"] = len(SEEN_IP_KEYS)
+        count = len(SEEN_IP_KEYS)
+    if new_key and auth_mode() == "log":
+        AUTH_LOG.warning("auth log-mode: distinct page ip_keys=%d cf_connecting_ip=%s", count, "yes" if has_cf else "no")
+
+
+def _ip_key(ip: str) -> str:
+    return hashlib.sha256(("ip:" + ip).encode()).hexdigest()[:16]
+
+
+def _bump(stat: str) -> None:
+    with AUTH_STATS_LOCK:
+        AUTH_STATS[stat] = AUTH_STATS.get(stat, 0) + 1
+
+
+def require_api_access(request: Request,
+                       authorization: Optional[str] = Header(None),
+                       x_transcript_api_token: Optional[str] = Header(None),
+                       x_transcript_session: Optional[str] = Header(None)) -> dict:
+    ip_key = _ip_key(client_ip(request))
+    supplied = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        supplied = authorization[7:].strip()
+    supplied = supplied or (x_transcript_api_token or "").strip()
+    if supplied:
+        for tok in api_tokens():
+            if secrets.compare_digest(tok.encode(), supplied.encode()):
+                _bump("auth_ok_token")
+                return {"kind": "token", "id": "token:" + hashlib.sha256(tok.encode()).hexdigest()[:12], "ip_key": ip_key}
+    if x_transcript_session:
+        parsed = parse_session(x_transcript_session)
+        if parsed and parsed[1] >= time.time():
+            _bump("auth_ok_session")
+            note_client_key(request, ip_key)
+            return {"kind": "session", "id": "session:" + parsed[0], "ip_key": ip_key}
+    stat = "auth_invalid" if (supplied or x_transcript_session) else "auth_missing"
+    _bump(stat)
+    AUTH_LOG.warning("%s route=%s mode=%s", stat, request.url.path, auth_mode())
+    if auth_mode() == "log":
+        note_client_key(request, ip_key)
+        return {"kind": "anonymous", "id": "anon:" + ip_key, "ip_key": ip_key}
+    raise HTTPException(401, AUTH_REQUIRED_MESSAGE)
+
+
+def auth_status() -> dict:
+    with AUTH_STATS_LOCK:
+        stats = dict(AUTH_STATS)
+    return {"mode": auth_mode(), "tokens_configured": len(api_tokens()), **stats}
+
+
+# Long-job slot (C5) and per-job deadline (C3), both thread-safe.
+LONG_JOB_SLOTS = threading.BoundedSemaphore(max(1, env_int("MAX_CONCURRENT_LONG_JOBS", 1)))
+DOWNLOAD_TIMEOUT_CTX: contextvars.ContextVar[Optional[int]] = contextvars.ContextVar("download_timeout", default=None)
+WHISPER_TIMEOUT_CTX: contextvars.ContextVar[Optional[int]] = contextvars.ContextVar("whisper_timeout", default=None)
+# Per-thread job context: {"job_id": str|None, "allow_long": bool}. Set by the job runner so
+# helper signatures stay unchanged (keeps existing callers and test fakes working).
+JOB_CTX: contextvars.ContextVar[Optional[dict]] = contextvars.ContextVar("job_ctx", default=None)
+
+
+def current_job() -> tuple[Optional[str], bool]:
+    ctx = JOB_CTX.get() or {}
+    return ctx.get("job_id"), bool(ctx.get("allow_long"))
+SINGLE_AUDIO_MAX_SECONDS_DEFAULT = 360
+SYNC_LONG_MEDIA_MESSAGE = "That audio is longer than 6 minutes (or its length is unknown), so it can't finish in a single request. Use the page's Get Transcript button, which runs it as a background job."
+TIMEOUT_PUBLIC_MESSAGE = "That audio took too long to transcribe. Please try again, or upload a shorter file."
+GENERIC_PUBLIC_MESSAGE = "Transcription failed on the server. Please try again."
+
+
+def single_audio_max_seconds() -> int:
+    return env_int("SINGLE_AUDIO_MAX_SECONDS", env_int("YOUTUBE_JOB_SINGLE_AUDIO_MAX_SECONDS", SINGLE_AUDIO_MAX_SECONDS_DEFAULT))
+
+
+def chunk_timeout_seconds(chunk_seconds: int) -> int:
+    configured = env_int("CHUNK_TIMEOUT_SECONDS", env_int("LONG_VIDEO_CHUNK_TIMEOUT_SECONDS", 1800))
+    return max(configured, 1800, 3 * chunk_seconds)
+
+
+def job_deadline(job_id: Optional[str]) -> Optional[float]:
+    if not job_id:
+        return None
+    with URL_JOBS_LOCK:
+        return (URL_JOBS.get(job_id) or {}).get("deadline_at")
+
+
+class JobDeadlineExceeded(RuntimeError):
+    pass
 
 
 def db() -> sqlite3.Connection:
@@ -517,7 +715,10 @@ def yt_dlp_metadata(url: str) -> dict:
     proc = subprocess.run([resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--dump-single-json", "--no-warnings", url], capture_output=True, text=True, timeout=90)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr else "yt-dlp failed")
-    return json.loads(proc.stdout)
+    data = json.loads(proc.stdout or "null")
+    if not isinstance(data, dict):
+        raise RuntimeError((proc.stderr.strip().splitlines() or ["yt-dlp returned no metadata"])[-1])
+    return data
 
 
 WHISPER_LANGUAGE_NAMES = {
@@ -654,7 +855,7 @@ def yt_dlp_download_audio(url: str, work_dir: Path) -> Path:
             old.unlink(missing_ok=True)
         cmd = base_cmd + extra + [url]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=int(os.getenv("YT_DLP_AUDIO_TIMEOUT_SECONDS", "45")))
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=DOWNLOAD_TIMEOUT_CTX.get() or env_int("YT_DLP_AUDIO_TIMEOUT_SECONDS", 90))
         except subprocess.TimeoutExpired:
             errors.append("audio download timed out")
             continue
@@ -717,7 +918,7 @@ def transcribe_with_local_whisper(input_path: Path, language: Optional[str] = No
     env = os.environ.copy()
     ffmpeg_dir = str(Path(resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)).parent)
     env["PATH"] = ffmpeg_dir + os.pathsep + env.get("PATH", "")
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or int(os.getenv("LOCAL_WHISPER_TIMEOUT_SECONDS", "90")), env=env)
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout or WHISPER_TIMEOUT_CTX.get() or env_int("LOCAL_WHISPER_TIMEOUT_SECONDS", 90), env=env)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or "Local Whisper transcription failed")
     files = list(out_dir.glob("*.vtt"))
@@ -776,8 +977,29 @@ def load_url_jobs_locked() -> None:
         URL_JOBS.update({str(k): v for k, v in data.items() if isinstance(v, dict)})
 
 
+RESTART_MESSAGE = "Server restarted while this job ran. Please resubmit."
+
+
+def recover_interrupted_jobs_locked() -> int:
+    n = 0
+    for job in URL_JOBS.values():
+        if job.get("status") in {"queued", "running"}:
+            job.update({"status": "error", "error": RESTART_MESSAGE, "status_code": 503, "finished_at": time.time()})
+            n += 1
+    if n:
+        save_url_jobs_locked()
+    return n
+
+
 with URL_JOBS_LOCK:
     load_url_jobs_locked()
+
+
+@app.on_event("startup")
+def _recover_jobs_on_startup() -> None:
+    # Runs when the server starts (not on import), so tests and tools that import app don't rewrite job files.
+    with URL_JOBS_LOCK:
+        recover_interrupted_jobs_locked()
 
 
 def visitor_safe_transcription_error(detail: object) -> str:
@@ -820,6 +1042,59 @@ def split_audio_for_long_transcription(audio_path: Path, work_dir: Path, chunk_s
     return chunks
 
 
+def download_audio_with_timeout(url: str, work_dir: Path, timeout: int) -> Path:
+    """Run yt_dlp_download_audio with a per-thread timeout (no os.environ mutation)."""
+    token = DOWNLOAD_TIMEOUT_CTX.set(int(timeout))
+    try:
+        return yt_dlp_download_audio(url, work_dir)
+    finally:
+        DOWNLOAD_TIMEOUT_CTX.reset(token)
+
+
+def _wait_for_long_slot(job_id: Optional[str]) -> None:
+    deadline = job_deadline(job_id)
+    waited = False
+    while not LONG_JOB_SLOTS.acquire(timeout=2):
+        if not waited:
+            update_url_job(job_id, status="queued", message="Waiting for another long transcript to finish")
+            waited = True
+        if deadline and time.time() > deadline:
+            raise JobDeadlineExceeded("job deadline passed while waiting for the long-job slot")
+    if waited:
+        update_url_job(job_id, status="running")
+
+
+def transcribe_audio_chunked(audio: Path, work_dir: Path, job_id: Optional[str] = None, language: Optional[str] = None,
+                             model: Optional[str] = None) -> tuple[list[dict], str, list[Path]]:
+    """Split audio into LONG_VIDEO_CHUNK_SECONDS chunks and run local Whisper per chunk (C1/C3/C5)."""
+    chunk_seconds = env_int("LONG_VIDEO_CHUNK_SECONDS", 600)
+    per_chunk_timeout = chunk_timeout_seconds(chunk_seconds)
+    _wait_for_long_slot(job_id)
+    try:
+        update_url_job(job_id, stage="splitting", message="Splitting long audio into chunks", percent=12)
+        chunks = split_audio_for_long_transcription(audio, work_dir, chunk_seconds)
+        all_segs: list[dict] = []
+        lang = language
+        deadline = job_deadline(job_id)
+        for idx, chunk in enumerate(chunks, 1):
+            if deadline and time.time() > deadline:
+                raise JobDeadlineExceeded(f"job deadline passed at chunk {idx} of {len(chunks)}")
+            update_url_job(job_id, stage="transcribing", message=f"Transcribing chunk {idx} of {len(chunks)}", percent=min(90, 10 + int(80 * idx / max(len(chunks), 1))), chunks_total=len(chunks), chunks_done=idx - 1)
+            try:
+                segs, chunk_lang = transcribe_with_local_whisper(chunk, language=lang, model=model, timeout=per_chunk_timeout)
+            except RuntimeError as e:
+                if "came back empty" in str(e):
+                    continue  # silent or music-only chunk: keep going
+                raise
+            if not lang and chunk_lang and chunk_lang != "unknown":
+                lang = chunk_lang  # detected on the first speaking chunk, reused after
+            all_segs.extend(offset_segments(segs, (idx - 1) * chunk_seconds))
+        update_url_job(job_id, chunks_total=len(chunks), chunks_done=len(chunks))
+        return all_segs, lang or "unknown", chunks
+    finally:
+        LONG_JOB_SLOTS.release()
+
+
 def transcribe_long_youtube_queued(url: str, video_id: str, started: float, work_dir: Path, owner_token: Optional[str], meta: dict, job_id: Optional[str] = None) -> dict:
     attempts = [{"provider": "metadata", "ok": True, "duration_seconds": meta.get("duration")}]
     title = meta.get("title") or f"YouTube {video_id}"
@@ -854,23 +1129,11 @@ def transcribe_long_youtube_queued(url: str, video_id: str, started: float, work
             attempts.append({"provider": name, "ok": False, "error": str(e)[:240]})
     update_url_job(job_id, stage="download", message="Downloading long-video audio for chunked Whisper", percent=10)
     try:
-        old_timeout = os.environ.get("YT_DLP_AUDIO_TIMEOUT_SECONDS")
-        os.environ["YT_DLP_AUDIO_TIMEOUT_SECONDS"] = os.getenv("LONG_VIDEO_DOWNLOAD_TIMEOUT_SECONDS", "300")
-        try:
-            audio = yt_dlp_download_audio(url, work_dir)
-        finally:
-            if old_timeout is None:
-                os.environ.pop("YT_DLP_AUDIO_TIMEOUT_SECONDS", None)
-            else:
-                os.environ["YT_DLP_AUDIO_TIMEOUT_SECONDS"] = old_timeout
-        chunk_seconds = int(os.getenv("LONG_VIDEO_CHUNK_SECONDS", "600"))
-        chunks = split_audio_for_long_transcription(audio, work_dir, chunk_seconds)
-        all_segs: list[dict] = []
+        audio = download_audio_with_timeout(url, work_dir, env_int("LONG_VIDEO_DOWNLOAD_TIMEOUT_SECONDS", 1800))
         expected_lang = infer_expected_language(meta)
-        for idx, chunk in enumerate(chunks, 1):
-            update_url_job(job_id, stage="transcribing", message=f"Transcribing chunk {idx} of {len(chunks)}", percent=min(90, 10 + int(80 * idx / max(len(chunks), 1))), chunks_total=len(chunks), chunks_done=idx - 1)
-            segs, lang = transcribe_with_local_whisper(chunk, language=expected_lang, model=os.getenv("LONG_VIDEO_WHISPER_MODEL", os.getenv("YOUTUBE_WHISPER_MODEL", "tiny")), timeout=int(os.getenv("LONG_VIDEO_CHUNK_TIMEOUT_SECONDS", "300")))
-            all_segs.extend(offset_segments(segs, (idx - 1) * chunk_seconds))
+        all_segs, lang, chunks = transcribe_audio_chunked(
+            audio, work_dir, job_id=job_id, language=expected_lang,
+            model=os.getenv("LONG_VIDEO_WHISPER_MODEL", os.getenv("YOUTUBE_WHISPER_MODEL", "tiny")))
         transcript = segments_to_transcript(all_segs)
         if transcript_word_count(transcript) < 10:
             raise RuntimeError("chunked Whisper transcript not credible")
@@ -942,10 +1205,18 @@ def transcribe_youtube_uncached(url: str, video_id: str, started: float, work_di
         audio_path = yt_dlp_download_audio(url, work_dir)
         expected_lang = infer_expected_language(meta)
         whisper_model = os.getenv("YOUTUBE_WHISPER_MODEL", "tiny") if expected_lang else None
-        segs, lang = transcribe_with_local_whisper(audio_path, language=expected_lang, model=whisper_model, timeout=youtube_whisper_timeout_seconds(duration))
+        method = "local-whisper"
+        job_id, allow_long = current_job()
+        if allow_long and not duration:
+            duration = media_duration_seconds(audio_path)
+        if allow_long and (not duration or duration > single_audio_max_seconds()):
+            segs, lang, _chunks = transcribe_audio_chunked(audio_path, work_dir, job_id=job_id, language=expected_lang, model=whisper_model)
+            method = "chunked-local-whisper"
+        else:
+            segs, lang = transcribe_with_local_whisper(audio_path, language=expected_lang, model=whisper_model, timeout=youtube_whisper_timeout_seconds(duration))
         transcript = segments_to_transcript(segs)
-        attempts.append({"provider": "local-whisper", "ok": True, "segments": len(segs), "words": transcript_word_count(transcript)})
-        return save_transcript(source=title, source_kind="youtube", method="local-whisper", transcript=transcript,
+        attempts.append({"provider": method, "ok": True, "segments": len(segs), "words": transcript_word_count(transcript)})
+        return save_transcript(source=title, source_kind="youtube", method=method, transcript=transcript,
                                duration_seconds=duration, processing_seconds=time.monotonic() - started,
                                media_id=video_id, source_url=canonical, title=title, creator=creator,
                                language=lang, segments=segs, provider_attempts=attempts, cache_hit=False,
@@ -1712,7 +1983,17 @@ def root_index() -> FileResponse:
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "setup": setup_status()}
+    return {"ok": True, "setup": setup_status(), "auth": auth_status()}
+
+
+@app.post("/api/session")
+def api_session(x_transcript_session: Optional[str] = Header(None)) -> dict:
+    """Mint a page session. A validly signed old session keeps its sid if it expired under 24 h ago."""
+    sid = None
+    parsed = parse_session(x_transcript_session)
+    if parsed and time.time() - parsed[1] < SESSION_RENEW_WINDOW_SECONDS:
+        sid = parsed[0]
+    return {"ok": True, "session": mint_session(sid), "expires_in": SESSION_TTL_SECONDS}
 
 
 @app.get("/api/setup")
@@ -1739,6 +2020,7 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
     if is_long and not allow_long:
         raise HTTPException(422, LONG_VIDEO_MESSAGE)
     work_dir = Path(tempfile.mkdtemp(prefix="epic-youtube-"))
+    ctx_token = JOB_CTX.set({"job_id": job_id, "allow_long": allow_long})
     try:
         if is_long:
             single_audio_max = int(os.getenv("YOUTUBE_JOB_SINGLE_AUDIO_MAX_SECONDS", "360"))
@@ -1750,29 +2032,79 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
         update_url_job(job_id, private_error_detail=str(e))
         raise HTTPException(422, visitor_safe_transcription_error(e))
     finally:
+        JOB_CTX.reset(ctx_token)
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
+# Hosts still refused up front (they almost never allow public downloads).
 SOCIAL_URL_HOSTS = {
-    "tiktok.com": "TikTok",
     "instagram.com": "Instagram",
     "facebook.com": "Facebook",
     "fb.watch": "Facebook",
+}
+
+# Trevor, 2026-10-18 2:17 AM ET: X and TikTok links are accepted and go through the normal
+# yt-dlp path (captions if any, else Whisper, chunked if long). If yt-dlp can't get the
+# media, the visitor gets a clear reason plus the upload suggestion (ytdlp_failure_message).
+YTDLP_SOCIAL_HOSTS = {
+    "tiktok.com": "TikTok",
     "x.com": "X/Twitter",
     "twitter.com": "X/Twitter",
 }
 
 
-def social_url_guidance(url: str) -> Optional[str]:
+def _host_label(url: str, table: dict) -> Optional[str]:
     host = (urlparse(url).hostname or "").lower().removeprefix("www.")
-    for domain, label in SOCIAL_URL_HOSTS.items():
+    for domain, label in table.items():
         if host == domain or host.endswith("." + domain):
-            return f"{label} links often block automatic public downloads. If you have the audio or video file, upload it here and we’ll transcribe it directly. Direct MP3, WAV, M4A, MP4, MOV, WebM, and other public media file URLs are supported when the source allows downloads."
+            return label
     return None
 
 
-def transcribe_public_media_url_to_record(url: str, owner_token: str, started: Optional[float] = None) -> dict:
+def social_url_guidance(url: str) -> Optional[str]:
+    label = _host_label(url, SOCIAL_URL_HOSTS)
+    if label:
+        return f"{label} links often block automatic public downloads. If you have the audio or video file, upload it here and we’ll transcribe it directly. Direct MP3, WAV, M4A, MP4, MOV, WebM, and other public media file URLs are supported when the source allows downloads."
+    return None
+
+
+GENERIC_LINK_FAILURE_MESSAGE = "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route."
+_YTDLP_FAILURE_REASONS = [
+    (("ip address is blocked", "blocked from accessing", "http error 403", "forbidden", "http error 429", "rate-limit", "rate limit", "too many requests"),
+     "it blocked our server from downloading it"),
+    (("login", "log in", "sign in", "cookies", "authentication", "age-restricted", "age restricted", "nsfw", "sensitive content"),
+     "it needs a login to view"),
+    (("no video could be found", "no video formats", "there's no video", "no media", "requested format is not available"),
+     "that post has no video or audio we can download"),
+    (("private", "removed", "deleted", "not available", "unavailable", "does not exist", "http error 404", "not found"),
+     "the post is private, removed or not available"),
+]
+
+
+def ytdlp_failure_message(url: str, error_text: str) -> str:
+    """Visitor-safe message for a yt-dlp failure: a short reason, and always the upload route.
+    Raw yt-dlp text never reaches the visitor (it goes to private_error_detail)."""
+    t = (error_text or "").lower()
+    reason = next((r for keys, r in _YTDLP_FAILURE_REASONS if any(k in t for k in keys)), None)
+    label = _host_label(url, YTDLP_SOCIAL_HOSTS)
+    if not reason:
+        if label:
+            return f"{label} wouldn’t let us download that post automatically. If you have the video or audio file, upload it here and we’ll transcribe it directly."
+        return GENERIC_LINK_FAILURE_MESSAGE
+    who = label or "That site"
+    return f"{who} wouldn’t let us download that automatically: {reason}. If you have the video or audio file, upload it here and we’ll transcribe it directly."
+
+
+def transcribe_public_media_url_to_record(url: str, owner_token: str, started: Optional[float] = None, job_id: Optional[str] = None, allow_long: Optional[bool] = None) -> dict:
+    """Non-YouTube links (podcast MP3s, Vimeo, ...): captions first, then local Whisper.
+
+    Sync callers (allow_long=False) get a 422 before any Whisper call when the audio is
+    longer than SINGLE_AUDIO_MAX_SECONDS or its length is unknown. Job callers chunk it.
+    """
     started = started or time.monotonic()
+    ctx_job, ctx_long = current_job()
+    job_id = job_id or ctx_job
+    allow_long = ctx_long if allow_long is None else allow_long
     guidance = social_url_guidance(url)
     if guidance:
         raise HTTPException(422, guidance)
@@ -1783,30 +2115,57 @@ def transcribe_public_media_url_to_record(url: str, owner_token: str, started: O
     try:
         meta = yt_dlp_metadata(url)
         title = meta.get("title") or url
+        duration = meta.get("duration")
         try:
             segs, lang, method = fetch_caption_url_segments(meta)
             transcript = segments_to_transcript(segs)
         except Exception as e:
             attempts.append({"provider": "captions", "ok": False, "error": str(e)[:240]})
-            audio = yt_dlp_download_audio(url, work_dir)
-            segs, lang = transcribe_with_local_whisper(audio)
+            single_max = single_audio_max_seconds()
+            if not allow_long and duration and duration > single_max:
+                raise HTTPException(422, SYNC_LONG_MEDIA_MESSAGE)
+            update_url_job(job_id, stage="download", message="Downloading audio", percent=8)
+            timeout = env_int("MEDIA_DOWNLOAD_TIMEOUT_SECONDS", 1800) if allow_long else env_int("YT_DLP_AUDIO_TIMEOUT_SECONDS", 90)
+            audio = download_audio_with_timeout(url, work_dir, timeout)
+            if not duration:
+                duration = media_duration_seconds(audio)
+            if duration:
+                update_url_job(job_id, duration_seconds=duration)
+            if not duration or duration > single_max:
+                if not allow_long:
+                    raise HTTPException(422, SYNC_LONG_MEDIA_MESSAGE)
+                segs, lang, _chunks = transcribe_audio_chunked(audio, work_dir, job_id=job_id, model=os.getenv("LONG_MEDIA_WHISPER_MODEL") or None)
+                method = "chunked-local-whisper"
+            else:
+                update_url_job(job_id, stage="transcribing", message="Transcribing audio", percent=40)
+                wt = WHISPER_TIMEOUT_CTX.set(max(90, int(3 * duration)))
+                try:
+                    segs, lang = transcribe_with_local_whisper(audio)
+                finally:
+                    WHISPER_TIMEOUT_CTX.reset(wt)
+                method = "local-whisper"
             transcript = segments_to_transcript(segs)
-            method = "local-whisper"
+            if transcript_word_count(transcript) < 3:
+                raise RuntimeError("Whisper transcript not credible")
         return save_transcript(source=title, source_kind="url", method=method, transcript=transcript,
-                               duration_seconds=meta.get("duration"), processing_seconds=time.monotonic() - started,
+                               duration_seconds=duration, processing_seconds=time.monotonic() - started,
                                media_id=meta.get("id"), source_url=meta.get("webpage_url") or url,
                                title=title, creator=meta.get("uploader") or meta.get("channel"), language=lang,
                                segments=segs, provider_attempts=attempts, owner_token=owner_token)
-    except RuntimeError:
-        # Non-YouTube sources are Phase 2 territory. Keep the error helpful for visitors.
-        raise HTTPException(422, "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route.")
+    except (subprocess.TimeoutExpired, JobDeadlineExceeded) as e:
+        update_url_job(job_id, private_error_detail=f"timeout: {str(e)[:400]}")
+        raise HTTPException(422, TIMEOUT_PUBLIC_MESSAGE)
+    except (RuntimeError, subprocess.SubprocessError) as e:
+        update_url_job(job_id, private_error_detail=str(e)[:400])
+        # Keep the error helpful for visitors: a plain reason (login, blocked, private) + upload.
+        raise HTTPException(422, ytdlp_failure_message(url, str(e)))
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
 def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure: bool = False) -> None:
     with URL_JOBS_LOCK:
-        URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
+        URL_JOBS[job_id].update({"status": "running", "started_at": time.time(), "deadline_at": time.time() + env_int("JOB_MAX_SECONDS", 14400)})
         save_url_jobs_locked()
     try:
         started = time.monotonic()
@@ -1817,7 +2176,11 @@ def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure
         else:
             with URL_JOBS_LOCK:
                 URL_JOBS[job_id].update({"stage": "media_url", "message": "Checking public media URL for captions or audio fallback", "percent": 10})
-            rec = transcribe_public_media_url_to_record(url, owner_token, started=started)
+            ctx_token = JOB_CTX.set({"job_id": job_id, "allow_long": True})
+            try:
+                rec = transcribe_public_media_url_to_record(url, owner_token, started=started)
+            finally:
+                JOB_CTX.reset(ctx_token)
         with URL_JOBS_LOCK:
             URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time(), "percent": 100})
             save_url_jobs_locked()
@@ -1830,41 +2193,73 @@ def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure
             URL_JOBS[job_id].update(updates)
             save_url_jobs_locked()
     except Exception as e:
+        public = TIMEOUT_PUBLIC_MESSAGE if isinstance(e, (subprocess.TimeoutExpired, JobDeadlineExceeded)) else GENERIC_PUBLIC_MESSAGE
         with URL_JOBS_LOCK:
-            URL_JOBS[job_id].update({"status": "error", "error": str(e), "status_code": 500, "finished_at": time.time()})
+            URL_JOBS[job_id].update({"status": "error", "error": public, "private_error_detail": f"{type(e).__name__}: {str(e)[:400]}", "status_code": 500, "finished_at": time.time()})
             save_url_jobs_locked()
 
 
+PRIVATE_JOB_FIELDS = ("private_error_detail", "principal", "ip_key", "tier", "deadline_at")
+ACTIVE_JOB_STATES = {"queued", "running"}
+
+
+def public_job_view(job: dict, same_principal: bool) -> dict:
+    out = {k: v for k, v in job.items() if k not in PRIVATE_JOB_FIELDS}
+    if not same_principal and isinstance(out.get("record"), dict):
+        out["record"] = {k: v for k, v in out["record"].items() if k != "owner_token"}
+    return out
+
+
+def check_page_tier_limits_locked(principal: dict) -> None:
+    if principal.get("kind") == "token":
+        return
+    active = [j for j in URL_JOBS.values() if j.get("status") in ACTIVE_JOB_STATES and j.get("tier") == "page"]
+    per_ip = sum(1 for j in active if j.get("ip_key") == principal.get("ip_key"))
+    if per_ip >= env_int("MAX_ACTIVE_PAGE_JOBS_PER_IP", 2):
+        raise HTTPException(429, PAGE_TIER_MESSAGE_PER_IP)
+    if len(active) >= env_int("MAX_QUEUED_PAGE_JOBS", 5):
+        raise HTTPException(429, PAGE_TIER_MESSAGE_QUEUE)
+
+
 @app.post("/api/transcribe-url-job")
-def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None), phase1_qc_force_failure: Optional[str] = Form(None)) -> JSONResponse:
+def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None), phase1_qc_force_failure: Optional[str] = Form(None), principal: dict = Depends(require_api_access)) -> JSONResponse:
     url = (url or "").strip()
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     if not re.match(r"^https?://", url, re.IGNORECASE):
         raise HTTPException(400, "URL must start with http:// or https://")
     job_id = uuid.uuid4().hex[:12]
     with URL_JOBS_LOCK:
-        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
+        check_page_tier_limits_locked(principal)
+        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time(),
+                            "principal": principal["id"], "ip_key": principal.get("ip_key"),
+                            "tier": "token" if principal.get("kind") == "token" else "page"}
         save_url_jobs_locked()
+        view = public_job_view(URL_JOBS[job_id], True)
     force_failure = (phase1_qc_force_failure or "").lower() in {"1", "true", "yes"} and url == "https://example.com/hermes-forced-failure.mp3"
     thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token, force_failure), daemon=True)
     thread.start()
-    return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
+    return JSONResponse({"ok": True, "job": view}, status_code=202)
 
 
 @app.get("/api/jobs/{job_id}")
-def api_get_job(job_id: str) -> JSONResponse:
+def api_get_job(job_id: str, principal: dict = Depends(require_api_access)) -> JSONResponse:
     with URL_JOBS_LOCK:
         if job_id not in URL_JOBS:
             load_url_jobs_locked()
         job = dict(URL_JOBS.get(job_id) or {})
     if not job:
         raise HTTPException(404, "Job not found")
-    job.pop("private_error_detail", None)
-    return JSONResponse({"ok": True, "job": job})
+    owner = job.get("principal")
+    same = (not owner) or owner == principal["id"]
+    if not same:
+        if auth_mode() == "enforce":
+            raise HTTPException(404, "Job not found")
+        AUTH_LOG.warning("job_principal_mismatch job=%s mode=log", job_id)
+    return JSONResponse({"ok": True, "job": public_job_view(job, same)})
 
 
 @app.post("/api/transcribe-url")
-def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) -> JSONResponse:
+def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None), principal: dict = Depends(require_api_access)) -> JSONResponse:
     url = (url or "").strip()
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     if not url:
@@ -1880,7 +2275,7 @@ def api_transcribe_url(url: str = Form(...), owner: Optional[str] = Form(None)) 
 
 
 @app.post("/api/transcribe-upload")
-def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = Form(None)) -> JSONResponse:
+def api_transcribe_upload(file: UploadFile = File(...), owner: Optional[str] = Form(None), principal: dict = Depends(require_api_access)) -> JSONResponse:
     name = file.filename or "upload"
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     ext = Path(name).suffix.lower()
@@ -1994,7 +2389,7 @@ def api_analysis_outputs() -> dict:
 
 
 @app.post("/api/analyze/{rec_id}")
-def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[str] = Form(None), x_transcript_owner: Optional[str] = Header(None)) -> dict:
+def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[str] = Form(None), x_transcript_owner: Optional[str] = Header(None), principal: dict = Depends(require_api_access)) -> dict:
     with db() as conn:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
     if not row:
@@ -2013,7 +2408,7 @@ def api_analyze(rec_id: str, output_type: str = Form(...), question: Optional[st
 
 
 @app.post("/api/analyze-all/{rec_id}")
-def api_analyze_all(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
+def api_analyze_all(rec_id: str, x_transcript_owner: Optional[str] = Header(None), principal: dict = Depends(require_api_access)) -> dict:
     with db() as conn:
         row = conn.execute("SELECT * FROM transcripts WHERE id=?", (rec_id,)).fetchone()
     if not row:
@@ -2071,4 +2466,5 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8090"))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
+    # proxy_headers=False: client_ip() decides which forwarding headers to trust (loopback only).
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False, proxy_headers=False)

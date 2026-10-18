@@ -15,6 +15,14 @@ import time
 from typing import Any
 from urllib import error, parse, request
 
+try:  # token header for guarded job routes (PR fix/long-media-jobs)
+    from _auth import auth_headers
+except ImportError:  # imported as a module from tests
+    import importlib.util as _ilu, pathlib as _pl
+    _spec = _ilu.spec_from_file_location("_auth", _pl.Path(__file__).with_name("_auth.py"))
+    _mod = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_mod)
+    auth_headers = _mod.auth_headers
+
 PUBLIC_HEADERS = {
     "User-Agent": "Mozilla/5.0 Hermes EPIC Transcript recovery watchdog",
     "Accept": "application/json,text/plain,*/*",
@@ -26,7 +34,7 @@ LAUNCHD_LABEL = "com.epic.transcript-api"
 
 def http_request(method: str, url: str, data: dict[str, str] | None = None, timeout: int = 120) -> tuple[int, str]:
     body = None
-    headers = dict(PUBLIC_HEADERS)
+    headers = {**PUBLIC_HEADERS, **auth_headers()}
     if data is not None:
         body = parse.urlencode(data).encode()
         headers["Content-Type"] = "application/x-www-form-urlencoded"
