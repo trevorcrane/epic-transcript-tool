@@ -715,7 +715,10 @@ def yt_dlp_metadata(url: str) -> dict:
     proc = subprocess.run([resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES), "--dump-single-json", "--no-warnings", url], capture_output=True, text=True, timeout=90)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip().splitlines()[-1] if proc.stderr else "yt-dlp failed")
-    return json.loads(proc.stdout)
+    data = json.loads(proc.stdout or "null")
+    if not isinstance(data, dict):
+        raise RuntimeError((proc.stderr.strip().splitlines() or ["yt-dlp returned no metadata"])[-1])
+    return data
 
 
 WHISPER_LANGUAGE_NAMES = {
@@ -2033,22 +2036,63 @@ def transcribe_youtube_url_to_record(url: str, owner_token: str, started: Option
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
+# Hosts still refused up front (they almost never allow public downloads).
 SOCIAL_URL_HOSTS = {
-    "tiktok.com": "TikTok",
     "instagram.com": "Instagram",
     "facebook.com": "Facebook",
     "fb.watch": "Facebook",
+}
+
+# Trevor, 2026-10-18 2:17 AM ET: X and TikTok links are accepted and go through the normal
+# yt-dlp path (captions if any, else Whisper, chunked if long). If yt-dlp can't get the
+# media, the visitor gets a clear reason plus the upload suggestion (ytdlp_failure_message).
+YTDLP_SOCIAL_HOSTS = {
+    "tiktok.com": "TikTok",
     "x.com": "X/Twitter",
     "twitter.com": "X/Twitter",
 }
 
 
-def social_url_guidance(url: str) -> Optional[str]:
+def _host_label(url: str, table: dict) -> Optional[str]:
     host = (urlparse(url).hostname or "").lower().removeprefix("www.")
-    for domain, label in SOCIAL_URL_HOSTS.items():
+    for domain, label in table.items():
         if host == domain or host.endswith("." + domain):
-            return f"{label} links often block automatic public downloads. If you have the audio or video file, upload it here and we’ll transcribe it directly. Direct MP3, WAV, M4A, MP4, MOV, WebM, and other public media file URLs are supported when the source allows downloads."
+            return label
     return None
+
+
+def social_url_guidance(url: str) -> Optional[str]:
+    label = _host_label(url, SOCIAL_URL_HOSTS)
+    if label:
+        return f"{label} links often block automatic public downloads. If you have the audio or video file, upload it here and we’ll transcribe it directly. Direct MP3, WAV, M4A, MP4, MOV, WebM, and other public media file URLs are supported when the source allows downloads."
+    return None
+
+
+GENERIC_LINK_FAILURE_MESSAGE = "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route."
+_YTDLP_FAILURE_REASONS = [
+    (("ip address is blocked", "blocked from accessing", "http error 403", "forbidden", "http error 429", "rate-limit", "rate limit", "too many requests"),
+     "it blocked our server from downloading it"),
+    (("login", "log in", "sign in", "cookies", "authentication", "age-restricted", "age restricted", "nsfw", "sensitive content"),
+     "it needs a login to view"),
+    (("no video could be found", "no video formats", "there's no video", "no media", "requested format is not available"),
+     "that post has no video or audio we can download"),
+    (("private", "removed", "deleted", "not available", "unavailable", "does not exist", "http error 404", "not found"),
+     "the post is private, removed or not available"),
+]
+
+
+def ytdlp_failure_message(url: str, error_text: str) -> str:
+    """Visitor-safe message for a yt-dlp failure: a short reason, and always the upload route.
+    Raw yt-dlp text never reaches the visitor (it goes to private_error_detail)."""
+    t = (error_text or "").lower()
+    reason = next((r for keys, r in _YTDLP_FAILURE_REASONS if any(k in t for k in keys)), None)
+    label = _host_label(url, YTDLP_SOCIAL_HOSTS)
+    if not reason:
+        if label:
+            return f"{label} wouldn’t let us download that post automatically. If you have the video or audio file, upload it here and we’ll transcribe it directly."
+        return GENERIC_LINK_FAILURE_MESSAGE
+    who = label or "That site"
+    return f"{who} wouldn’t let us download that automatically: {reason}. If you have the video or audio file, upload it here and we’ll transcribe it directly."
 
 
 def transcribe_public_media_url_to_record(url: str, owner_token: str, started: Optional[float] = None, job_id: Optional[str] = None, allow_long: Optional[bool] = None) -> dict:
@@ -2113,8 +2157,8 @@ def transcribe_public_media_url_to_record(url: str, owner_token: str, started: O
         raise HTTPException(422, TIMEOUT_PUBLIC_MESSAGE)
     except (RuntimeError, subprocess.SubprocessError) as e:
         update_url_job(job_id, private_error_detail=str(e)[:400])
-        # Non-YouTube sources are Phase 2 territory. Keep the error helpful for visitors.
-        raise HTTPException(422, "That link is not available for automatic transcription yet. If you have the video or audio file, upload it here and we’ll take another route.")
+        # Keep the error helpful for visitors: a plain reason (login, blocked, private) + upload.
+        raise HTTPException(422, ytdlp_failure_message(url, str(e)))
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 

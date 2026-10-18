@@ -41,8 +41,10 @@ def test_async_url_job_accepts_public_non_youtube_media(monkeypatch):
 
 
 def test_social_url_guidance_is_fast_and_helpful():
-    message = app.social_url_guidance("https://www.tiktok.com/@creator/video/1234567890")
-    assert "TikTok links often block automatic public downloads" in message
+    # TikTok and X now go through yt-dlp (Trevor, 2026-10-18); Instagram/Facebook keep the guidance.
+    assert app.social_url_guidance("https://www.tiktok.com/@creator/video/1234567890") is None
+    message = app.social_url_guidance("https://www.facebook.com/watch/?v=1234567890")
+    assert "Facebook links often block automatic public downloads" in message
     assert "upload it here" in message
     assert "Direct MP3" in message
 
