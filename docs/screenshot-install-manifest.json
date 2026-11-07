@@ -1,0 +1,20 @@
+{
+  "baseline_commit": "28707a2",
+  "baseline": {
+    "app.py": "763dfca680c0e1382d1eaae456bc981138174a36c58d6624a09ed5a96fc91a39",
+    "static/index.html": "e71cba1071a4ec5b192fd41eea24f3e5323c2d78f1cb607e534281a59edd251e",
+    "Dockerfile": "8530f77533423bd1e75833d934f9eef1a23e177fda7fcdc39e5ebd45ad836e24",
+    "README.md": "ebcec1f13a0f3461346f787912ddbfbcbbca4b91579a513a08b15bf5fde2cbc0"
+  },
+  "install": {
+    "app.py": "675e6eedbb7ebdb601742c0bb6021878a06ee8454f9df12c1480b1ea8e41d6d3",
+    "static/index.html": "146555257d2760880a7ea18fc70c350adc0fba2c8cd225488a486a17320f9d76",
+    "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
+    "README.md": "3a50f373abf5e7f4353a611705cf6fc7347e31b2d8179684eb94d2ab3019dc22",
+    "screenshots.py": "658656254a5c3751d3c98913e742c420a6c62921dc989cf18fdcd767a857f1e1",
+    "docs/SCREENSHOT_DEPLOY.md": "cf3e019d35bd54179f79c4441a211e2dc725a129cfd27862e5b00dcf13d3e021",
+    "scripts/screenshot_host_preflight.py": "a0dc2eb921723bbde018817e88b6eafadebf716442493f59e665e888377f3cce",
+    "scripts/screenshot_host_apply.py": "53fff4be04bbcb611469db5c723798e0e46ae9472fbbdd13a322155346f55029"
+  },
+  "note": "sha256 of the reviewed file bytes. This manifest is copied by the installer but is not hashed inside itself. Screenshot download accepts only a rebuilt YouTube watch URL."
+}

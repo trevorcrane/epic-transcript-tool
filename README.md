@@ -73,6 +73,15 @@ text upload roundtrip.
 - **URL submit** → `yt-dlp --write-auto-sub --skip-download` first; if captions
   exist, parse and return. Otherwise download audio (`-x --audio-format mp3`)
   and POST to OpenAI Whisper.
+- **Transcript only** keeps that path. **Transcript with screenshots** runs it
+  first, then, for a YouTube video only, downloads a bounded 360p copy and
+  builds a timestamped gallery plus a ZIP. The downloader is given a rebuilt
+  `https://www.youtube.com/watch?v=ID` and `yt-dlp --use-extractors youtube`.
+  Other links, redirect URLs, and private addresses are not fetched for
+  screenshots. A screenshot failure still returns the transcript and says
+  `Screenshots could not be captured.` It does not mark the screenshot step as
+  successful. Screenshot files follow the same job login as the page session
+  or API token.
 - **File upload** → `txt`/`md` returned as-is, `srt`/`vtt` stripped to clean
   text, audio/video sent to Whisper.
 - Files >25 MB are auto-transcoded to mono 16 kHz 32 kbps mp3 before Whisper.
@@ -86,8 +95,11 @@ GET  /                                    serves the SPA (no visitor login)
 GET  /health                              status + setup info + auth counters (no secrets)
 GET  /api/setup                           missing-keys list
 POST /api/session                         mint a 12 h page session (the page does this itself)
-POST /api/transcribe-url-job  form: url   → 202 { job }      [guarded]
+POST /api/transcribe-url-job  form: url, optional include_screenshots=1
+                                          → 202 { job }      [guarded]
 GET  /api/jobs/{id}                       → { job }          [guarded, creator only]
+GET  /api/jobs/{id}/screenshots/{file}    JPEG frame         [same job access; only after a successful capture]
+GET  /api/jobs/{id}/screenshots.zip       ZIP of frames      [same job access; only after a successful capture]
 POST /api/transcribe-url   form: url      → { record }       [guarded; media > 6 min → 422, use the job API]
 POST /api/transcribe-upload file: <file>  → { record }       [guarded]
 POST /api/analyze/{id}, /api/analyze-all/{id}                [guarded + owner]
