@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TEA PARTY</title>
+<style>
+:root{--pink:#ff8fc7;--ink:#4a2a6b;--card:#fff;--bg1:#ffe3f3;--bg2:#e3d4ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Comic Sans MS","Chalkboard SE",system-ui,sans-serif;color:var(--ink);
+background:linear-gradient(160deg,var(--bg1),var(--bg2));min-height:100vh}
+#app{max-width:760px;margin:0 auto;padding:14px 16px 40px;text-align:center}
+h1{font-size:2.4rem;margin:6px 0;letter-spacing:2px}
+h2{font-size:1.5rem;margin:6px 0 10px}
+.card{background:var(--card);border-radius:22px;padding:14px;box-shadow:0 6px 0 #d9c3f5;margin:10px 0}
+button{font:inherit;color:var(--ink);cursor:pointer}
+.big{background:var(--pink);border:0;border-radius:999px;padding:14px 28px;font-size:1.3rem;font-weight:bold;box-shadow:0 5px 0 #d2569a;margin:8px 4px}
+.big:active{transform:translateY(3px);box-shadow:0 2px 0 #d2569a}
+.big.alt{background:#b7e4ff;box-shadow:0 5px 0 #6fb4de}
+.big:disabled{opacity:.4}
+.grid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.opt{background:#fff;border:4px solid #eadcff;border-radius:18px;padding:4px;width:104px}
+.opt.sel{border-color:var(--pink);background:#fff0f8}
+.opt svg{width:100%;height:auto;display:block}
+.sw{width:54px;height:54px;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 3px #eadcff}
+.sw.sel{box-shadow:0 0 0 5px var(--ink)}
+.opt .lbl{font-size:.85rem;font-weight:bold}
+#preview{width:min(70vw,300px);margin:0 auto}
+.steps{display:flex;justify-content:center;gap:6px;margin:6px 0 2px}
+.dot{width:12px;height:12px;border-radius:50%;background:#d9c3f5}.dot.on{background:var(--pink)}
+.bubble{background:#fff;border-radius:16px;padding:6px 10px;font-size:.9rem;display:inline-block;box-shadow:0 3px 0 #d9c3f5}
+input[type=text]{font:inherit;font-size:1.2rem;border:4px solid #eadcff;border-radius:14px;padding:8px 12px;width:80%;max-width:300px;text-align:center}
+#stage{width:100%;height:auto;border-radius:22px;box-shadow:0 6px 0 #d9c3f5;background:#bfe9ff}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.small{font-size:.85rem;opacity:.75}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ---------- data ----------
+const COLORS=[["Pink","#ff9ecf"],["Purple","#b98cff"],["Blue","#7fc4ff"],["Teal","#6fe0d0"],["Green","#8be28b"],["Yellow","#ffe66d"],["Orange","#ffb067"],["Red","#ff6b6b"],["White","#ffffff"],["Black","#4b4b57"],["Rainbow","rainbow"]];
+const FACES=["smile","omg","wink","heart","silly","sleepy","surprised","cool"];
+const FACE_NAMES={smile:"Smiley",omg:"OMG!",wink:"Wink",heart:"Heart eyes",silly:"Silly",sleepy:"Sleepy",surprised:"Wow",cool:"Cool"};
+const PATTERNS=["none","stars","hearts","stripes","spots"];
+const HORNS=["#ffd84d","#ff9ecf","#b98cff","#7fc4ff","#6fe0d0","#ff6b6b","rainbow"];
+const MANES=COLORS.filter(c=>c[0]!="White");
+const TREATS=[["Cupcakes","🧁"],["Cookies","🍪"],["Ice cream","🍦"],["Strawberries","🍓"],["Sandwiches","🥪"],["Donuts","🍩"]];
+const CUPS=["Teacup","Fancy cup","Star cup"];
+const AI_NAMES=["Sprinkles","Pinkie Pie","Teeny Greeny","Blacky","Bluey Hooey","Tealini","Violet"];
+const SAYS=["I picked my favorite colors!","Yay, a tea party!","Ooh, so sparkly!","Can I have a cupcake?","This is the best day ever!","OMG, I love your unicorn!"];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const col=(c,id)=>c==="rainbow"?`url(#rb${id})`:c;
+let uid=0;
+
+// ---------- unicorn svg ----------
+function face(f,cx,cy){
+ const eye=(x,y,k)=>{
+  if(k==="heart")return `<path transform="translate(${x} ${y}) scale(.9)" d="M0 4 C-9 -4 -5 -9 0 -4 C5 -9 9 -4 0 4Z" fill="#ff3d81"/>`;
+  if(k==="closed")return `<path d="M${x-5} ${y} q5 5 10 0" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  if(k==="wide")return `<circle cx="${x}" cy="${y}" r="7" fill="#fff" stroke="#333" stroke-width="2"/><circle cx="${x}" cy="${y}" r="3" fill="#333"/>`;
+  if(k==="cool")return `<rect x="${x-8}" y="${y-5}" width="16" height="10" rx="4" fill="#222"/>`;
+  return `<circle cx="${x}" cy="${y}" r="4.5" fill="#333"/><circle cx="${x+1.5}" cy="${y-1.5}" r="1.5" fill="#fff"/>`;
+ };
+ const L=cx-14,R=cx+14,Y=cy-4;let e="",m="";
+ switch(f){
+  case"omg":e=eye(L,Y,"wide")+eye(R,Y,"wide");m=`<ellipse cx="${cx}" cy="${cy+16}" rx="6" ry="9" fill="#7a2147"/><ellipse cx="${cx}" cy="${cy+19}" rx="3.5" ry="4" fill="#ff7a9c"/>`;break;
+  case"wink":e=eye(L,Y)+eye(R,Y,"closed");m=`<path d="M${cx-9} ${cy+11} q9 10 18 0" stroke="#7a2147" stroke-width="3" fill="none" stroke-linecap="round"/>`;break;
+  case"heart":e=eye(L,Y,"heart")+eye(R,Y,"heart");m=`<path d="M${cx-9} ${cy+11} q9 10 18 0" stroke="#7a2147" stroke-width="3" fill="none" stroke-linecap="round"/>`;break;
+  case"silly":e=eye(L,Y-2,"wide")+eye(R,Y+2);m=`<path d="M${cx-8} ${cy+12} q8 6 16 0" stroke="#7a2147" stroke-width="3" fill="none"/><path d="M${cx-2} ${cy+14} q0 12 7 8 q2-4 -1-8" fill="#ff7a9c"/>`;break;
+  case"sleepy":e=eye(L,Y,"closed")+eye(R,Y,"closed");m=`<path d="M${cx-6} ${cy+14} q6 4 12 0" stroke="#7a2147" stroke-width="3" fill="none" stroke-linecap="round"/><text x="${cx+22}" y="${cy-18}" font-size="14" fill="#6a5acd">z</text>`;break;
+  case"surprised":e=eye(L,Y)+eye(R,Y);m=`<circle cx="${cx}" cy="${cy+15}" r="5" fill="#7a2147"/>`;break;
+  case"cool":e=eye(L,Y,"cool")+eye(R,Y,"cool");m=`<path d="M${cx-9} ${cy+12} q9 7 18 -1" stroke="#7a2147" stroke-width="3" fill="none" stroke-linecap="round"/>`;break;
+  default:e=eye(L,Y)+eye(R,Y);m=`<path d="M${cx-10} ${cy+10} q10 12 20 0" stroke="#7a2147" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+ }
+ return e+m+`<ellipse cx="${cx-24}" cy="${cy+8}" rx="6" ry="4" fill="#ff9ec0" opacity=".6"/><ellipse cx="${cx+24}" cy="${cy+8}" rx="6" ry="4" fill="#ff9ec0" opacity=".6"/>`;
+}
+function pattern(p,id){
+ const c="rgba(255,255,255,.75)";let s="";
+ if(p==="stars")[[70,112],[100,125],[130,108],[85,140],[115,142]].forEach(([x,y])=>s+=`<text x="${x}" y="${y}" font-size="14" text-anchor="middle" fill="${c}">★</text>`);
+ if(p==="hearts")[[70,112],[100,125],[130,108],[85,140],[115,142]].forEach(([x,y])=>s+=`<text x="${x}" y="${y}" font-size="14" text-anchor="middle" fill="${c}">♥</text>`);
+ if(p==="stripes")for(let i=0;i<4;i++)s+=`<rect x="${72+i*17}" y="95" width="7" height="55" fill="${c}" clip-path="url(#bc${id})"/>`;
+ if(p==="spots")[[72,112],[98,126],[126,108],[88,142],[116,140]].forEach(([x,y])=>s+=`<circle cx="${x}" cy="${y}" r="6" fill="${c}"/>`);
+ return s;
+}
+function unicorn(u,opt={}){
+ const id=++uid, mane=col(u.mane,id), body=col(u.body,id), horn=col(u.horn,id);
+ const head={x:148,y:70};
+ return `<svg viewBox="0 0 220 200" ${opt.cls?`class="${opt.cls}"`:""}>
+ <defs>
+  <linearGradient id="rb${id}" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ff6b6b"/><stop offset=".25" stop-color="#ffd84d"/><stop offset=".5" stop-color="#8be28b"/><stop offset=".75" stop-color="#7fc4ff"/><stop offset="1" stop-color="#b98cff"/></linearGradient>
+  <clipPath id="bc${id}"><ellipse cx="100" cy="125" rx="52" ry="34"/></clipPath>
+ </defs>
+ <!-- tail -->
+ <path d="M52 118 C20 100 18 150 36 172 C30 150 44 140 56 140Z" fill="${mane}" stroke="#0002" stroke-width="2"/>
+ <!-- back legs -->
+ <rect x="62" y="140" width="15" height="42" rx="7" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <rect x="82" y="144" width="15" height="40" rx="7" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <!-- body -->
+ <ellipse cx="100" cy="125" rx="52" ry="34" fill="${body}" stroke="#0002" stroke-width="2"/>
+ ${pattern(u.pattern,id)}
+ <!-- front legs -->
+ <rect x="112" y="144" width="15" height="40" rx="7" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <rect x="130" y="140" width="15" height="42" rx="7" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <g fill="#8a6bb8"><rect x="62" y="176" width="15" height="7" rx="3"/><rect x="82" y="178" width="15" height="7" rx="3"/><rect x="112" y="178" width="15" height="7" rx="3"/><rect x="130" y="176" width="15" height="7" rx="3"/></g>
+ <!-- neck + head -->
+ <path d="M118 100 L136 52 L176 70 L152 112Z" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <!-- mane -->
+ <path d="M132 40 C108 44 104 70 116 96 C110 78 128 64 142 60Z" fill="${mane}" stroke="#0002" stroke-width="2"/>
+ <path d="M118 96 C98 92 96 76 108 62 C108 78 124 82 126 90Z" fill="${mane}"/>
+ <circle cx="${head.x}" cy="${head.y}" r="34" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <!-- ears -->
+ <path d="M126 44 L120 20 L140 36Z" fill="${body}" stroke="#0002" stroke-width="2"/>
+ <path d="M126 40 L123 27 L134 36Z" fill="#ffb3d1"/>
+ <!-- horn -->
+ <path d="M146 38 L158 -2 L168 40Z" fill="${horn}" stroke="#0003" stroke-width="2"/>
+ <path d="M149 28 L166 30 M151 18 L163 20 M154 9 L161 10" stroke="#fff8" stroke-width="2"/>
+ <!-- forelock -->
+ <path d="M126 50 C140 38 160 40 170 56 C150 46 138 54 126 62Z" fill="${mane}"/>
+ <!-- snout -->
+ <ellipse cx="170" cy="82" rx="14" ry="11" fill="${body}" opacity=".0"/>
+ ${face(u.face,150,78)}
+ ${opt.name?`<text x="110" y="198" text-anchor="middle" font-size="14" font-weight="bold" fill="#4a2a6b">${u.name||""}</text>`:""}
+ </svg>`;
+}
+const swatch=(c,sel,attr)=>`<button class="sw ${sel?"sel":""}" ${attr} style="background:${c==="rainbow"?"linear-gradient(135deg,#ff6b6b,#ffd84d,#8be28b,#7fc4ff,#b98cff)":c}" aria-label="${c}"></button>`;
+
+// ---------- state ----------
+const S={mode:null,step:0,players:[],cur:0,party:{},guests:[]};
+const newUni=()=>({name:"",body:"#ffffff",mane:"#ff9ecf",horn:"#ffd84d",face:"smile",pattern:"none"});
+const newParty=()=>({blanket:"#ff9ecf",cup:"#b98cff",pot:"#7fc4ff",treat:0});
+const STEPS=["Color","Face","Horn","Mane","Body","Party!"];
+const app=document.getElementById("app");
+const dots=()=>`<div class="steps">${STEPS.map((_,i)=>`<span class="dot ${i<=S.step?"on":""}"></span>`).join("")}</div>`;
+const me=()=>S.players[S.cur];
+
+// ---------- screens ----------
+function home(){
+ app.innerHTML=`<h1>🦄 TEA PARTY 🫖</h1>
+ <div class="card"><div id="preview">${unicorn({...newUni(),mane:"rainbow",face:"heart",pattern:"stars"})}</div>
+ <p>Make your unicorn and throw the best tea party ever!</p>
+ <button class="big" id="ai">Play with unicorn friends</button><br>
+ <button class="big alt" id="fr">Play with a real friend</button></div>`;
+ document.getElementById("ai").onclick=()=>start("ai");
+ document.getElementById("fr").onclick=()=>start("friend");
+}
+function start(mode){S.mode=mode;S.players=mode==="friend"?[newUni(),newUni()]:[newUni()];S.party=[newParty(),newParty()];S.cur=0;S.step=0;design();}
+
+function design(){
+ const u=me(),st=S.step;let title="",body="";
+ if(st===0){title="Pick your unicorn's color!";
+  body=`<div class="grid">${COLORS.map(c=>swatch(c[1],u.body===c[1],`data-k="body" data-v="${c[1]}"`)).join("")}</div>
+  <p class="small">Tap a color. Rainbow unicorns are extra magical!</p>`;}
+ if(st===1){title="Pick a face!";
+  body=`<div class="grid">${FACES.map(f=>`<button class="opt ${u.face===f?"sel":""}" data-k="face" data-v="${f}">${unicorn({...u,face:f})}<div class="lbl">${FACE_NAMES[f]}</div></button>`).join("")}</div>`;}
+ if(st===2){title="Pick your horn color!";
+  body=`<div class="grid">${HORNS.map(c=>swatch(c,u.horn===c,`data-k="horn" data-v="${c}"`)).join("")}</div>`;}
+ if(st===3){title="Pick your mane and tail!";
+  body=`<div class="grid">${MANES.map(c=>swatch(c[1],u.mane===c[1],`data-k="mane" data-v="${c[1]}"`)).join("")}</div>`;}
+ if(st===4){title="Make your body sparkly!";
+  body=`<div class="grid">${PATTERNS.map(p=>`<button class="opt ${u.pattern===p?"sel":""}" data-k="pattern" data-v="${p}">${unicorn({...u,pattern:p})}<div class="lbl">${p==="none"?"Plain":p[0].toUpperCase()+p.slice(1)}</div></button>`).join("")}</div>
+  <p>Paint the body again:</p><div class="grid">${COLORS.map(c=>swatch(c[1],u.body===c[1],`data-k="body" data-v="${c[1]}"`)).join("")}</div>`;}
+ if(st===5){title="Name your unicorn!";
+  body=`<input type="text" id="nm" maxlength="14" placeholder="Unicorn name" value="${u.name}">`;}
+ const who=S.mode==="friend"?`<div class="bubble">Player ${S.cur+1}'s turn</div>`:"";
+ app.innerHTML=`${who}<h2>${title}</h2>${dots()}
+ <div class="card"><div id="preview">${unicorn(u,{name:true})}</div></div>
+ <div class="card">${body}</div>
+ <div class="row">${st>0?`<button class="big alt" id="back">◀ Back</button>`:""}<button class="big" id="next">${st===5?"Tea party! ▶":"Next ▶"}</button></div>`;
+ app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{u[b.dataset.k]=b.dataset.v;design();});
+ const nm=document.getElementById("nm");if(nm)nm.oninput=()=>{u.name=nm.value;};
+ document.getElementById("next").onclick=()=>{
+  if(st===5){u.name=(document.getElementById("nm").value||"").trim()||pick(AI_NAMES);setupParty();}
+  else{S.step++;design();}};
+ const bk=document.getElementById("back");if(bk)bk.onclick=()=>{S.step--;design();};
+}
+
+function setupParty(){
+ const p=S.party[S.cur],u=me();
+ const sw=(k)=>`<div class="grid">${COLORS.filter(c=>c[1]!=="rainbow").map(c=>swatch(c[1],p[k]===c[1],`data-pk="${k}" data-v="${c[1]}"`)).join("")}</div>`;
+ const who=S.mode==="friend"?`<div class="bubble">${u.name}'s party picks</div>`:"";
+ app.innerHTML=`${who}<h2>Plan your tea party!</h2>
+ <div class="card"><b>Blanket / carpet color</b>${sw("blanket")}</div>
+ <div class="card"><b>Cup color</b>${sw("cup")}</div>
+ <div class="card"><b>Teapot color</b>${sw("pot")}</div>
+ <div class="card"><b>Yummy treat</b><div class="grid">${TREATS.map((t,i)=>`<button class="opt ${p.treat===i?"sel":""}" data-tr="${i}" style="font-size:2.2rem">${t[1]}<div class="lbl">${t[0]}</div></button>`).join("")}</div></div>
+ <button class="big" id="go">Invite everyone! 🎉</button>`;
+ app.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>{p[b.dataset.pk]=b.dataset.v;setupParty();});
+ app.querySelectorAll("[data-tr]").forEach(b=>b.onclick=()=>{p.treat=+b.dataset.tr;setupParty();});
+ document.getElementById("go").onclick=()=>{
+  if(S.mode==="friend"&&S.cur===0){S.cur=1;S.step=0;handoff();}
+  else party();};
+}
+function handoff(){
+ app.innerHTML=`<h1>Pass it to your friend!</h1><div class="card"><p style="font-size:3rem">🦄➡️🦄</p><p>Player 2, it's your turn to make a unicorn and plan your party picks.</p><button class="big" id="ok">I'm ready!</button></div>`;
+ document.getElementById("ok").onclick=design;
+}
+
+function randAI(n){
+ const used=new Set(S.players.map(p=>p.name)),names=AI_NAMES.filter(x=>!used.has(x)).sort(()=>Math.random()-.5);
+ return Array.from({length:n},(_,i)=>{
+  const body=pick(COLORS)[1],mane=pick(MANES.filter(c=>c[1]!==body))[1];
+  return {name:names[i%names.length],body,mane,horn:pick(HORNS),face:pick(FACES),pattern:pick(PATTERNS),
+   cup:pick(COLORS.filter(c=>c[1]!=="rainbow"))[1],treat:Math.floor(Math.random()*TREATS.length)};});
+}
+
+function party(){
+ // guests: AI unicorns (each with their own different look and cup color), or the 2nd real friend
+ const humans=S.players.map((u,i)=>({...u,cup:S.party[i].cup,treat:S.party[i].treat}));
+ const ai=randAI(S.mode==="friend"?3:4);
+ S.guests=[...humans,...ai];
+ S.blanket=S.party[0].blanket;S.pot=S.party[0].pot;
+ const W=700,H=460,n=S.guests.length;
+ const cols=n,gap=W/(cols+.4);
+ const seats=S.guests.map((g,i)=>({g,x:gap*(i+.7)}));
+ let svg=`<svg id="stage" viewBox="0 0 ${W} ${H}">
+  <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9bdcff"/><stop offset="1" stop-color="#e5f8ff"/></linearGradient></defs>
+  <rect width="${W}" height="${H}" fill="url(#sky)"/>
+  <circle cx="620" cy="60" r="34" fill="#fff3a0"/>
+  <ellipse cx="110" cy="70" rx="55" ry="20" fill="#fff"/><ellipse cx="150" cy="60" rx="40" ry="18" fill="#fff"/>
+  <rect y="230" width="${W}" height="${H-230}" fill="#9be48f"/>
+  <ellipse cx="${W/2}" cy="370" rx="330" ry="72" fill="${S.blanket}" stroke="#fff" stroke-width="6" stroke-dasharray="14 10"/>`;
+ // unicorns sit behind blanket centre line
+ seats.forEach((s,i)=>{svg+=`<g transform="translate(${s.x-70} ${200+ (i%2?18:0)}) scale(.64)">${unicorn(s.g,{name:true}).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</g>`;});
+ // table items
+ const potX=W/2;
+ svg+=`<g transform="translate(${potX-20} 330)"><ellipse cx="20" cy="40" rx="30" ry="9" fill="#0002"/><rect x="0" y="12" width="40" height="30" rx="14" fill="${S.pot}" stroke="#0003" stroke-width="2"/><path d="M40 20 q16 0 10 14" stroke="${S.pot}" stroke-width="5" fill="none"/><path d="M0 22 q-14 -6 -8 -14" stroke="${S.pot}" stroke-width="5" fill="none"/><rect x="12" y="5" width="16" height="8" rx="4" fill="${S.pot}" stroke="#0003" stroke-width="2"/></g>`;
+ S.guests.forEach((g,i)=>{
+  const x=60+i*((W-120)/(n-1||1)),y=378+(i%2?22:-6);
+  svg+=`<g transform="translate(${x-14} ${y})"><ellipse cx="14" cy="22" rx="18" ry="5" fill="#0002"/><path d="M0 4 h28 l-4 18 h-20z" fill="${g.cup}" stroke="#0003" stroke-width="2"/><path d="M28 8 q10 2 -2 10" stroke="${g.cup}" stroke-width="3" fill="none"/></g>
+  <text x="${x+30}" y="${y+20}" font-size="26">${TREATS[g.treat][1]}</text>`;
+ });
+ svg+=`<g id="kits"></g></svg>`;
+ const lines=S.guests.slice(S.players.length).map(g=>`<div class="bubble"><b>${g.name}:</b> ${pick(SAYS)} I brought ${TREATS[g.treat][0].toLowerCase()} and a ${COLORS.find(c=>c[1]===g.cup)?.[0].toLowerCase()||"fancy"} cup!</div>`).join(" ");
+ app.innerHTML=`<h1>🎉 TEA PARTY 🎉</h1>${svg}
+ <div class="card">${lines}</div>
+ <p class="small">Everyone picked different colors for their cups and treats!</p>
+ <div class="row"><button class="big" id="surp">🔔 Ice cream truck… and a surprise?</button><button class="big alt" id="again">Play again</button></div>`;
+ document.getElementById("again").onclick=home;
+ document.getElementById("surp").onclick=()=>{
+  const kits=document.getElementById("kits"),ks=["🐱","😺","😸","😻","🐈","😽","🐱"];
+  kits.innerHTML=ks.map((k,i)=>`<text x="${70+i*95}" y="${420+(i%2)*14}" font-size="34">${k}</text>`).join("");
+  document.getElementById("surp").textContent="🐱 Seven kittens! Everybody adopts one!";document.getElementById("surp").disabled=true;};
+}
+home();
+</script>
+</body>
+</html>
