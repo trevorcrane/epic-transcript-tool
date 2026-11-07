@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transcript Machine</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #100d16;
+      --card: #1b1524;
+      --ink: #f6f1ea;
+      --muted: #c8bed4;
+      --line: rgba(255,255,255,.14);
+      --danger: #ffb4c4;
+      --ok: #b6f3c8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 500px at 10% -10%, #3a215c 0%, transparent 55%), var(--bg);
+      color: var(--ink);
+    }
+    main { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+    h1 { font-size: 40px; line-height: 1.05; margin: 0 0 8px; }
+    .lede { color: var(--muted); max-width: 62ch; margin: 0 0 22px; }
+    form, .result, .note {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 18px;
+    }
+    label { display: block; font-weight: 700; margin-bottom: 8px; }
+    input[type="url"] {
+      width: 100%;
+      height: 54px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #0d0a12;
+      color: var(--ink);
+      padding: 0 14px;
+      font-size: 16px;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    button, .download {
+      height: 52px;
+      border: 0;
+      border-radius: 16px;
+      padding: 0 16px;
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    button:disabled, .download[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+    #grabShots { background: linear-gradient(115deg, #7b2ff7 0%, #c22ffc 48%, #f107a3 100%); }
+    #grab, .secondary { background: rgba(255,255,255,.14); }
+    #status { min-height: 1.4em; margin: 14px 2px; }
+    #status.error { color: var(--danger); }
+    #status.done { color: var(--ok); }
+    .result { margin-top: 18px; }
+    .result[hidden] { display: none; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0d0a12;
+      border-radius: 14px;
+      padding: 14px;
+      max-height: 420px;
+      overflow: auto;
+      margin: 0;
+    }
+    .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 12px; }
+    .shots[hidden], #shotsNote[hidden] { display: none; }
+    figure { margin: 0; background: #0d0a12; border-radius: 14px; overflow: hidden; }
+    img { width: 100%; height: 120px; object-fit: cover; display: block; background: #000; }
+    figcaption { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; }
+    figcaption button { height: 34px; border-radius: 10px; }
+    a { color: #f0c2ff; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Transcript Machine</h1>
+    <p class="lede">Paste a YouTube link. Transcript only reads the video's captions. Transcript with screenshots keeps that transcript and adds a timestamped gallery plus a ZIP. This server does not call a paid transcription service.</p>
+    <form id="form">
+      <label for="url">YouTube URL</label>
+      <input id="url" name="url" type="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/..." required>
+      <div class="actions">
+        <button id="grab" class="secondary" type="submit">Transcript only</button>
+        <button id="grabShots" type="button">Transcript with screenshots</button>
+      </div>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section class="result" id="result" hidden>
+      <p id="source"></p>
+      <div class="toolbar">
+        <button id="copyTranscript" class="secondary" type="button">Copy transcript</button>
+        <a id="downloadTranscript" class="download secondary" href="#" aria-disabled="true">Download transcript</a>
+      </div>
+      <pre id="transcript"></pre>
+      <p id="shotsNote" hidden></p>
+      <div id="shotsGallery" class="shots" hidden></div>
+    </section>
+  </main>
+  <script>
+    const els = {
+      form: document.getElementById('form'),
+      url: document.getElementById('url'),
+      grab: document.getElementById('grab'),
+      grabShots: document.getElementById('grabShots'),
+      status: document.getElementById('status'),
+      result: document.getElementById('result'),
+      source: document.getElementById('source'),
+      transcript: document.getElementById('transcript'),
+      copyTranscript: document.getElementById('copyTranscript'),
+      downloadTranscript: document.getElementById('downloadTranscript'),
+      shotsNote: document.getElementById('shotsNote'),
+      shotsGallery: document.getElementById('shotsGallery'),
+    };
+
+    function setBusy(busy) {
+      els.grab.disabled = busy;
+      els.grabShots.disabled = busy;
+      els.url.disabled = busy;
+    }
+
+    function setStatus(text, mode) {
+      els.status.textContent = text || '';
+      els.status.classList.toggle('error', mode === 'error');
+      els.status.classList.toggle('done', mode === 'done');
+    }
+
+    async function readJson(response) {
+      let data = null;
+      try { data = await response.json(); } catch (err) { data = null; }
+      if (!response.ok) {
+        const msg = (data && (data.error || data.detail)) || response.statusText || 'Request failed';
+        throw new Error(typeof msg === 'string' ? msg : 'Request failed');
+      }
+      return data;
+    }
+
+    async function transcribe(includeScreenshots) {
+      const url = els.url.value.trim();
+      if (!url) {
+        setStatus('Paste a YouTube link.', 'error');
+        return;
+      }
+      setBusy(true);
+      els.result.hidden = true;
+      setStatus(includeScreenshots ? 'Preparing transcript and screenshots...' : 'Preparing transcript...');
+      try {
+        const body = new URLSearchParams();
+        body.set('url', url);
+        if (includeScreenshots) body.set('include_screenshots', '1');
+        const started = await readJson(await fetch('/api/transcribe-url-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        }));
+        const jobId = started && started.job && started.job.id;
+        if (!jobId) throw new Error('Transcript job did not return an ID.');
+        const startedAt = Date.now();
+        for (let attempt = 0; attempt < 450; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, attempt < 5 ? 800 : 2000));
+          const data = await readJson(await fetch('/api/jobs/' + encodeURIComponent(jobId)));
+          const job = data.job || {};
+          const elapsed = Math.round((Date.now() - startedAt) / 1000);
+          if (job.message) setStatus(job.message + ' ' + elapsed + 's');
+          if (job.status === 'done' && job.record) {
+            renderResult(job.id, job.record, job.screenshots);
+            setStatus('Transcript ready.', 'done');
+            return;
+          }
+          if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');
+        }
+        throw new Error('That job is still running. Leave this page open and try the link again in a minute.');
+      } catch (err) {
+        setStatus(err.message || 'Request failed', 'error');
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    function renderResult(jobId, record, jobShots) {
+      const shots = (record && record.screenshots) || jobShots;
+      els.result.hidden = false;
+      els.source.textContent = (record && record.source) || '';
+      els.transcript.textContent = (record && record.transcript) || '';
+      if (jobId && record && record.transcript) {
+        els.downloadTranscript.href = '/api/jobs/' + encodeURIComponent(jobId) + '/transcript.txt';
+        els.downloadTranscript.setAttribute('aria-disabled', 'false');
+      }
+      renderScreenshots(shots);
+    }
+
+    function renderScreenshots(shots) {
+      els.shotsGallery.innerHTML = '';
+      if (!shots) {
+        els.shotsNote.hidden = true;
+        els.shotsGallery.hidden = true;
+        return;
+      }
+      if (shots.status === 'error') {
+        els.shotsNote.hidden = false;
+        els.shotsGallery.hidden = true;
+        els.shotsNote.textContent = shots.error || 'Screenshots could not be captured.';
+        return;
+      }
+      const frames = shots.frames || [];
+      if (!frames.length) {
+        els.shotsNote.hidden = true;
+        els.shotsGallery.hidden = true;
+        return;
+      }
+      els.shotsNote.hidden = false;
+      const total = shots.count || frames.length;
+      els.shotsNote.textContent = total === 1 ? '1 screenshot. ' : total + ' screenshots. ';
+      if ((shots.shown || frames.length) < total) {
+        els.shotsNote.textContent += 'Showing ' + (shots.shown || frames.length) + ' of ' + total + '. ';
+      }
+      if (shots.zip_url) {
+        const link = document.createElement('a');
+        link.href = shots.zip_url;
+        link.textContent = 'Download all screenshots';
+        els.shotsNote.appendChild(link);
+      }
+      els.shotsGallery.hidden = false;
+      frames.forEach((frame) => {
+        const card = document.createElement('figure');
+        const img = document.createElement('img');
+        img.src = frame.url;
+        img.alt = 'Screenshot at ' + (frame.timestamp || '');
+        const cap = document.createElement('figcaption');
+        const time = document.createElement('span');
+        time.textContent = frame.timestamp || '';
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.className = 'secondary';
+        copy.textContent = 'Copy';
+        copy.addEventListener('click', () => copyScreenshot(frame));
+        cap.append(time, copy);
+        card.append(img, cap);
+        els.shotsGallery.appendChild(card);
+      });
+    }
+
+    async function copyScreenshot(frame) {
+      try {
+        const response = await fetch(frame.url);
+        const blob = await response.blob();
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/jpeg']: blob })]);
+          setStatus('Copied screenshot at ' + (frame.timestamp || ''), 'done');
+          return;
+        }
+      } catch (err) {
+        /* Fall through to text so the timestamp is still copyable. */
+      }
+      try {
+        await navigator.clipboard.writeText('Screenshot at ' + (frame.timestamp || ''));
+        setStatus('Copied the screenshot time ' + (frame.timestamp || ''), 'done');
+      } catch (err) {
+        setStatus('Could not copy that screenshot.', 'error');
+      }
+    }
+
+    els.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      transcribe(false);
+    });
+    els.grabShots.addEventListener('click', () => transcribe(true));
+    els.copyTranscript.addEventListener('click', async () => {
+      const text = els.transcript.textContent || '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('Copied transcript.', 'done');
+      } catch (err) {
+        setStatus('Could not copy the transcript.', 'error');
+      }
+    });
+    els.downloadTranscript.addEventListener('click', (event) => {
+      if (els.downloadTranscript.getAttribute('aria-disabled') === 'true') event.preventDefault();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# New free-public service. Does not replace the existing iMac / Cloudflare site.
+services:
+  - type: web
+    name: epic-transcript-free-public
+    runtime: docker
+    plan: free
+    dockerfilePath: ./free_public/Dockerfile
+    dockerContext: ./free_public
+    healthCheckPath: /health
+    envVars:
+      - key: TRANSCRIPT_DATA_DIR
+        value: /tmp/transcript-data
+      - key: TRANSCRIPT_STATIC_DIR
+        value: /app/free_public/static
+      - key: PYTHONUNBUFFERED
+        value: "1"
