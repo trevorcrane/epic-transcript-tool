@@ -1,0 +1,66 @@
+{
+  "proves_new_eric_job": true,
+  "uses_precaptured_zip": false,
+  "url": "https://youtu.be/tTruM2VB9C0",
+  "video_id": "tTruM2VB9C0",
+  "cookies_used": false,
+  "proxy_used": false,
+  "paid_provider_used": false,
+  "cloudflare_tunnel_7844_used": false,
+  "public_url": null,
+  "hosting": {
+    "render_api_key_present": false,
+    "render_cli_present": false,
+    "blocker": "No Render API key and no render CLI in this environment. Composio has no Render connection here. Do not sign up or spend. A static page is not a running transcriber."
+  },
+  "health": {
+    "ok": true,
+    "ready": true,
+    "runtime": "free-public",
+    "transcription": "captions-only",
+    "whisper": false,
+    "paid_providers": [],
+    "ffmpeg": true,
+    "yt_dlp": true,
+    "node": true,
+    "missing": [],
+    "memory_budget_mb": 512
+  },
+  "server_rss_kb": 53444,
+  "start_status": 202,
+  "job_id": "a61c8366acc3",
+  "poll_status": 200,
+  "job_status": "error",
+  "public_error": "YouTube refused this server: Sign in to confirm you're not a bot. This runtime did not use cookies, a proxy, or a paid transcription service.",
+  "method": null,
+  "word_count": null,
+  "transcript_present": false,
+  "transcript_head": "",
+  "screenshot_status": null,
+  "screenshot_count": null,
+  "screenshot_error": null,
+  "zip_downloaded": false,
+  "upstream": [
+    {
+      "tool": "yt-dlp",
+      "js_runtime": "/exec-daemon/node",
+      "exit_code": 1,
+      "lines": [
+        "[debug] [youtube] tTruM2VB9C0: tv_samsung player response playability status: LOGIN_REQUIRED",
+        "[debug] [youtube] tTruM2VB9C0: visionos player response playability status: LOGIN_REQUIRED",
+        "[debug] [youtube] tTruM2VB9C0: web player response playability status: LOGIN_REQUIRED",
+        "ERROR: [youtube] tTruM2VB9C0: Sign in to confirm you\u2019re not a bot. This helps protect our community."
+      ]
+    },
+    {
+      "tool": "youtube-transcript-api",
+      "ok": false,
+      "type": "RequestBlocked",
+      "error": "Could not retrieve a transcript for the video https://www.youtube.com/watch?v=tTruM2VB9C0! This is most likely caused by: YouTube is blocking requests from your IP. This usually is due to one of the following reasons: - You have done too many requests and your IP has been blocked by YouTube - You are doing requests from an IP belonging to a cloud provider (like AWS, Google Cloud Platform, Azure, etc.). Unfortunately, most IPs from cloud providers are blocked by YouTube.",
+      "lines": [
+        "Could not retrieve a transcript for the video https://www.youtube.com/watch?v=tTruM2VB9C0! This is most likely caused by: YouTube is blocking requests from your IP. This usually is due to one of the following reasons: - You have done too many requests and your IP has been blocked by YouTube - You are doing requests from an IP belonging to a cloud provider (like AWS, Google Cloud Platform, Azure, etc.). Unfortunately, most IPs from cloud providers are blocked by YouTube."
+      ]
+    }
+  ],
+  "eric_url_ingestion_succeeded": false
+}

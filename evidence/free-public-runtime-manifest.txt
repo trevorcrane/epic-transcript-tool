@@ -1,0 +1,18 @@
+sha256 fcbdb8b21d5359570971507f3c65e75101e86a97a21bec4ad302773669100682
+bytes 48478
+files 15
+render.yaml
+free_public/Dockerfile
+free_public/requirements.txt
+free_public/README.md
+free_public/DEPLOY.md
+free_public/eric_proof.py
+free_public/src/free_public/__init__.py
+free_public/src/free_public/screenshots.py
+free_public/src/free_public/captions.py
+free_public/src/free_public/app.py
+free_public/src/free_public/static/index.html
+free_public/src/free_public/__pycache__/screenshots.cpython-312.pyc
+free_public/src/free_public/__pycache__/captions.cpython-312.pyc
+free_public/src/free_public/__pycache__/__init__.cpython-312.pyc
+free_public/src/free_public/__pycache__/app.cpython-312.pyc
