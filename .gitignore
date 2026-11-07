@@ -4,6 +4,8 @@ __pycache__/
 .env
 data/*.db
 data/*.db-*
+data/screenshots/
+backups/
 .DS_Store
 .pytest_cache/
 
