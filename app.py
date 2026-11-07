@@ -26,6 +26,14 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
+from screenshots import (
+    capture_from_url,
+    public_payload,
+    safe_frame_path,
+    safe_job_dir,
+    screenshot_error_payload,
+)
+
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
@@ -52,6 +60,7 @@ URL_JOBS_PATH = DATA_DIR / "url_jobs.json"
 PHASE3_GEMINI_USAGE_PATH = DATA_DIR / "phase3_gemini_usage.json"
 URL_JOBS: dict[str, dict] = {}
 URL_JOBS_LOCK = threading.Lock()
+SCREENSHOT_SLOTS = threading.BoundedSemaphore(1)
 PHASE3_GEMINI_USAGE_LOCK = threading.Lock()
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -1804,7 +1813,62 @@ def transcribe_public_media_url_to_record(url: str, owner_token: str, started: O
         shutil.rmtree(work_dir, ignore_errors=True)
 
 
-def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure: bool = False) -> None:
+def _shot_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def prune_screenshot_dirs(keep: Optional[set[str]] = None) -> int:
+    """Delete expired screenshot folders only. Transcript files and job JSON stay put."""
+    root = DATA_DIR / "screenshots"
+    if not root.is_dir():
+        return 0
+    keep = keep or set()
+    max_age = _shot_int("SCREENSHOT_RETENTION_HOURS", 24) * 3600
+    now = time.time()
+    removed = 0
+    for child in list(root.iterdir()):
+        if child.name in keep or child.is_symlink() or not child.is_dir():
+            continue
+        if not re.fullmatch(r"[0-9a-f]{12}", child.name):
+            continue
+        try:
+            if now - child.stat().st_mtime <= max_age:
+                continue
+            shutil.rmtree(child)
+            removed += 1
+        except OSError:
+            continue
+    return removed
+
+
+def _attach_screenshots(job_id: str, url: str) -> dict:
+    """Capture screenshots after a transcript. Failures never fail the job."""
+    acquired = SCREENSHOT_SLOTS.acquire(timeout=_shot_int("SCREENSHOT_SLOT_WAIT_SECONDS", 90))
+    if not acquired:
+        return screenshot_error_payload()
+    out_dir = DATA_DIR / "screenshots" / job_id
+    try:
+        prune_screenshot_dirs(keep={job_id})
+        yt_bin = resolve_binary("yt-dlp", "YT_DLP_BIN", YT_DLP_BINARY_CANDIDATES)
+        ff_bin = resolve_binary("ffmpeg", "FFMPEG_BIN", FFMPEG_BINARY_CANDIDATES)
+        result = capture_from_url(url, out_dir, str(yt_bin), str(ff_bin))
+        payload = public_payload(job_id, result)
+        if payload.get("status") != "done" or not payload.get("frames"):
+            shutil.rmtree(out_dir, ignore_errors=True)
+            return screenshot_error_payload()
+        return payload
+    except Exception:
+        logging.exception("screenshot capture failed for job %s", job_id)
+        shutil.rmtree(out_dir, ignore_errors=True)
+        return screenshot_error_payload()
+    finally:
+        SCREENSHOT_SLOTS.release()
+
+
+def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure: bool = False, include_screenshots: bool = False) -> None:
     with URL_JOBS_LOCK:
         URL_JOBS[job_id].update({"status": "running", "started_at": time.time()})
         save_url_jobs_locked()
@@ -1818,8 +1882,21 @@ def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure
             with URL_JOBS_LOCK:
                 URL_JOBS[job_id].update({"stage": "media_url", "message": "Checking public media URL for captions or audio fallback", "percent": 10})
             rec = transcribe_public_media_url_to_record(url, owner_token, started=started)
+        screenshots = None
+        if include_screenshots:
+            if isinstance(rec, dict):
+                rec = dict(rec)
+            with URL_JOBS_LOCK:
+                URL_JOBS[job_id].update({"stage": "screenshots", "message": "Grabbing screenshots", "percent": 90, "record": rec})
+                save_url_jobs_locked()
+            screenshots = _attach_screenshots(job_id, url)
+            if isinstance(rec, dict):
+                rec["screenshots"] = screenshots
         with URL_JOBS_LOCK:
-            URL_JOBS[job_id].update({"status": "done", "record": rec, "finished_at": time.time(), "percent": 100})
+            payload = {"status": "done", "record": rec, "finished_at": time.time(), "percent": 100}
+            if screenshots is not None:
+                payload["screenshots"] = screenshots
+            URL_JOBS[job_id].update(payload)
             save_url_jobs_locked()
     except HTTPException as e:
         with URL_JOBS_LOCK:
@@ -1836,19 +1913,62 @@ def run_url_job(job_id: str, url: str, owner_token: str, phase1_qc_force_failure
 
 
 @app.post("/api/transcribe-url-job")
-def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None), phase1_qc_force_failure: Optional[str] = Form(None)) -> JSONResponse:
+def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(None), phase1_qc_force_failure: Optional[str] = Form(None), include_screenshots: Optional[str] = Form(None)) -> JSONResponse:
     url = (url or "").strip()
     owner_token = valid_owner_token(owner) or secrets.token_urlsafe(32)
     if not re.match(r"^https?://", url, re.IGNORECASE):
         raise HTTPException(400, "URL must start with http:// or https://")
     job_id = uuid.uuid4().hex[:12]
+    want_shots = str(include_screenshots or "").strip().lower() in {"1", "true", "yes", "on"}
     with URL_JOBS_LOCK:
-        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time()}
+        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time(), "include_screenshots": want_shots}
         save_url_jobs_locked()
     force_failure = (phase1_qc_force_failure or "").lower() in {"1", "true", "yes"} and url == "https://example.com/hermes-forced-failure.mp3"
-    thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token, force_failure), daemon=True)
+    thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token, force_failure, want_shots), daemon=True)
     thread.start()
     return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
+
+
+def _screenshot_job(job_id: str) -> dict:
+    with URL_JOBS_LOCK:
+        if job_id not in URL_JOBS:
+            load_url_jobs_locked()
+        job = dict(URL_JOBS.get(job_id) or {})
+    if not job:
+        raise HTTPException(404, "Screenshots not found")
+    shots = job.get("screenshots") or {}
+    if shots.get("status") != "done" or not shots.get("frames"):
+        raise HTTPException(404, "Screenshots not found")
+    return job
+
+
+@app.get("/api/jobs/{job_id}/screenshots.zip")
+def api_job_screenshots_zip(job_id: str):
+    job = _screenshot_job(job_id)
+    try:
+        job_dir = safe_job_dir(DATA_DIR / "screenshots", job_id)
+    except ValueError as exc:
+        raise HTTPException(404, "Screenshots not found") from exc
+    zip_path = job_dir / "screenshots.zip"
+    if not zip_path.is_file() or not (job.get("screenshots") or {}).get("zip_url"):
+        raise HTTPException(404, "Screenshots not found")
+    return FileResponse(zip_path, media_type="application/zip", filename="screenshots.zip")
+
+
+@app.get("/api/jobs/{job_id}/screenshots/{filename}")
+def api_job_screenshot(job_id: str, filename: str):
+    job = _screenshot_job(job_id)
+    names = {frame.get("filename") for frame in (job.get("screenshots") or {}).get("frames") or []}
+    if filename not in names:
+        raise HTTPException(404, "Screenshot not found")
+    try:
+        job_dir = safe_job_dir(DATA_DIR / "screenshots", job_id)
+        path = safe_frame_path(job_dir, filename)
+    except ValueError as exc:
+        raise HTTPException(404, "Screenshot not found") from exc
+    if not path.is_file():
+        raise HTTPException(404, "Screenshot not found")
+    return FileResponse(path, media_type="image/jpeg")
 
 
 @app.get("/api/jobs/{job_id}")

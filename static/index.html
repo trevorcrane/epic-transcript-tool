@@ -117,6 +117,16 @@
   .grab-btn::after { content:' ↗'; opacity:.8; }
   .grab-btn:hover:not(:disabled) { transform:translateY(-1px); filter:saturate(1.1) brightness(1.04); }
   .grab-btn:disabled { opacity:.55; cursor:not-allowed; }
+  .grab-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .grab-btn-secondary { background:rgba(255,255,255,.14); box-shadow:none; }
+  .grab-btn-secondary:hover:not(:disabled) { background:rgba(255,255,255,.22); filter:none; }
+  .shots-note { margin:0 24px 14px; color:#3a3a42; font-size:14px; line-height:1.45; }
+  .shots-zip { border:0; background:transparent; color:#7b2ff7; font-weight:800; cursor:pointer; padding:0; font-size:14px; }
+  .shots-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin:0 24px 18px; }
+  .shot-card { margin:0; background:#f4f1ea; border:1px solid rgba(0,0,0,.06); border-radius:14px; overflow:hidden; }
+  .shot-card img { display:block; width:100%; height:122px; object-fit:cover; background:#eceae4; }
+  .shot-card figcaption { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; font-size:12px; color:#3a3a42; }
+  .shot-copy { border:1px solid rgba(0,0,0,.1); border-radius:10px; padding:5px 10px; cursor:pointer; color:#171719; background:#fff; font-size:12px; font-weight:800; }
   .divider { display:flex; align-items:center; justify-content:center; gap:14px; margin:22px 8px 14px; color:rgba(255,255,255,.34); font-size:11px; letter-spacing:.18em; text-transform:uppercase; }
   .divider::before, .divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.10); }
   .input-tools { display:flex; gap:8px; align-items:stretch; margin-top:10px; }
@@ -238,6 +248,7 @@
     .input-tools .url-row { grid-template-columns:1fr; }
     .url-input { height:54px; }
     .grab-btn { width:100%; height:56px; }
+    .grab-row { grid-template-columns:1fr; }
     .step-grid { grid-template-columns:1fr; gap:48px; }
     .machine-card-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
 
@@ -291,12 +302,15 @@
             <div class="input-tools">
               <div class="url-row">
                 <input id="url" class="url-input" type="url" placeholder="Enter URL..." inputmode="url" autocomplete="off" spellcheck="false" />
-                <button id="grab" class="grab-btn" type="submit">Get Transcript</button>
               </div>
               <label class="upload-mini" id="drop" for="file" role="button" tabindex="0" aria-label="Upload audio, video, or transcript file" title="Upload">
                 <span id="uploadBtn" aria-hidden="true">↥</span><span class="sr-only">Choose file</span>
                 <input id="file" type="file" accept=".mp3,.wav,.m4a,.aac,.flac,.ogg,.opus,.mp4,.mov,.mkv,.webm,.avi,.txt,.md,.srt,.vtt" />
               </label>
+            </div>
+            <div class="grab-row">
+              <button id="grab" class="grab-btn grab-btn-secondary" type="submit">Transcript only</button>
+              <button id="grabShots" class="grab-btn" type="button">Transcript with screenshots</button>
             </div>
             <div class="file-name" id="fileName" aria-live="polite"></div>
             <label class="browser-option"><input id="browserLocal" type="checkbox" checked /> Prefer private browser transcription for uploads</label>
@@ -319,7 +333,7 @@
     <h2>How it works</h2>
     <div class="step-grid">
       <div class="step-card"><div class="step-number">1</div><h3>Copy the YouTube URL</h3><p>Copy the link from your browser's address bar, or use YouTube's Copy video URL option.</p></div>
-      <div class="step-card"><div class="step-number">2</div><h3>Paste the URL above</h3><p>Paste the YouTube link into the field above and click Get Transcript.</p></div>
+      <div class="step-card"><div class="step-number">2</div><h3>Paste the URL above</h3><p>Paste the YouTube link into the field above and choose Transcript only or Transcript with screenshots.</p></div>
       <div class="step-card"><div class="step-number">3</div><h3>View the YouTube transcript</h3><p>Read, copy, or download the transcript immediately. No email address is required.</p></div>
     </div>
   </section>
@@ -336,6 +350,7 @@
         </div>
         <div class="actions" aria-label="Transcript actions">
           <div class="copy-wrap" id="copyMenu">
+            <button class="btn" id="copyTranscriptBtn" type="button">Copy transcript</button>
             <button class="btn" id="copyBtn" type="button" aria-haspopup="true" aria-expanded="false">Copy ▾</button>
             <div class="download-menu-panel" role="menu" aria-label="Copy transcript">
               <button class="copy-option" type="button" role="menuitem" data-copy-format="txt">Copy .txt</button>
@@ -364,6 +379,8 @@
           <div class="analysis-head"><span id="analysisTitle">Video intelligence</span><button class="btn analysis-copy" id="copyAnalysisBtn" type="button" aria-label="Copy analysis result">⧉</button></div>
           <pre class="analysis-box" id="analysisBox"></pre>
         </div>
+        <div class="shots-note" id="shotsNote" hidden></div>
+        <div class="shots-gallery" id="shotsGallery" hidden></div>
         <div class="transcript-box" id="transcript"></div>
       </div>
     </div>
@@ -385,7 +402,7 @@
   <section class="faq-stage">
     <div class="shell">
       <h2>Frequently Asked Questions (FAQ)</h2>
-      <div class="faq-item"><button class="faq-q" id="faq-youtube-text-button" type="button" aria-expanded="false" aria-controls="faq-youtube-text-answer"><span>How do I transcribe a YouTube video to text?</span><span aria-hidden="true">⌄</span></button><div class="faq-a" id="faq-youtube-text-answer" role="region" aria-labelledby="faq-youtube-text-button" hidden>Paste the video's YouTube URL into the field at the top of this page and select Get Transcript. Your transcript will appear below the form.</div></div>
+      <div class="faq-item"><button class="faq-q" id="faq-youtube-text-button" type="button" aria-expanded="false" aria-controls="faq-youtube-text-answer"><span>How do I transcribe a YouTube video to text?</span><span aria-hidden="true">⌄</span></button><div class="faq-a" id="faq-youtube-text-answer" role="region" aria-labelledby="faq-youtube-text-button" hidden>Paste the video's YouTube URL into the field at the top of this page and choose Transcript only or Transcript with screenshots. Your transcript will appear below the form.</div></div>
       <div class="faq-item"><button class="faq-q" id="faq-download-button" type="button" aria-expanded="false" aria-controls="faq-download-answer"><span>How do I download a YouTube transcript?</span><span aria-hidden="true">⌄</span></button><div class="faq-a" id="faq-download-answer" role="region" aria-labelledby="faq-download-button" hidden>After the transcript is generated, choose TXT, Markdown, SRT, or VTT. You can also copy the complete transcript with one click.</div></div>
       <div class="faq-item"><button class="faq-q" id="faq-free-button" type="button" aria-expanded="false" aria-controls="faq-free-answer"><span>Is the YouTube transcript machine free?</span><span aria-hidden="true">⌄</span></button><div class="faq-a" id="faq-free-answer" role="region" aria-labelledby="faq-free-button" hidden>Yes. You can use EPIC Transcript Machine without creating an account or entering an email address.</div></div>
       <div class="faq-item"><button class="faq-q" id="faq-transcript-button" type="button" aria-expanded="false" aria-controls="faq-transcript-answer"><span>What is a YouTube video transcript?</span><span aria-hidden="true">⌄</span></button><div class="faq-a" id="faq-transcript-answer" role="region" aria-labelledby="faq-transcript-button" hidden>A transcript is a written version of the spoken audio in a video. It makes the content easier to read, search, quote, and reuse.</div></div>
@@ -434,7 +451,8 @@
 
   const $ = (id) => document.getElementById(id);
   const els = {
-    form: $('form'), url: $('url'), grab: $('grab'),
+    form: $('form'), url: $('url'), grab: $('grab'), grabShots: $('grabShots'),
+    shotsNote: $('shotsNote'), shotsGallery: $('shotsGallery'), copyTranscriptBtn: $('copyTranscriptBtn'),
     file: $('file'), drop: $('drop'), fileName: $('fileName'),
     status: $('status'), statusText: $('statusText'),
     result: $('result'), source: $('resultSource'), method: $('resultMethod'),
@@ -447,6 +465,8 @@
   };
   let currentRecord = null;
   let currentAnalysis = null;
+  let wantScreenshots = false;
+  let shotObjectUrls = [];
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   const HISTORY_KEY = 'epicTranscriptHistory';
   function ownerToken() {
@@ -478,11 +498,12 @@
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  async function transcribeUrlWithJob(url) {
+  async function transcribeUrlWithJob(url, includeScreenshots) {
     const fd = new URLSearchParams();
     fd.append('url', url);
     fd.append('owner', ownerToken());
-    setStatus('Preparing transcript job...');
+    if (includeScreenshots) fd.append('include_screenshots', '1');
+    setStatus(includeScreenshots ? 'Preparing transcript and screenshots...' : 'Preparing transcript job...');
     const started = await jfetch('/api/transcribe-url-job', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd });
     const jobId = started && started.job && started.job.id;
     if (!jobId) throw new Error('Transcript job did not return an ID.');
@@ -492,7 +513,8 @@
       'Checking captions first...',
       'Downloading audio fallback...',
       'Transcribing with Whisper...',
-      'Finishing transcript...'
+      'Finishing transcript...',
+      'Grabbing screenshots...'
     ];
     const startedAt = Date.now();
     for (let attempt = 0; attempt < 150; attempt += 1) {
@@ -502,7 +524,16 @@
       await sleep(attempt < 6 ? 1000 : 2000);
       const data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
       const job = data.job || {};
-      if (job.status === 'done' && job.record) return job.record;
+      if (job.status === 'done' && job.record) {
+        const rec = job.record;
+        if (includeScreenshots) {
+          const shots = job.screenshots || rec.screenshots;
+          rec.screenshots = (shots && shots.status === 'error') ? shots : (shots && shots.status === 'done' && (shots.frames || []).length
+            ? shots
+            : { status: 'error', error: 'Screenshots could not be captured.', frames: [], count: 0, shown: 0, zip_url: null });
+        }
+        return rec;
+      }
       if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');
       if (job.message) {
         const percent = typeof job.percent === 'number' ? ` (${job.percent}%)` : '';
@@ -538,6 +569,116 @@
     showToast._t = setTimeout(() => els.toast.classList.remove('show'), 3000);
   }
 
+  function screenshotApiPath(url) {
+    if (typeof url !== 'string' || !url.startsWith('/api/jobs/') || url.includes('..') || url.includes('\\') || url.includes('://')) return '';
+    return url;
+  }
+
+  function clearShotPreviews() {
+    shotObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    shotObjectUrls = [];
+    if (els.shotsGallery) els.shotsGallery.innerHTML = '';
+  }
+
+  function renderScreenshots(rec) {
+    const note = els.shotsNote;
+    const gallery = els.shotsGallery;
+    clearShotPreviews();
+    if (!note || !gallery) return;
+    const shots = rec && rec.screenshots;
+    if (!shots) {
+      note.hidden = true;
+      note.textContent = '';
+      gallery.hidden = true;
+      return;
+    }
+    if (shots.status !== 'done' || !(shots.frames || []).length) {
+      note.hidden = false;
+      gallery.hidden = true;
+      note.textContent = shots.error || 'Screenshots could not be captured.';
+      return;
+    }
+    note.hidden = false;
+    note.textContent = '';
+    const total = shots.count || shots.frames.length;
+    const summary = document.createElement('span');
+    summary.textContent = total === 1 ? '1 screenshot. ' : `${total} screenshots. `;
+    note.appendChild(summary);
+    const zipPath = screenshotApiPath(shots.zip_url || '');
+    if (zipPath) {
+      const zip = document.createElement('button');
+      zip.type = 'button';
+      zip.className = 'shots-zip';
+      zip.textContent = 'Download ZIP';
+      zip.addEventListener('click', () => downloadScreenshotsZip(zipPath));
+      note.appendChild(zip);
+    }
+    gallery.hidden = false;
+    shots.frames.forEach((frame) => {
+      const path = screenshotApiPath(frame.url || '');
+      const card = document.createElement('figure');
+      card.className = 'shot-card';
+      const img = document.createElement('img');
+      img.alt = `Screenshot at ${frame.timestamp || ''}`;
+      const cap = document.createElement('figcaption');
+      const time = document.createElement('span');
+      time.textContent = frame.timestamp || '';
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.className = 'shot-copy';
+      copy.textContent = 'Copy image';
+      if (path) {
+        copy.addEventListener('click', () => copyScreenshot(path, frame.timestamp || ''));
+        fetch(apiUrl(path)).then(async (res) => {
+          if (!res.ok) throw new Error('missing');
+          const blob = await res.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          shotObjectUrls.push(objectUrl);
+          img.src = objectUrl;
+        }).catch(() => {
+          img.alt = `Screenshot at ${frame.timestamp || ''} is unavailable`;
+        });
+      }
+      cap.append(time, copy);
+      card.append(img, cap);
+      gallery.appendChild(card);
+    });
+  }
+
+  async function downloadScreenshotsZip(path) {
+    try {
+      const res = await fetch(apiUrl(path));
+      if (!res.ok) throw new Error('Could not download screenshots.');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = 'screenshots.zip';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+    } catch (err) {
+      setStatus('Could not download screenshots.', 'error');
+    }
+  }
+
+  async function copyScreenshot(path, timestamp) {
+    try {
+      const res = await fetch(apiUrl(path));
+      if (!res.ok) throw new Error('missing');
+      const blob = await res.blob();
+      const type = blob.type || 'image/jpeg';
+      if (navigator.clipboard && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+        showToast(`Copied image at ${timestamp}`);
+        return;
+      }
+    } catch (err) { /* text fallback below */ }
+    const ok = await copyTextToClipboard(`Screenshot at ${timestamp}`);
+    showToast(ok ? `Copied screenshot time ${timestamp}` : 'Could not copy that screenshot.', !ok);
+  }
+
   function renderResult(rec) {
     currentRecord = rec;
     els.source.textContent = rec.source || '(unknown source)';
@@ -550,6 +691,7 @@
     const proc = rec.processing_seconds ? ` · ${rec.processing_seconds.toFixed(1)}s` : '';
     els.method.textContent = `${methodLabel} · ${words.toLocaleString()} words${dur}${proc}`;
     els.transcript.textContent = rec.transcript || '';
+    renderScreenshots(rec);
     currentAnalysis = null;
     els.analysisPanel.classList.remove('show');
     els.analysisBox.textContent = '';
@@ -661,6 +803,9 @@ ${seg.text || ''}
     if (els.analysisPanel) els.analysisPanel.classList.remove('show');
     if (els.analysisBox) els.analysisBox.textContent = '';
     if (els.tapCopy) els.tapCopy.hidden = true;
+    clearShotPreviews();
+    if (els.shotsNote) { els.shotsNote.hidden = true; els.shotsNote.textContent = ''; }
+    if (els.shotsGallery) els.shotsGallery.hidden = true;
     els.url.value = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => els.url.focus(), 250);
@@ -684,6 +829,7 @@ ${seg.text || ''}
 
   function lockUI(locked) {
     els.grab.disabled = locked;
+    if (els.grabShots) els.grabShots.disabled = locked;
     els.url.disabled = locked;
     els.file.disabled = locked;
     els.drop.style.pointerEvents = locked ? 'none' : '';
@@ -697,22 +843,35 @@ ${seg.text || ''}
     }
   }
 
-  // URL submit
+  if (els.grabShots) els.grabShots.addEventListener('click', () => {
+    wantScreenshots = true;
+    if (typeof els.form.requestSubmit === 'function') els.form.requestSubmit();
+    else els.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  });
+
+  // URL submit. Transcript only is the default. Screenshot failures still show the transcript.
   els.form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const includeScreenshots = wantScreenshots;
+    wantScreenshots = false;
     const url = els.url.value.trim();
     if (!url) { els.url.focus(); return; }
     lockUI(true);
-    // Keep the previous transcript visible while a new URL runs, so failures never wipe useful output.
-    setStatus('Preparing transcript job...');
+    setStatus(includeScreenshots ? 'Preparing transcript and screenshots...' : 'Preparing transcript job...');
     try {
-      const record = await transcribeUrlWithJob(url);
-      setStatus('Done', 'done');
+      const record = await transcribeUrlWithJob(url, includeScreenshots);
+      const shotError = includeScreenshots && record.screenshots && record.screenshots.status === 'error';
       renderResult(record);
+      if (shotError) {
+        if (els.successMessage) els.successMessage.classList.remove('success-ready');
+        setStatus('Transcript ready. ' + (record.screenshots.error || 'Screenshots could not be captured.'), 'error');
+      } else {
+        setStatus('Done', 'done');
+        setTimeout(clearStatus, 1200);
+      }
       loadRecent();
-      setTimeout(clearStatus, 1200);
-    } catch (e) {
-      setStatus('Error: ' + e.message, 'error');
+    } catch (err) {
+      setStatus('Error: ' + err.message, 'error');
     } finally {
       lockUI(false);
     }
@@ -919,6 +1078,7 @@ ${seg.text || ''}
   }
 
   // Result actions
+  if (els.copyTranscriptBtn) els.copyTranscriptBtn.addEventListener('click', () => copyCurrent('txt'));
   els.copyBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = els.copyMenu.classList.toggle('open');

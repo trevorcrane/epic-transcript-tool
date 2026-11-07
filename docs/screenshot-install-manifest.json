@@ -1,0 +1,28 @@
+{
+  "baseline_commit": "c943233222a021e91903e01fb626918e55b43ccc",
+  "do_not_deploy_previous_pack": "7246cbcdcdcf32d488326a3f4846d98d63ae013e",
+  "baseline": {
+    "app.py": "61cb52a2318a3bbd304a7685f09161f3bc805eefc5bea06a20ed82c3347414be",
+    "static/index.html": "e7513891be39bb0dcb845bcba05c97d4cad1398ed1e10d24759285dcf0375999",
+    "Dockerfile": "8530f77533423bd1e75833d934f9eef1a23e177fda7fcdc39e5ebd45ad836e24",
+    "README.md": "ecc30826cfe702c281d11b8b23663179c86c801bd58e1eac91a02205aeb7d035"
+  },
+  "install": {
+    "app.py": "a2df87f7da69ead4ff0c8f3b2c164498ca732a8bcee64aa2711e8f5b4b52b2c5",
+    "static/index.html": "ee7310185a4e8054147b9db3d6dadf53b39cff851eb74780e23fca572d4625ff",
+    "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
+    "README.md": "3890466ad3c74d8566bcd6e0e680758eea14d7d4ed46b077240872df721e8187",
+    "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
+    "docs/SCREENSHOT_DEPLOY.md": "cc13ddf3f27446fd43e45df2c09e45874cd708f660fea293b48e0ea066e0811f",
+    "scripts/screenshot_host_preflight.py": "c5b4cf16484a0076904811eef907f44b5f7fc3bab7adb0131f2ac61c782c2787",
+    "scripts/screenshot_host_apply.py": "1e38446cd95b861c901682e89d4765ab7f49413dad626244bc621711130f5812"
+  },
+  "preserve_byte_for_byte": [
+    ".env",
+    "data/transcripts.db",
+    "data/url_jobs.json",
+    "data/phase3_gemini_usage.json",
+    "data/transcripts/"
+  ],
+  "note": "sha256 of file bytes. The manifest file is copied but not hashed inside itself. This pack starts at production c943233. Do not apply the 28707a2/7246 pack."
+}

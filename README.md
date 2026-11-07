@@ -73,6 +73,12 @@ text upload roundtrip.
 - **URL submit** → `yt-dlp --write-auto-sub --skip-download` first; if captions
   exist, parse and return. Otherwise download audio (`-x --audio-format mp3`)
   and POST to OpenAI Whisper.
+- **Transcript only** keeps that path. **Transcript with screenshots** runs it
+  first, then, for a YouTube video only, downloads a bounded 360p copy and
+  builds a timestamped gallery plus a ZIP. The downloader is given a rebuilt
+  `https://www.youtube.com/watch?v=ID` and `yt-dlp --use-extractors youtube`.
+  Other links are not fetched for screenshots. A screenshot failure still
+  returns the transcript and says `Screenshots could not be captured.`
 - **File upload** → `txt`/`md` returned as-is, `srt`/`vtt` stripped to clean
   text, audio/video sent to Whisper.
 - Files >25 MB are auto-transcoded to mono 16 kHz 32 kbps mp3 before Whisper.
@@ -85,6 +91,10 @@ text upload roundtrip.
 GET  /                                    serves the SPA
 GET  /health                              status + setup info
 GET  /api/setup                           missing-keys list
+POST /api/transcribe-url-job form: url, optional include_screenshots=1 → 202 { job }
+GET  /api/jobs/{id}                       poll job
+GET  /api/jobs/{id}/screenshots/{file}    JPEG after a successful capture
+GET  /api/jobs/{id}/screenshots.zip       ZIP after a successful capture
 POST /api/transcribe-url   form: url      → { record }
 POST /api/transcribe-upload file: <file>  → { record }
 GET  /api/recent?limit=20                 → { items: [...] }

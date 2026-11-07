@@ -17,10 +17,10 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt \
     && pip install --no-cache-dir openai-whisper
 
-COPY app.py ./
+COPY app.py screenshots.py ./
 COPY static ./static
 
-RUN mkdir -p /data && python -m py_compile app.py
+RUN mkdir -p /data && python -m py_compile app.py screenshots.py
 
 EXPOSE 8090
 VOLUME ["/data"]
