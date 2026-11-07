@@ -5,7 +5,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -23,6 +26,7 @@ from screenshots import (  # noqa: E402
     dedupe_frames,
     download_360p,
     format_timestamp,
+    grab_frame_at,
     hamming,
     hybrid_sample_times,
     public_http_url,
@@ -164,8 +168,7 @@ def test_proof_slides_10_and_11_not_merged():
     slide10 = frames_dir / "frame_0235_0977.88s.jpg"
     slide11 = frames_dir / "frame_0240_1005.04s.jpg"
     if not (slide10.exists() and slide11.exists()):
-        print("SKIP proof slides missing")
-        return
+        pytest.skip("proof slides are not in this checkout")
     with tempfile.TemporaryDirectory() as tmp:
         a = Path(tmp) / "a.jpg"
         b = Path(tmp) / "b.jpg"
@@ -188,8 +191,7 @@ def test_proof_min_gap_keeps_slide_05_and_slide_10(tmp_path: Path):
     ]
     missing = [name for pair in pairs for name in pair[:2] if not (frames_dir / name).exists()]
     if missing:
-        print("SKIP proof frames missing", missing)
-        return
+        pytest.skip("proof frames are not in this checkout: " + ", ".join(missing))
     tmp_path.mkdir(parents=True, exist_ok=True)
     for earlier_name, later_name, earlier_t, later_t in pairs:
         earlier = tmp_path / f"{later_t}_earlier.jpg"
@@ -379,7 +381,12 @@ def test_download_360p_sets_bounds_for_canonical_youtube_url(monkeypatch, tmp_pa
         stderr = "nope"
 
     _public_youtube_dns(monkeypatch)
-    monkeypatch.setattr("screenshots.subprocess.run", lambda cmd, **kwargs: called.append(list(cmd)) or Proc())
+
+    def fake_bounded(cmd, *, timeout, text=False):
+        called.append(list(cmd))
+        return Proc()
+
+    monkeypatch.setattr("screenshots.run_bounded", fake_bounded)
     try:
         download_360p(
             "https://youtu.be/abcdefghijk?next=http://127.0.0.1/latest/meta-data",
@@ -415,6 +422,72 @@ def test_safe_paths_reject_traversal(tmp_path):
     except ValueError:
         return
     raise AssertionError("traversal job id was accepted")
+
+
+def _spawn_marker(path: Path, marker: str) -> None:
+    path.write_text(
+        "#!/usr/bin/env python3\n"
+        "import subprocess, sys, time\n"
+        f"subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(45)  # {marker}'])\n"
+        "time.sleep(45)\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+
+
+def _marked_processes(marker: str) -> list[str]:
+    import subprocess
+    listing = subprocess.check_output(["ps", "-eo", "pid,cmd"], text=True)
+    return [line for line in listing.splitlines() if marker in line and "ps -eo" not in line]
+
+
+def _kill_marked(marker: str) -> None:
+    import os
+    import signal
+    for line in _marked_processes(marker):
+        pid = int(line.split()[0])
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+
+def test_download_360p_timeout_leaves_no_descendants(tmp_path, monkeypatch):
+    marker = f"epic-shot-yt-{tmp_path.name}"
+    stub = tmp_path / "yt-dlp"
+    _spawn_marker(stub, marker)
+    _public_youtube_dns(monkeypatch)
+    try:
+        download_360p("https://www.youtube.com/watch?v=abcdefghijk", tmp_path, str(stub), "ffmpeg", timeout=1)
+        raised = False
+    except subprocess.TimeoutExpired:
+        raised = True
+        time.sleep(0.3)
+    finally:
+        survivors = _marked_processes(marker)
+        _kill_marked(marker)
+    assert raised
+    assert survivors == []
+
+
+def test_ffmpeg_frame_timeout_leaves_no_descendants(tmp_path, monkeypatch):
+    marker = f"epic-shot-ff-{tmp_path.name}"
+    stub = tmp_path / "ffmpeg"
+    _spawn_marker(stub, marker)
+    monkeypatch.setattr("screenshots.FRAME_TIMEOUT_SECONDS", 1)
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"not a real video")
+    try:
+        grab_frame_at(str(stub), video, 1.0, tmp_path / "frame.jpg")
+        raised = False
+    except subprocess.TimeoutExpired:
+        raised = True
+        time.sleep(0.3)
+    finally:
+        survivors = _marked_processes(marker)
+        _kill_marked(marker)
+    assert raised
+    assert survivors == []
 
 
 def test_cap_frames_keeps_ends_and_deletes_the_rest(tmp_path):

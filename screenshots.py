@@ -12,6 +12,7 @@ import ipaddress
 import logging
 import os
 import re
+import signal
 import socket
 import subprocess
 import zipfile
@@ -198,13 +199,64 @@ def frame_filename(index: int, seconds: float) -> str:
     return f"frame_{index:04d}_{seconds:07.2f}s.jpg"
 
 
+FFPROBE_TIMEOUT_SECONDS = 30
+FRAME_TIMEOUT_SECONDS = 30
+SCENE_TIMEOUT_SECONDS = 180
+GRAY_TIMEOUT_SECONDS = 20
+# Two short waits: SIGTERM, then SIGKILL. The caller does not wait out the child's own sleep.
+PROCESS_GROUP_GRACE_SECONDS = 1.0
+
+
+def _signal_group(proc: subprocess.Popen, sig: int) -> None:
+    try:
+        os.killpg(os.getpgid(proc.pid), sig)
+    except (ProcessLookupError, PermissionError):
+        try:
+            proc.send_signal(sig)
+        except (ProcessLookupError, OSError):
+            return
+
+
+def _finish_group(proc: subprocess.Popen) -> None:
+    """Stop the launcher and descendants, then wait a bounded time."""
+    _signal_group(proc, signal.SIGTERM)
+    try:
+        proc.wait(timeout=PROCESS_GROUP_GRACE_SECONDS)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    _signal_group(proc, signal.SIGKILL)
+    try:
+        proc.wait(timeout=PROCESS_GROUP_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        return
+
+
+def run_bounded(args: list[str], *, timeout: float, text: bool = False) -> subprocess.CompletedProcess:
+    """Run a command in its own process group and reap descendants on timeout."""
+    proc = subprocess.Popen(
+        args,
+        start_new_session=True,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=text,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _finish_group(proc)
+        raise
+    return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
+
+
 def media_duration_seconds(ffmpeg_bin: str, video: Path) -> float:
     ffprobe = Path(ffmpeg_bin).with_name("ffprobe")
     probe = str(ffprobe if ffprobe.exists() else "ffprobe")
-    proc = subprocess.run(
+    proc = run_bounded(
         [probe, "-v", "error", "-show_entries", "format=duration",
          "-of", "default=noprint_wrappers=1:nokey=1", str(video)],
-        capture_output=True, text=True, timeout=30,
+        timeout=FFPROBE_TIMEOUT_SECONDS, text=True,
     )
     if proc.returncode != 0:
         raise RuntimeError("could not read video duration")
@@ -238,7 +290,7 @@ def download_360p(url: str, work_dir: Path, yt_dlp_bin: str, ffmpeg_bin: str, ti
         if attempt["extractor"]:
             cmd.extend(["--extractor-args", attempt["extractor"]])
         cmd.extend(["-f", attempt["fmt"], "-o", str(dest), url])
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        proc = run_bounded(cmd, timeout=timeout, text=True)
         if proc.returncode == 0 and dest.exists() and dest.stat().st_size >= 1024:
             return dest
         LOGGER.warning("360p download attempt failed (client=%s)", attempt["extractor"] or "default")
@@ -247,11 +299,11 @@ def download_360p(url: str, work_dir: Path, yt_dlp_bin: str, ffmpeg_bin: str, ti
 
 def grab_frame_at(ffmpeg_bin: str, video: Path, seconds: float, dest: Path) -> Optional[Path]:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    proc = subprocess.run(
+    proc = run_bounded(
         [ffmpeg_bin, "-hide_banner", "-loglevel", "error",
          "-ss", f"{seconds:.3f}", "-i", str(video),
          "-frames:v", "1", "-update", "1", "-q:v", str(JPEG_QUALITY), "-y", str(dest)],
-        capture_output=True, text=True, timeout=30,
+        timeout=FRAME_TIMEOUT_SECONDS, text=True,
     )
     if proc.returncode != 0 or not dest.exists() or dest.stat().st_size < 32:
         return None
@@ -262,10 +314,10 @@ def extract_scene_frames(ffmpeg_bin: str, video: Path, tmp_dir: Path, threshold:
     tmp_dir.mkdir(parents=True, exist_ok=True)
     pattern = tmp_dir / "scene_%04d.jpg"
     vf = f"select='gt(scene\\,{threshold:.2f})',showinfo"
-    proc = subprocess.run(
+    proc = run_bounded(
         [ffmpeg_bin, "-hide_banner", "-i", str(video),
          "-vf", vf, "-vsync", "vfr", "-q:v", str(JPEG_QUALITY), str(pattern)],
-        capture_output=True, text=True, timeout=180,
+        timeout=SCENE_TIMEOUT_SECONDS, text=True,
     )
     times = [float(match.group(1)) for match in SHOWINFO_TIME.finditer((proc.stderr or "") + (proc.stdout or ""))]
     files = sorted(tmp_dir.glob("scene_*.jpg"))
@@ -283,19 +335,19 @@ def extract_scene_frames(ffmpeg_bin: str, video: Path, tmp_dir: Path, threshold:
 
 def extract_scene_times(ffmpeg_bin: str, video: Path, threshold: float = SCENE_THRESHOLD) -> list[float]:
     vf = f"select='gt(scene\\,{threshold:.2f})',showinfo"
-    proc = subprocess.run(
+    proc = run_bounded(
         [ffmpeg_bin, "-hide_banner", "-i", str(video),
          "-vf", vf, "-vsync", "vfr", "-f", "null", "-"],
-        capture_output=True, text=True, timeout=180,
+        timeout=SCENE_TIMEOUT_SECONDS, text=True,
     )
     return [float(match.group(1)) for match in SHOWINFO_TIME.finditer((proc.stderr or "") + (proc.stdout or ""))]
 
 
 def _gray_bytes(ffmpeg_bin: str, image: Path, width: int, height: int, vf: str) -> Optional[bytes]:
-    proc = subprocess.run(
+    proc = run_bounded(
         [ffmpeg_bin, "-hide_banner", "-loglevel", "error",
          "-i", str(image), "-vf", vf, "-f", "rawvideo", "-pix_fmt", "gray", "pipe:1"],
-        capture_output=True, timeout=20,
+        timeout=GRAY_TIMEOUT_SECONDS, text=False,
     )
     expected = width * height
     if proc.returncode != 0 or len(proc.stdout) < expected:

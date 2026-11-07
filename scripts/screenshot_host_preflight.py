@@ -42,6 +42,23 @@ DO_NOT_TOUCH = (
 )
 
 
+def write_path_symlink(root: Path, rel: str) -> str | None:
+    """Return the first symlink on rel, including ancestors. Missing tails are fine."""
+    cursor = root
+    for part in Path(rel).parts:
+        if part in {"", ".", ".."}:
+            return rel
+        cursor = cursor / part
+        if cursor.is_symlink():
+            try:
+                return cursor.relative_to(root).as_posix()
+            except ValueError:
+                return rel
+        if not cursor.exists():
+            return None
+    return None
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -121,31 +138,43 @@ def inspect_tree(root: Path, new_hashes: dict[str, str] | None = None) -> dict:
     new_hashes = new_hashes or {}
     files = []
     blocking = []
-    for rel, baseline in BASELINE.items():
+    def describe(rel: str, baseline: str | None, new: str | None, allow_missing_hash: bool) -> None:
+        link = write_path_symlink(root, rel)
         path = root / rel
+        if link:
+            files.append({"path": rel, "state": "symlink", "sha256": None, "baseline": baseline, "new": new, "symlink": link})
+            blocking.append(rel)
+            return
         exists = path.is_file()
         current = sha256(path) if exists else None
-        state = classify(exists, current, baseline, new_hashes.get(rel))
-        files.append({"path": rel, "state": state, "sha256": current, "baseline": baseline, "new": new_hashes.get(rel)})
+        state = classify(exists, current, baseline, new)
+        if exists and allow_missing_hash and not new:
+            state = "drift"
+        files.append({"path": rel, "state": state, "sha256": current, "baseline": baseline, "new": new})
         if state in {"drift", "missing"}:
             blocking.append(rel)
+
+    for rel, baseline in BASELINE.items():
+        describe(rel, baseline, new_hashes.get(rel), False)
     for rel in NEW_FILES:
-        path = root / rel
-        exists = path.is_file()
-        current = sha256(path) if exists else None
-        state = classify(exists, current, None, new_hashes.get(rel))
-        # A new file with no published hash yet is still safe to add when absent.
-        if exists and not new_hashes.get(rel):
-            state = "drift"
-        files.append({"path": rel, "state": state, "sha256": current, "baseline": None, "new": new_hashes.get(rel)})
-        if state == "drift":
+        describe(rel, None, new_hashes.get(rel), True)
+    for rel in (".gitignore", "backups"):
+        link = write_path_symlink(root, rel)
+        if link:
+            files.append({"path": rel, "state": "symlink", "sha256": None, "baseline": None, "new": None, "symlink": link})
             blocking.append(rel)
     untouched = []
     for rel in DO_NOT_TOUCH:
         path = root / rel
-        untouched.append({"path": rel, "exists": path.exists(), "sha256": sha256(path) if path.is_file() else None})
+        link = write_path_symlink(root, rel)
+        untouched.append({
+            "path": rel,
+            "exists": path.exists() and not link,
+            "symlink": link,
+            "sha256": sha256(path) if path.is_file() and not link else None,
+        })
     gitignore = root / ".gitignore"
-    gitignore_text = gitignore.read_text(encoding="utf-8") if gitignore.is_file() else ""
+    gitignore_text = "" if gitignore.is_symlink() or not gitignore.is_file() else gitignore.read_text(encoding="utf-8")
     return {
         "ok": not blocking,
         "root": str(root),

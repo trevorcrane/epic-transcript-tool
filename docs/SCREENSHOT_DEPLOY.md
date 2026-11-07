@@ -87,9 +87,23 @@ python3 /path/to/artifact/scripts/screenshot_host_apply.py \
 
 It writes the previous bytes to `backups/screenshots-<UTC>/` inside the app
 folder. It appends `data/screenshots/` and `backups/` to `.gitignore` only when
-those lines are absent. It does not delete transcripts.
+those lines are absent and `.gitignore` is a regular file. It does not delete
+transcripts, `.env`, or the database.
 
-## 4. Restart, only after the copy
+The installer refuses the copy, before it creates or writes anything, if a
+file it would write is a symlink or sits under a symlink. That includes
+`app.py`, `static/`, `backups/`, and `.gitignore`. A refused copy leaves the
+tree as it was.
+
+If a copy fails part way through, the installer puts the files it changed back
+to the bytes from before the copy and exits non-zero. Do not restart after a
+non-zero installer exit. The process recorded in step 1 is still the one to
+keep.
+
+## 4. Restart, only after a zero exit
+
+Restart only when `--apply` printed `"ok": true` and `"wrote": true`. A
+non-zero exit means do not restart.
 
 Stop the pid recorded in step 1. Wait until nothing is listening on 8090.
 Start the app with the same command and the same virtualenv as before, from
@@ -123,6 +137,10 @@ capture runs at a time. A capture that fails, including a busy slot, keeps the
 transcript and does not report the screenshots as ready.
 
 ## Rollback
+
+Use this only after a copy that exited zero and a restart. A failed copy has
+already put the replaced files back; do not restart, and do not delete the
+database.
 
 Stop the new pid the same way. Restore the backup over the files that were
 replaced, and remove `screenshots.py` if the backup does not contain it:
