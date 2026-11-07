@@ -136,6 +136,13 @@ download that URL. Downloads are capped at 800 MB and 2 hours
 capture runs at a time. A capture that fails, including a busy slot, keeps the
 transcript and does not report the screenshots as ready.
 
+`yt-dlp` and ffmpeg are started in their own process group. On timeout the
+group gets SIGTERM, then SIGKILL, each followed by a one-second wait. That
+reaps a same-group child that ignores SIGTERM after the leader has already
+exited. A descendant that calls `setsid` leaves the group. This installer does
+not scan the machine or change host limits to find it. That process is outside
+this cleanup.
+
 ## Rollback
 
 Use this only after a copy that exited zero and a restart. A failed copy has

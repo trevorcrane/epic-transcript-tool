@@ -1,7 +1,9 @@
 """Synthetic + proof-frame tests for screenshot capture (no paid APIs)."""
 from __future__ import annotations
 
+import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -437,8 +439,8 @@ def _spawn_marker(path: Path, marker: str) -> None:
 
 def _marked_processes(marker: str) -> list[str]:
     import subprocess
-    listing = subprocess.check_output(["ps", "-eo", "pid,cmd"], text=True)
-    return [line for line in listing.splitlines() if marker in line and "ps -eo" not in line]
+    listing = subprocess.check_output(["ps", "-ww", "-eo", "pid,cmd"], text=True)
+    return [line for line in listing.splitlines() if marker in line and "ps -ww" not in line]
 
 
 def _kill_marked(marker: str) -> None:
@@ -488,6 +490,113 @@ def test_ffmpeg_frame_timeout_leaves_no_descendants(tmp_path, monkeypatch):
         _kill_marked(marker)
     assert raised
     assert survivors == []
+
+
+def _ignore_sigterm_stub(path: Path, marker: str) -> None:
+    """Leader dies on SIGTERM. Grandchild ignores SIGTERM and stays in the group."""
+    child = path.with_name(f"{marker}.py")
+    child.write_text(
+        "import signal, time\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    path.write_text(
+        "#!/usr/bin/env python3\n"
+        "import subprocess, sys, time\n"
+        f"subprocess.Popen([sys.executable, {str(child)!r}])\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+
+
+def _setsid_stub(path: Path, marker: str, pidfile: Path) -> None:
+    """Grandchild calls setsid and leaves the launcher process group."""
+    child = path.with_name(f"{marker}.py")
+    child.write_text(
+        "import os, time\n"
+        "os.setsid()\n"
+        f"open({str(pidfile)!r}, 'w').write(str(os.getpid()))\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    path.write_text(
+        "#!/usr/bin/env python3\n"
+        "import subprocess, sys, time\n"
+        f"subprocess.Popen([sys.executable, {str(child)!r}])\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+
+
+def test_m3_sigterm_ignoring_grandchild_also_reaped(tmp_path, monkeypatch):
+    """Same-group grandchild that ignores SIGTERM must die after the leader exits."""
+    monkeypatch.setattr("screenshots.FRAME_TIMEOUT_SECONDS", 1)
+    _public_youtube_dns(monkeypatch)
+    unrelated = f"m3-unrelated-{tmp_path.name}"
+    unrelated_script = tmp_path / f"{unrelated}.py"
+    unrelated_script.write_text("import time\ntime.sleep(60)\n", encoding="utf-8")
+    unrelated_proc = subprocess.Popen([sys.executable, str(unrelated_script)])
+    try:
+        for kind in ("grab", "download"):
+            marker = f"m3-ignore-{kind}-{tmp_path.name}"
+            stub = tmp_path / f"{kind}-stub"
+            _ignore_sigterm_stub(stub, marker)
+            try:
+                if kind == "grab":
+                    grab_frame_at(str(stub), tmp_path / "clip.mp4", 1.0, tmp_path / f"{kind}.jpg")
+                else:
+                    download_360p(
+                        "https://www.youtube.com/watch?v=abcdefghijk",
+                        tmp_path / kind, str(stub), "ffmpeg", timeout=1,
+                    )
+                raised = False
+            except subprocess.TimeoutExpired:
+                raised = True
+                time.sleep(0.4)
+            finally:
+                survivors = _marked_processes(marker)
+                _kill_marked(marker)
+            assert raised, kind
+            assert survivors == [], (kind, survivors)
+            assert _marked_processes(unrelated), "unrelated process was killed"
+    finally:
+        unrelated_proc.kill()
+        unrelated_proc.wait(timeout=2)
+
+
+def test_setsid_descendant_is_outside_portable_group_cleanup(tmp_path, monkeypatch):
+    """setsid() leaves the group. Cleanup must not search the machine to kill it."""
+    monkeypatch.setattr("screenshots.FRAME_TIMEOUT_SECONDS", 1)
+    marker = f"m3-setsid-{tmp_path.name}"
+    pidfile = tmp_path / "escaped.pid"
+    stub = tmp_path / "ffmpeg"
+    _setsid_stub(stub, marker, pidfile)
+    unrelated = f"m3-unrelated-setsid-{tmp_path.name}"
+    unrelated_script = tmp_path / f"{unrelated}.py"
+    unrelated_script.write_text("import time\ntime.sleep(60)\n", encoding="utf-8")
+    unrelated_proc = subprocess.Popen([sys.executable, str(unrelated_script)])
+    escaped = None
+    try:
+        try:
+            grab_frame_at(str(stub), tmp_path / "clip.mp4", 1.0, tmp_path / "frame.jpg")
+        except subprocess.TimeoutExpired:
+            time.sleep(0.4)
+        assert pidfile.is_file(), "setsid child did not record its pid"
+        escaped = int(pidfile.read_text().strip())
+        os.kill(escaped, 0)  # still alive: not in the launcher group
+        assert _marked_processes(unrelated), "unrelated process was killed"
+    finally:
+        if escaped is not None:
+            try:
+                os.kill(escaped, signal.SIGKILL)
+            except OSError:
+                pass
+        unrelated_proc.kill()
+        unrelated_proc.wait(timeout=2)
+        _kill_marked(marker)
 
 
 def test_cap_frames_keeps_ends_and_deletes_the_rest(tmp_path):

@@ -15,6 +15,7 @@ import re
 import signal
 import socket
 import subprocess
+import time
 import zipfile
 from pathlib import Path
 from typing import Callable, Optional
@@ -207,29 +208,88 @@ GRAY_TIMEOUT_SECONDS = 20
 PROCESS_GROUP_GRACE_SECONDS = 1.0
 
 
-def _signal_group(proc: subprocess.Popen, sig: int) -> None:
-    try:
-        os.killpg(os.getpgid(proc.pid), sig)
-    except (ProcessLookupError, PermissionError):
+def _pids_in_group(pgid: int) -> list[int]:
+    """Return pids whose process group is pgid.
+
+    Uses Linux /proc when it exists. This does not walk by name, parent, or
+    session, so a process that called setsid() is not included and is not
+    signaled from here.
+    """
+    root = "/proc"
+    if not os.path.isdir(root):
+        return []
+    found = []
+    for name in os.listdir(root):
+        if not name.isdigit():
+            continue
+        stat_path = os.path.join(root, name, "stat")
         try:
-            proc.send_signal(sig)
-        except (ProcessLookupError, OSError):
-            return
+            with open(stat_path, "r", encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        end = text.rfind(")")
+        if end < 0:
+            continue
+        fields = text[end + 2:].split()
+        if len(fields) < 3:
+            continue
+        try:
+            pgrp = int(fields[2])
+        except ValueError:
+            continue
+        if pgrp == pgid:
+            found.append(int(name))
+    return found
 
 
 def _finish_group(proc: subprocess.Popen) -> None:
-    """Stop the launcher and descendants, then wait a bounded time."""
-    _signal_group(proc, signal.SIGTERM)
+    """Stop this launcher's process group, then SIGKILL anyone still in it.
+
+    The direct child can exit on SIGTERM while a same-group grandchild
+    ignores that signal. Waiting only on the child used to return there and
+    leave the grandchild running. The pgid is taken before the signal. The
+    only kill is os.killpg of that pgid. A descendant that calls setsid()
+    leaves the group; portable code cannot find it again without matching
+    unrelated processes, so it is not chased.
+    """
+    try:
+        pgid = os.getpgid(proc.pid)
+    except (ProcessLookupError, PermissionError, OSError):
+        pgid = None
+    if pgid is None:
+        try:
+            proc.send_signal(signal.SIGTERM)
+        except (ProcessLookupError, OSError):
+            pass
+    else:
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
     try:
         proc.wait(timeout=PROCESS_GROUP_GRACE_SECONDS)
-        return
     except subprocess.TimeoutExpired:
         pass
-    _signal_group(proc, signal.SIGKILL)
+    if pgid is not None:
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        deadline = time.monotonic() + PROCESS_GROUP_GRACE_SECONDS
+        while time.monotonic() < deadline and _pids_in_group(pgid):
+            time.sleep(0.05)
     try:
         proc.wait(timeout=PROCESS_GROUP_GRACE_SECONDS)
     except subprocess.TimeoutExpired:
-        return
+        try:
+            proc.kill()
+        except OSError:
+            pass
+        try:
+            proc.wait(timeout=PROCESS_GROUP_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            return
 
 
 def run_bounded(args: list[str], *, timeout: float, text: bool = False) -> subprocess.CompletedProcess:

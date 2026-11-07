@@ -11,10 +11,10 @@
     "static/index.html": "146555257d2760880a7ea18fc70c350adc0fba2c8cd225488a486a17320f9d76",
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "3a50f373abf5e7f4353a611705cf6fc7347e31b2d8179684eb94d2ab3019dc22",
-    "screenshots.py": "e2277d11630808fc901a62a4e3c852241277b500a2f58ee7359e99e369f617ff",
-    "docs/SCREENSHOT_DEPLOY.md": "0768741a68dbb2b80343fe64dac5cad1dbd6890f9e83e32f57dcc15fbc650e12",
+    "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
+    "docs/SCREENSHOT_DEPLOY.md": "f88f42505f119c51d0414541519d9533393511fa0766195f25ff5818bc7263b1",
     "scripts/screenshot_host_preflight.py": "db6026a1d42220d855b0089f2f34237085a4788f2ee8c43c4b3fc44ff191c704",
     "scripts/screenshot_host_apply.py": "8f16c50343733162e5339e7fe139f7aa7de8722806989d29ce59c90dfe2af484"
   },
-  "note": "sha256 of the reviewed file bytes. This manifest is copied by the installer but is not hashed inside itself. Screenshot download accepts only a rebuilt YouTube watch URL. The installer refuses symlink write paths and rolls back a partial copy."
+  "note": "sha256 of the reviewed file bytes. This manifest is copied by the installer but is not hashed inside itself. Screenshot download accepts only a rebuilt YouTube watch URL. The installer refuses symlink write paths and rolls back a partial copy. Process-group cleanup SIGKILLs same-group members after the leader exits. A setsid descendant is outside that group."
 }
