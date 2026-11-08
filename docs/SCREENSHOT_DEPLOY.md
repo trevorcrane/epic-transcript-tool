@@ -82,25 +82,48 @@ checkpoint a leftover WAL into `transcripts.db` and remove the WAL and
 SHM files. The rows remain. That byte change is SQLite, not the installer
 writing those files. The installer still does not write `.env`, the
 transcript text files, or the two JSON files. `protected_unchanged` does
-not mean the SHM bytes were identical.
-`SCREENSHOT_APPLY_COPY_PAUSE_SECONDS` is not an operator control and is
-unset here. A fixture may set it so a second writer is observed during
-that copy. The script never sets it and never calls launchctl.
+not mean the SHM bytes were identical. The script does not call launchctl.
+
+Each run gets its own directory under `$HOME`, created with an exclusive
+`mkdir`. The name includes the process id and random bytes. `date +%s%N`
+is not used, because on BSD that format can print a literal N and a second
+run would reopen the same folder. A folder that already exists is not reused.
+
+Before the first source file is replaced, apply writes an intent into that
+directory and flushes it. The intent names this run, this root, the manifest,
+and one backup directory. That backup is the tree captured before the copy,
+checked against the c943 baseline, and marked with this run's id. If the
+apply process is killed after that point, there may be no `apply.json` and
+the tree may be only partly replaced. Recovery still uses this intent. It
+prints `RECOVERY=source-restored` only after every rollback path is the
+c943 baseline again. Otherwise it prints `RECOVERY=failed`. It does not
+print `RECOVERY=not-needed` once an intent or a receipt exists.
+`RECOVERY=not-needed` is only a failure from before any replacement started.
+
+The nine rollback paths are `app.py`, `static/index.html`, `Dockerfile`,
+`README.md`, `screenshots.py`, `docs/SCREENSHOT_DEPLOY.md`,
+`docs/screenshot-install-manifest.json`, `scripts/screenshot_host_preflight.py`,
+and `scripts/screenshot_host_apply.py`. The first four must match the
+manifest hashes. The other five must be absent. The manifest file is one of
+those five even though the manifest does not hash itself. A backup is
+eligible only when its resolved path stays inside this tree's `backups/`
+directory with no symlink component and no `..` escape, its directory name
+is `screenshots-<this run id>`, and its transaction file is this run. A
+string prefix is not enough. Another directory of valid c943 bytes is not
+this run's backup. Recovery does not read `$HOME/screenshot-apply.json`.
+
+`SCREENSHOT_APPLY_CRASH_AT`, `SCREENSHOT_APPLY_COPY_PAUSE_SECONDS`, and
+`SCREENSHOT_APPLY_TEST_HARNESS` are not operator controls. If any of them
+is set, the script stops before backup and apply. It does not sleep and it
+does not take the crash path. An isolated test may set the harness itself.
+The pause, when that harness is on, cannot be longer than one second.
 
 A stale plist hash or a program that no longer matches the plist stops
 the script before backup and apply. It records queued and running job
 ids in `$HOME/screenshot-interrupted-jobs.json` and does not modify the
-live `url_jobs.json`. If apply fails, the same run looks only at the
-receipt it just wrote.
-A receipt left in the home directory from another run is ignored. A
-backup is used only when it sits under this tree's `backups/` directory
-and every c943 baseline file in it matches the manifest hash. After
-that, every baseline file on the live tree must match, and the files
-this install adds must be absent. Anything short of that is
-`RECOVERY=failed`. A preflight or dry-run failure does not read a
-receipt and does not change source. The script does not start the new
-code and it does not run bootstrap. There is no second authorization
-step. Recovery does not restore or delete data, `.env`, or the plist.
+live `url_jobs.json`. The script does not start the new code and it does
+not run bootstrap. There is no second authorization step. Recovery does
+not restore or delete data, `.env`, or the plist.
 
 The operator restart, also not run by the script, uses the plist path
 captured in the identity file. On this host that path was reported as
@@ -134,7 +157,7 @@ does.
 
 ## Outside backup, before any copy
 
-The installer does not make this backup. Its `backups/screenshots-<UTC>/`
+The installer does not make this backup. Its `backups/screenshots-<run>/`
 folder only keeps the previous source files it replaces. It does not
 contain `data/`, `.env`, or the launchd configuration.
 

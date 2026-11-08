@@ -21,9 +21,9 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "d2ba502c2965351a7512dd080855b1f93b5cfba35f5c729885508a6de43b73f6",
+    "docs/SCREENSHOT_DEPLOY.md": "ce0d3517fb603af9cec82c21af2a2adca8856216cb2c555beb4c8d1c0e0c2866",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
-    "scripts/screenshot_host_apply.py": "642f22b481a339b1b043c6c447377a6e49fe5f5988853d7e042c958fd4236d70"
+    "scripts/screenshot_host_apply.py": "d108968a135fbf17dfc0e7e1161ec301a5bb42df813872b32779e440f932c119"
   },
   "outside_backup_script": {
     "path": "scripts/screenshot_outside_backup.py",
@@ -55,11 +55,11 @@
   "note": "sha256 of file bytes. The manifest file is copied but not hashed inside itself. parent_commit is the production diff baseline. github_pr_base_commit is main and must not be merged. The outside backup is not restored by this procedure. Deploy and rollback entry points stay in the artifact.",
   "deploy_entry_points": {
     "scripts/screenshot_outside_backup.py": "20a660bceaabd7d89a77036203c79ad8b3ccad6df43724c817e190112195817d",
-    "scripts/screenshot_host_deploy.sh": "08166d72de88cf46cf901f471b4853fe47c01cbbde175f2db172d9b210aaffca",
-    "scripts/screenshot_host_rollback.sh": "0c2e5fec21289e7309c6b049b0bc9500e574b01040213e6eb0ee96e918c5099b",
+    "scripts/screenshot_host_deploy.sh": "f390715f8abeb085c2b38b8edac2a8e0a7ebbc3eac0fed2dec338194d6171559",
+    "scripts/screenshot_host_rollback.sh": "3b65c25ac975479ec48e3bf6a312da8f8286e470ebbd03428f17c2f26afb9acb",
     "scripts/screenshot_host_capture_identity.sh": "7ebfa8fc92b465f7b19226074fc224874fdbd50ec8da04656cbccc03bf201037",
-    "scripts/screenshot_host_offline_deploy.sh": "0ebdc27059e140e087e2b348474bafc11a45fdf8739f2a90d62fcef5938bb76d",
-    "scripts/screenshot_host_offline_checks.py": "ab5fb05faa7d61613e6b1004a5fb41077bf9bfa0bb07b627081feaf89ffc1f74"
+    "scripts/screenshot_host_offline_deploy.sh": "8b45fa989b3ed013767934d2eac563b7d0bf4718a5486997a2c22ddb133b48a1",
+    "scripts/screenshot_host_offline_checks.py": "bc44d88ec69ab9cf04b48d29cfd8d621e500b2396e8b4c0637666b7432e68dc8"
   },
   "offline_route": "conditional; not approved; scripts do not bootout or bootstrap",
   "sqlite_guard": "BEGIN IMMEDIATE held across backup and apply; read-only backup connection; close may checkpoint WAL; not an installer write of data or .env"

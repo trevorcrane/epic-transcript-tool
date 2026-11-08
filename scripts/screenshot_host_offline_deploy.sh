@@ -23,30 +23,26 @@ source_is_baseline() {
 }
 
 recover_failed_apply() {
-  # Only the receipt written by this process. Never $HOME/screenshot-apply.json.
+  # This run's intent, written before the first replacement. Never a home-directory
+  # receipt and never another run's valid c943 backup.
+  intent="$RUN_DIR/intent.json"
   receipt="$RUN_DIR/apply.json"
-  if [ ! -s "$receipt" ]; then
+  if [ ! -s "$intent" ] && [ ! -s "$receipt" ]; then
     printf '%s\n' "RECOVERY=not-needed"
     return 0
   fi
-  backup=$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("backup") or "")' "$receipt") || backup=""
-  if [ -n "$backup" ]; then
-    case "$backup" in
-      "$ROOT/backups/"*) ;;
-      *)
-        printf '%s\n' "RECOVERY=failed"
-        return 1
-        ;;
-    esac
-    if ! source_is_baseline "$backup"; then
+  if [ ! -s "$intent" ]; then
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  fi
+  backup=$("$PY" "$checks" recovery-backup --intent "$intent" --run-dir "$RUN_DIR" --root "$ROOT" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" --receipt "$receipt") || {
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  }
+  if ! source_is_baseline "$ROOT"; then
+    if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" PY="$PY" ARTIFACT="$ARTIFACT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
       printf '%s\n' "RECOVERY=failed"
       return 1
-    fi
-    if ! source_is_baseline "$ROOT"; then
-      if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
-        printf '%s\n' "RECOVERY=failed"
-        return 1
-      fi
     fi
   fi
   if source_is_baseline "$ROOT"; then
@@ -60,6 +56,12 @@ recover_failed_apply() {
 if [ "${SCREENSHOT_OFFLINE_AUTHORIZATION:-}" != "interruptible-offline-window-approved" ]; then
   deny 1
 fi
+if [ -n "${SCREENSHOT_APPLY_CRASH_AT:-}" ] || [ -n "${SCREENSHOT_APPLY_COPY_PAUSE_SECONDS:-}" ] || [ -n "${SCREENSHOT_APPLY_TEST_HARNESS:-}" ]; then
+  printf '%s\n' "HOOKS=rejected"
+  printf '%s\n' "RECOVERY=not-needed"
+  deny 1
+fi
+unset SCREENSHOT_APPLY_CRASH_AT SCREENSHOT_APPLY_COPY_PAUSE_SECONDS SCREENSHOT_APPLY_TEST_HARNESS
 if [ -z "${ROOT:-}" ] || [ ! -d "$ROOT" ] || [ -z "${ARTIFACT:-}" ] || [ ! -d "$ARTIFACT" ] || [ -z "${DEST:-}" ] || [ -z "${HOME:-}" ] || [ ! -d "$HOME" ]; then
   deny 1
 fi
@@ -74,9 +76,6 @@ if [ ! -w "$dest_parent" ]; then
   deny 1
 fi
 
-RUN_ID=$(date +%s%N)
-RUN_DIR="$HOME/screenshot-run-$RUN_ID"
-mkdir -p "$RUN_DIR" || deny 1
 LABEL="${LAUNCHD_LABEL:-gui/501/com.epic.transcript-api}"
 PORT="${SCREENSHOT_PORT:-8090}"
 IDENTITY="${IDENTITY:-$HOME/screenshot-prestop-identity.json}"
@@ -106,6 +105,17 @@ if [ -z "$PLIST" ] || [ ! -f "$PLIST" ] || [ -z "$PID" ] || [ -z "$PGID" ]; then
 fi
 if [ "$(printf '%s\n' "$identity" | sed -n '1p')" != "$PY" ]; then
   deny 11
+fi
+
+RUN_DIR=$("$PY" "$checks" create-run --home "$HOME") || deny 1
+RUN_ID=$(basename -- "$RUN_DIR")
+home_real=$("$PY" -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$HOME") || deny 1
+case "$RUN_DIR" in
+  "$home_real"/screenshot-run-*) ;;
+  *) deny 1 ;;
+esac
+if [ ! -d "$RUN_DIR" ] || [ -n "$(ls -A "$RUN_DIR")" ]; then
+  deny 1
 fi
 
 if launchctl print "$LABEL" >/dev/null 2>&1; then
@@ -140,12 +150,13 @@ if [ -n "$jobs_before" ]; then
   fi
 fi
 
-export ROOT ARTIFACT DEST HOME PY PLIST PORT LABEL RUN_DIR
+export ROOT ARTIFACT DEST HOME PY PLIST PORT LABEL RUN_DIR RUN_ID
 body="$HOME/screenshot-critical-body.sh"
 cat > "$body" <<'BODY'
 #!/usr/bin/env bash
 set -u
 set -o pipefail
+unset SCREENSHOT_APPLY_CRASH_AT SCREENSHOT_APPLY_COPY_PAUSE_SECONDS SCREENSHOT_APPLY_TEST_HARNESS
 trace() { printf '%s\n' "$1" >> "$HOME/screenshot-offline-trace"; }
 trace "backup"
 backup_exit=0
@@ -180,6 +191,8 @@ apply_exit=0
   --source "$ARTIFACT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --apply \
+  --intent "$RUN_DIR/intent.json" \
+  --run-id "$RUN_ID" \
   --out "$RUN_DIR/apply.json" || apply_exit=$?
 trace "apply-exit=$apply_exit"
 ok=no

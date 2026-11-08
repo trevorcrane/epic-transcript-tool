@@ -18,6 +18,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import screenshot_host_offline_checks as offline_checks
 from screenshot_host_preflight import (
     DO_NOT_TOUCH,
     inspect_tree,
@@ -26,6 +27,13 @@ from screenshot_host_preflight import (
     sha256,
     write_path_symlink,
 )
+
+# Operator scripts reject these. They do nothing unless the isolated harness
+# sets SCREENSHOT_APPLY_TEST_HARNESS=1. The pause cannot exceed one second.
+HARNESS_FLAG = "SCREENSHOT_APPLY_TEST_HARNESS"
+CRASH_FLAG = "SCREENSHOT_APPLY_CRASH_AT"
+PAUSE_FLAG = "SCREENSHOT_APPLY_COPY_PAUSE_SECONDS"
+MAX_COPY_PAUSE_SECONDS = 1.0
 
 
 INSTALL_PATHS = (
@@ -152,7 +160,39 @@ def _restore(host: Path, originals: dict[str, bytes | None], gitignore_existed: 
         gitignore.unlink()
 
 
-def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> dict:
+def _harness_on() -> bool:
+    return os.environ.get(HARNESS_FLAG) == "1"
+
+
+def harness_pause_seconds() -> float:
+    """Zero unless an isolated harness asked for a bounded pause."""
+    if not _harness_on():
+        return 0.0
+    raw = os.environ.get(PAUSE_FLAG, "")
+    if raw == "":
+        return 0.0
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise RuntimeError("copy pause is not a number") from exc
+    if value < 0 or value > MAX_COPY_PAUSE_SECONDS:
+        raise RuntimeError("copy pause must be from 0 to 1 seconds")
+    return value
+
+
+def _harness_crash(rel: str) -> bool:
+    return _harness_on() and os.environ.get(CRASH_FLAG) == rel
+
+
+def apply_tree(
+    host: Path,
+    source: Path,
+    manifest: Path | None,
+    apply: bool,
+    *,
+    intent: Path | None = None,
+    run_id: str = "",
+) -> dict:
     new_hashes = load_new_hashes(manifest)
     report = inspect_tree(host, new_hashes)
     report["apply"] = apply
@@ -210,6 +250,7 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
         report["protected_after"] = protected_fingerprints(host)
         report["protected_unchanged"] = report["protected_before"] == report["protected_after"]
         return report
+    pause = harness_pause_seconds() if apply else 0.0
     originals: dict[str, bytes | None] = {}
     for rel in INSTALL_PATHS:
         path = host / rel
@@ -217,8 +258,13 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
     gitignore = host / ".gitignore"
     gitignore_existed = gitignore.is_file() and not gitignore.is_symlink()
     gitignore_bytes = _read_nofollow(gitignore) if gitignore_existed else None
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    backup = host / "backups" / f"screenshots-{stamp}"
+    if intent is not None:
+        if offline_checks.RUN_ID_RE.fullmatch(run_id) is None or manifest is None:
+            raise RuntimeError("apply intent requires a run id and a manifest")
+        backup = host / "backups" / f"screenshots-{run_id}"
+    else:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        backup = host / "backups" / f"screenshots-{stamp}"
     try:
         blocked_again = symlink_blocks(host)
         if blocked_again:
@@ -230,19 +276,33 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
                 target = backup / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(dest, target)
-        # Test hook only. Unset in production. Holds this copy loop open so a
-        # second SQLite writer can observe the reservation during copy2 itself.
-        copy_pause = os.environ.get("SCREENSHOT_APPLY_COPY_PAUSE_SECONDS", "")
+        if intent is not None:
+            confined = offline_checks.confine_backup(host, str(backup))
+            if confined is None:
+                raise RuntimeError("backup is not confined to this tree")
+            problem = offline_checks.baseline_problem(confined, manifest)
+            if problem is not None:
+                raise RuntimeError(f"backup is not the c943 baseline: {problem}")
+            offline_checks.write_durable(confined / offline_checks.TRANSACTION_NAME, (run_id + "\n").encode("utf-8"))
+            intent_body = {
+                "phase": "replacing",
+                "run_id": run_id,
+                "run_dir": os.path.realpath(intent.parent),
+                "root": os.path.realpath(host),
+                "backup": str(confined),
+                "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+            }
+            offline_checks.write_durable(intent, (json.dumps(intent_body, indent=2) + "\n").encode("utf-8"))
         paused = False
         for rel in INSTALL_PATHS:
             dest = host / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
-            if os.environ.get("SCREENSHOT_APPLY_CRASH_AT") == rel and "backups" not in dest.parts:
+            if _harness_crash(rel) and "backups" not in dest.parts:
                 raise RuntimeError(f"simulated crash during copy of {rel}")
-            if copy_pause and not paused:
-                time.sleep(float(copy_pause))
-                paused = True
             shutil.copy2(source / rel, dest)
+            if pause and not paused:
+                time.sleep(pause)
+                paused = True
         existing = gitignore_bytes.decode("utf-8") if gitignore_bytes is not None else ""
         lines = existing.splitlines()
         added = [line for line in ("data/screenshots/", "backups/") if line not in lines]
@@ -294,13 +354,15 @@ def main() -> int:
     parser.add_argument("--source", type=Path, required=True, help="Unpacked artifact directory")
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--apply", action="store_true", help="Copy files. Without this, print the plan only.")
+    parser.add_argument("--intent", type=Path, help="Durable intent written before the first replacement.")
+    parser.add_argument("--run-id", default="", help="Run directory name that owns --intent.")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     host = args.root.expanduser().resolve()
     source = args.source.expanduser().resolve()
     manifest = args.manifest or (source / "docs" / "screenshot-install-manifest.json")
     try:
-        report = apply_tree(host, source, manifest, args.apply)
+        report = apply_tree(host, source, manifest, args.apply, intent=args.intent, run_id=args.run_id)
     except Exception as exc:
         backup = getattr(exc, "install_backup", "") or ""
         payload = {

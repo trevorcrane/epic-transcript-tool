@@ -15,6 +15,13 @@
 set -u
 set -o pipefail
 
+if [ -n "${SCREENSHOT_APPLY_CRASH_AT:-}" ] || [ -n "${SCREENSHOT_APPLY_COPY_PAUSE_SECONDS:-}" ] || [ -n "${SCREENSHOT_APPLY_TEST_HARNESS:-}" ]; then
+  printf '%s\n' "HOOKS=rejected"
+  printf '%s\n' "RESTART=no"
+  exit 1
+fi
+unset SCREENSHOT_APPLY_CRASH_AT SCREENSHOT_APPLY_COPY_PAUSE_SECONDS SCREENSHOT_APPLY_TEST_HARNESS
+
 deny() {
   printf '%s\n' "RESTART=no"
   exit "${1:-1}"
