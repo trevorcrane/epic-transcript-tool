@@ -45,6 +45,59 @@ the two drift JSON files, or `.env` during the copy does roll those
 source files back. It does not delete the live data. Do not start the
 copy while a checkpoint is rewriting `transcripts.db`.
 
+## Conditional offline transition
+
+This route is prepared and not approved. Merlin has asked Trevor for
+permission to interrupt an in-flight job. There is no such approval.
+Nothing here is host clearance. The scripts do not run `launchctl bootout`
+or `launchctl bootstrap`. A fixture does not prove the Mac's launchctl
+output, that port 8090 is free on the host, or that every possible writer
+descendant was found.
+
+The running c943 process cannot be drained in place. Capture its identity
+while `launchctl print` still succeeds. Do not bootout and then run
+`scripts/screenshot_host_deploy.sh`: that script fail-closes when print
+fails, and this packet does not weaken that check.
+
+When approval exists, the operator stop is:
+
+`launchctl bootout gui/501/com.epic.transcript-api`
+
+That stops writers. It does not finish jobs. The old daemon threads are
+gone and c943 has no resume. The offline script then requires the
+pre-stop identity, a failed `launchctl print` for that label, TCP 8090
+refusing connections, the recorded pid and process group gone, and a
+SQLite exclusive lock. A stale plist hash or a program that no longer
+matches the plist stops the script before backup and apply. It records
+queued and running job ids in `$HOME/screenshot-interrupted-jobs.json`
+and does not modify the live `url_jobs.json`.
+
+The operator restart, also not run by the script, is:
+
+`launchctl bootstrap gui/501 /Users/tc-imac/Library/LaunchAgents/com.epic.transcript-api.plist`
+
+On the next start the new process marks queued and running jobs
+interrupted. A saved transcript is shown with the screenshot error and is
+not downloaded again. A job with no saved transcript becomes an error.
+That rewrite is process startup, not this copy. Errors print `RESTART=no`.
+Success prints `APPLY=ok` and `RESTART=not-run`.
+
+```bash
+# fixture: capture-identity
+exec "$ARTIFACT/scripts/screenshot_host_capture_identity.sh"
+```
+
+```bash
+# fixture: offline-deploy
+exec "$ARTIFACT/scripts/screenshot_host_offline_deploy.sh"
+```
+
+`screenshot_host_offline_deploy.sh` refuses to run unless
+`SCREENSHOT_OFFLINE_AUTHORIZATION` is
+`interruptible-offline-window-approved`. Setting that string is the
+operator saying approval exists. This repository does not assert that it
+does.
+
 ## Outside backup, before any copy
 
 The installer does not make this backup. Its `backups/screenshots-<UTC>/`
