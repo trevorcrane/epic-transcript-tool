@@ -30,9 +30,13 @@ it prints. Those are the service interpreter and the service plist. This
 procedure does not guess `$ROOT/.venv/bin/python` or
 `~/Library/LaunchAgents/com.epic.transcript-api.plist`.
 
-Hermes also confirms the service is not inside a transcript write before
-the copy. This procedure does not stop, start, bootout, or delete that
-job, and it does not delete WAL or SHM files. A WAL or SHM byte change
+Hermes runs the deploy script only when the service is not inside a
+transcript write. The script checks `ROOT`, `ARTIFACT`, `DEST`, `HOME`,
+the printed plist, and the printed interpreter. It does not prove the
+service is idle, and it does not stop the job. A test double for
+`launchctl` does not prove the Mac's print format. Hermes confirms the
+printed `program` and `path` on the machine. This procedure does not
+bootout or delete the job, and it does not delete WAL or SHM files. A WAL or SHM byte change
 while SQLite is in use is runtime state. It does not roll the copied
 source files back. A change to `transcripts.db`, the transcript files,
 the two drift JSON files, or `.env` during the copy does roll those
@@ -62,12 +66,12 @@ A later process start may rewrite `data/url_jobs.json` when it settles an
 interrupted job. That is a runtime write by the app. The installer does
 not write `data/` or `.env`.
 
-Set `ROOT`, `ARTIFACT`, `DEST`, and `HOME` before the sequence. `ARTIFACT`
-is the unpacked screenshot pack. The backup script stays in that pack. It
-is not one of the files the installer copies onto the host. The sequence
-does not use `set -e`, so a failed command still records `RESTART=no`
-and leaves the receipt it already wrote. Do not pipe the hash listing
-through `tee`.
+Set `ROOT`, `ARTIFACT`, `DEST`, and `HOME`. `ARTIFACT` is the unpacked
+screenshot pack. The backup script and `scripts/screenshot_host_deploy.sh`
+stay in that pack. They are not files the installer copies onto the host.
+The deploy script is the sequence. A failed binding, plist, interpreter,
+backup, hash listing, verify, preflight, or dry run exits before apply and
+prints `RESTART=no`. Do not pipe the hash listing through `tee`.
 
 ## Files this installer may write
 
@@ -100,56 +104,7 @@ restarts the service.
 
 ```bash
 # fixture: deploy-sequence
-set -u
-set -o pipefail
-: "${ROOT:?}"
-: "${ARTIFACT:?}"
-: "${DEST:?}"
-: "${HOME:?}"
-LABEL="${LAUNCHD_LABEL:-gui/501/com.epic.transcript-api}"
-discovered=$(launchctl print "$LABEL") || { echo "RESTART=no"; exit 1; }
-PLIST=$(printf '%s\n' "$discovered" | sed -n 's/^[[:space:]]*path = //p' | head -n 1)
-PY=$(printf '%s\n' "$discovered" | sed -n 's/^[[:space:]]*program = //p' | head -n 1)
-test -n "$PLIST"
-test -f "$PLIST"
-test -n "$PY"
-test -x "$PY"
-mkdir -p "$(dirname "$DEST")"
-"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --root "$ROOT" --dest "$DEST" --plist "$PLIST"
-test -s "$DEST/SHA256SUMS"
-"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --verify "$DEST"
-preflight_exit=0
-"$PY" "$ARTIFACT/scripts/screenshot_host_preflight.py" \
-  --root "$ROOT" \
-  --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
-  --port 8090 \
-  --out "$HOME/screenshot-preflight.json" || preflight_exit=$?
-if [ "$preflight_exit" -ne 0 ]; then echo "RESTART=no"; exit "$preflight_exit"; fi
-dry_exit=0
-"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
-  --root "$ROOT" \
-  --source "$ARTIFACT" \
-  --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
-  --out "$HOME/screenshot-apply-dry-run.json" || dry_exit=$?
-if [ "$dry_exit" -ne 0 ]; then echo "RESTART=no"; exit "$dry_exit"; fi
-apply_exit=0
-"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
-  --root "$ROOT" \
-  --source "$ARTIFACT" \
-  --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
-  --apply \
-  --out "$HOME/screenshot-apply.json" || apply_exit=$?
-ok=no
-wrote=no
-if [ -s "$HOME/screenshot-apply.json" ]; then
-  read -r ok wrote < <("$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); print("yes" if d.get("ok") is True else "no", "yes" if d.get("wrote") is True else "no")' "$HOME/screenshot-apply.json")
-fi
-if [ "$apply_exit" -eq 0 ] && [ "$ok" = "yes" ] && [ "$wrote" = "yes" ]; then
-  echo "RESTART=allowed"
-else
-  echo "RESTART=no"
-fi
-exit "$apply_exit"
+exec "$ARTIFACT/scripts/screenshot_host_deploy.sh"
 ```
 
 Hermes restarts `gui/501/com.epic.transcript-api` only after reading
@@ -186,29 +141,10 @@ WAL, the SHM, transcript files, the drift JSON files, or the plist.
 
 ```bash
 # fixture: rollback-code
-set -eu
-set -o pipefail
-: "${ROOT:?}"
-: "${BACKUP:?}"
-while IFS= read -r rel; do
-  if [ -f "$BACKUP/$rel" ]; then
-    mkdir -p "$ROOT/$(dirname "$rel")"
-    cp "$BACKUP/$rel" "$ROOT/$rel"
-  else
-    rm -f "$ROOT/$rel"
-  fi
-done <<'FILES'
-app.py
-static/index.html
-Dockerfile
-README.md
-screenshots.py
-docs/SCREENSHOT_DEPLOY.md
-docs/screenshot-install-manifest.json
-scripts/screenshot_host_preflight.py
-scripts/screenshot_host_apply.py
-FILES
+exec "$ARTIFACT/scripts/screenshot_host_rollback.sh"
 ```
 
-Do not point `$BACKUP` at `$DEST`. Do not start or stop launchd from this
-command.
+A failed rollback prints `RESTART=no` and does not grant a restart. A
+successful rollback prints `ROLLBACK=ok` and `RESTART=no`. It never prints
+`RESTART=allowed`. Do not point `$BACKUP` at `$DEST`. Do not start or stop
+launchd from this command.
