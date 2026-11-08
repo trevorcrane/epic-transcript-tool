@@ -32,13 +32,11 @@ If they differ, the script stops before backup and apply. This procedure
 does not guess `$ROOT/.venv/bin/python` or
 `~/Library/LaunchAgents/com.epic.transcript-api.plist`.
 
-Hermes runs the deploy script only when the service is not inside a
-transcript write. The script checks `ROOT`, `ARTIFACT`, `DEST`, `HOME`,
-the printed plist, and the printed interpreter. It does not prove the
-service is idle, and it does not stop the job. A test double for
+This Mac does not copy files while the service is up. A test double for
 `launchctl` does not prove the Mac's print format. Hermes confirms the
-printed `program` and `path` on the machine. This procedure does not
-bootout or delete the job, and it does not delete WAL or SHM files. A WAL or SHM byte change
+printed `program` and `path` on the machine before capture. This
+procedure's scripts do not bootout or delete the job, and they do not
+delete WAL or SHM files. A WAL or SHM byte change
 while SQLite is in use is runtime state. It does not roll the copied
 source files back. A change to `transcripts.db`, the transcript files,
 the two drift JSON files, or `.env` during the copy does roll those
@@ -54,10 +52,14 @@ or `launchctl bootstrap`. A fixture does not prove the Mac's launchctl
 output, that port 8090 is free on the host, or that every possible writer
 descendant was found.
 
-The running c943 process cannot be drained in place. Capture its identity
-while `launchctl print` still succeeds. Do not bootout and then run
-`scripts/screenshot_host_deploy.sh`: that script fail-closes when print
-fails, and this packet does not weaken that check.
+The running c943 process cannot be drained in place. For this Mac the
+prepared route is capture, then bootout only after Trevor approves the
+interruption, then the offline verified copy or recover, then a manual
+bootstrap only when a verified receipt allows it. Capture identity while
+`launchctl print` still succeeds. `scripts/screenshot_host_deploy.sh` is
+historical. It is not authorized for this Mac. Do not run it. The script
+file is unchanged and still fail-closes when print fails. This packet
+does not weaken that check and does not turn that script into a step.
 
 When approval exists, the operator stop is:
 
@@ -134,10 +136,13 @@ not a receipt and is not printed.
 identity is valid and this process did not start launchctl:
 `INSTALL=verified-new` after `APPLY=ok`, `INSTALL=verified-c943` after
 `RECOVERY=source-restored`, or `INSTALL=verified-untouched-c943` when no
-replacement started and all nine c943 paths still match. `INSTALL=unverified`
-is a tree that was checked and is not one of those. It is `RESTART=not-allowed`.
-A drifted file and a clean tree are not the same result. Do not start the
-service on `INSTALL=unverified`. A killed apply can exit 137 and still print
+replacement started and all nine c943 paths still match. `INSTALL=unverified` is a checked tree that is not one of those, with no
+apply receipt. `INSTALL=incomplete` is a failed apply receipt, including a
+mixed tree after a killed operator when the next copy refuses that partial
+backup. Both are `RESTART=not-allowed`. A drifted `README.md` is
+`INSTALL=unverified`. A mixed `app.py` that reached a receipt is
+`INSTALL=incomplete`. Neither starts the service, and neither is rolled
+back by that refusal. A killed apply can exit 137 and still print
 `RESTART=allowed` when the nine c943 paths were verified. The exit code
 is not the permission.
 
@@ -181,10 +186,11 @@ prints `RECOVERY=failed` and `RESTART=not-allowed`.
 A failure before any intent exists, such as the outside backup refusing
 a destination, has nothing for that named-run restore to use. If the live
 tree is still the nine-path c943 baseline, the same offline copy prints
-`INSTALL=verified-untouched-c943` and `RESTART=allowed`. If any of those
-nine paths differs, including a drifted `README.md` or a mixed `app.py`,
-it prints `INSTALL=unverified` and `RESTART=not-allowed` and does not
-roll anything back. The same check can be repeated without naming a run
+`INSTALL=verified-untouched-c943` and `RESTART=allowed`. A drifted
+`README.md` with no apply receipt prints `INSTALL=unverified` and
+`RESTART=not-allowed`. A mixed tree that reaches a failed apply receipt
+prints `INSTALL=incomplete` and `RESTART=not-allowed`. Neither refusal
+rolls the tree back. The untouched check can be repeated without naming a run
 and without restoring:
 
 ```bash
@@ -245,12 +251,12 @@ A later process start may rewrite `data/url_jobs.json` when it settles an
 interrupted job. That is a runtime write by the app. The installer does
 not write `data/` or `.env`.
 
-Set `ROOT`, `ARTIFACT`, `DEST`, and `HOME`. `ARTIFACT` is the unpacked
-screenshot pack. The backup script and `scripts/screenshot_host_deploy.sh`
-stay in that pack. They are not files the installer copies onto the host.
-The deploy script is the sequence. A failed binding, plist, interpreter,
-backup, hash listing, verify, preflight, or dry run exits before apply and
-prints `RESTART=no`. Do not pipe the hash listing through `tee`.
+Set `ROOT`, `ARTIFACT`, `DEST`, and `HOME` for the offline copy.
+`ARTIFACT` is the unpacked screenshot pack. The outside-backup helper
+stays in that pack. It is not a file the installer copies onto the host.
+`scripts/screenshot_host_deploy.sh` also stays in the pack and is not
+copied onto the host. It is historical and is not this sequence. Do not
+run it. Do not pipe a hash listing through `tee`.
 
 ## Files this installer may write
 
@@ -278,29 +284,29 @@ The manifest's `baseline` hashes are the `c943233` parent bytes. Its
 `install` hashes are the files in this pack, excluding the manifest file
 itself. `github_pr_base_commit` records the PR base and is not the parent.
 
-## Deploy sequence
+## Historical online entry, not this Mac
 
-Dry run and apply write different receipts. A dry run can exit 0 with
-`"wrote": false`. That is not a restart. Restart is allowed only when the
-apply command exits 0 and its receipt has `"ok": true` and `"wrote": true`.
-The receipt's own `"restart"` value stays false. The installer never
-restarts the service.
+`scripts/screenshot_host_deploy.sh` is not authorized for this deploy.
+Do not run it on this Mac. The block below is a fixture for that
+unchanged file. It is not a step. For this Mac, capture, then bootout
+only after the interruption is approved, then
+`screenshot_host_offline_deploy.sh` or `screenshot_host_offline_recover.sh`,
+then the manual bootstrap only when `RESTART=allowed` is paired with
+`INSTALL=verified-new`, `INSTALL=verified-c943`, or
+`INSTALL=verified-untouched-c943`.
 
 ```bash
 # fixture: deploy-sequence
+# Historical. Not a step for this Mac.
 exec "$ARTIFACT/scripts/screenshot_host_deploy.sh"
 ```
 
-`screenshot_host_deploy.sh` prints `RESTART=allowed` when apply exits 0
-and the receipt has ok true and wrote true. Otherwise it prints
-`RESTART=no`. It does not run launchctl. That script is the path used
-while `launchctl print` still succeeds. The offline copy and
-`screenshot_host_offline_recover.sh` use `RESTART=allowed` or
-`RESTART=not-allowed` together with `INSTALL=` and `BOOTSTRAP=not-run`,
-as written above. Do not treat `RESTART=no` and `RESTART=not-allowed` as
-the same line, and do not wait for `RESTART=not-run`. The script does not
-enforce that idle state. The
-first start after a successful copy may rewrite an interrupted job in
+If that historical file is executed by a fixture, it prints
+`RESTART=allowed` when apply exits 0 and the receipt has ok true and
+wrote true. Otherwise it prints `RESTART=no`. It does not run launchctl.
+`RESTART=no` is that file's word. It is not the offline
+`RESTART=not-allowed` line, and `RESTART=not-run` is not a receipt.
+The first start after a successful copy may rewrite an interrupted job in
 `data/url_jobs.json`. That is a runtime write. The installer does not
 write `.env`, `transcripts.db`, the WAL, the SHM, the transcript files, or
 the two drift JSON files. A WAL-only commit need not change the

@@ -21,7 +21,7 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "3a4c2f79ab488bb8ab0b18adf84388c42ce309f53f91a3124a452d181d4751e0",
+    "docs/SCREENSHOT_DEPLOY.md": "742d0ea184cfa8deca26d2c3f39e1a97259ea5fd846f7910ca8b6a9e87e1f6bb",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
     "scripts/screenshot_host_apply.py": "595be4fd30f321fb0dee8060c3d530e7a0d3d38db37be2428ce6638813170615"
   },
