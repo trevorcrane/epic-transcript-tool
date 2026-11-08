@@ -21,9 +21,9 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "352259a6fe9c10b184576c0c4845c10e504da8b2a0c58050444061a6772685fb",
+    "docs/SCREENSHOT_DEPLOY.md": "d2ba502c2965351a7512dd080855b1f93b5cfba35f5c729885508a6de43b73f6",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
-    "scripts/screenshot_host_apply.py": "60f6e85e8dca2fb8fdb511011c2f3606e34ed545850019d71971c5003d63d2e6"
+    "scripts/screenshot_host_apply.py": "642f22b481a339b1b043c6c447377a6e49fe5f5988853d7e042c958fd4236d70"
   },
   "outside_backup_script": {
     "path": "scripts/screenshot_outside_backup.py",
@@ -58,8 +58,8 @@
     "scripts/screenshot_host_deploy.sh": "08166d72de88cf46cf901f471b4853fe47c01cbbde175f2db172d9b210aaffca",
     "scripts/screenshot_host_rollback.sh": "0c2e5fec21289e7309c6b049b0bc9500e574b01040213e6eb0ee96e918c5099b",
     "scripts/screenshot_host_capture_identity.sh": "7ebfa8fc92b465f7b19226074fc224874fdbd50ec8da04656cbccc03bf201037",
-    "scripts/screenshot_host_offline_deploy.sh": "339b7713efd1087f65ac048c0febe52ac7dfbe46d01381d6e7132a067190bd65",
-    "scripts/screenshot_host_offline_checks.py": "40dca34a5d2f58d69f9f1be45a717f73f1346b0503dc257a1a04a3a595c62f8c"
+    "scripts/screenshot_host_offline_deploy.sh": "0ebdc27059e140e087e2b348474bafc11a45fdf8739f2a90d62fcef5938bb76d",
+    "scripts/screenshot_host_offline_checks.py": "ab5fb05faa7d61613e6b1004a5fb41077bf9bfa0bb07b627081feaf89ffc1f74"
   },
   "offline_route": "conditional; not approved; scripts do not bootout or bootstrap",
   "sqlite_guard": "BEGIN IMMEDIATE held across backup and apply; read-only backup connection; close may checkpoint WAL; not an installer write of data or .env"

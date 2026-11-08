@@ -75,23 +75,32 @@ check is IPv4 `127.0.0.1` only.
 
 Across backup, verify, preflight, dry run, and apply, the script holds
 `BEGIN IMMEDIATE` on `data/transcripts.db`. Another writer cannot commit
-during that section. The backup uses a separate read-only connection, so
-the reservation does not deadlock the snapshot. When the reservation
-closes, SQLite can checkpoint a leftover WAL into `transcripts.db` and
-remove the WAL and SHM files. The rows remain. That byte change is
-SQLite, not the installer writing those files. The installer still does
-not write `.env`, the transcript text files, or the two JSON files.
-`protected_unchanged` does not mean the SHM bytes were identical.
+during that section, including while `copy2` is replacing source files.
+The backup uses a separate read-only connection, so the reservation does
+not deadlock the snapshot. When the reservation closes, SQLite can
+checkpoint a leftover WAL into `transcripts.db` and remove the WAL and
+SHM files. The rows remain. That byte change is SQLite, not the installer
+writing those files. The installer still does not write `.env`, the
+transcript text files, or the two JSON files. `protected_unchanged` does
+not mean the SHM bytes were identical.
+`SCREENSHOT_APPLY_COPY_PAUSE_SECONDS` is not an operator control and is
+unset here. A fixture may set it so a second writer is observed during
+that copy. The script never sets it and never calls launchctl.
 
 A stale plist hash or a program that no longer matches the plist stops
 the script before backup and apply. It records queued and running job
 ids in `$HOME/screenshot-interrupted-jobs.json` and does not modify the
-live `url_jobs.json`. If apply fails, the same run restores the known-good
-source files from the apply receipt's backup when that backup exists,
-then prints `RECOVERY=source-restored` or `RECOVERY=failed`. It does not
-start the new code and it does not run bootstrap. There is no second
-authorization step. Recovery does not restore or delete data, `.env`, or
-the plist.
+live `url_jobs.json`. If apply fails, the same run looks only at the
+receipt it just wrote.
+A receipt left in the home directory from another run is ignored. A
+backup is used only when it sits under this tree's `backups/` directory
+and every c943 baseline file in it matches the manifest hash. After
+that, every baseline file on the live tree must match, and the files
+this install adds must be absent. Anything short of that is
+`RECOVERY=failed`. A preflight or dry-run failure does not read a
+receipt and does not change source. The script does not start the new
+code and it does not run bootstrap. There is no second authorization
+step. Recovery does not restore or delete data, `.env`, or the plist.
 
 The operator restart, also not run by the script, uses the plist path
 captured in the identity file. On this host that path was reported as

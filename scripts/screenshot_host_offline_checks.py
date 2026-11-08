@@ -176,24 +176,41 @@ def guard_section(args: argparse.Namespace) -> int:
         "close_may_checkpoint=true\n",
         encoding="utf-8",
     )
-    # A fixture may ask to attempt a writer before the copy continues.
-    # Production does not create this file, so it does not wait.
-    pause = Path(str(ready) + ".wait")
-    if pause.is_file():
-        attempted = Path(str(ready) + ".attempted")
-        deadline = time.time() + 5
-        while not attempted.exists() and time.time() < deadline:
-            time.sleep(0.01)
     try:
         proc = subprocess.run(cmd)
         return proc.returncode
     finally:
+        ready.unlink(missing_ok=True)
         try:
             conn.commit()
         except sqlite3.Error:
             pass
         conn.close()
-        ready.unlink(missing_ok=True)
+
+
+def source_matches_baseline(args: argparse.Namespace) -> int:
+    """Exit 0 only when every c943 baseline file matches and added install files are absent."""
+    manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
+    baseline = manifest.get("baseline") or {}
+    install = list((manifest.get("install") or {}).keys())
+    root = Path(args.root)
+    if not isinstance(baseline, dict) or not baseline or not install:
+        return 40
+    for rel, digest in baseline.items():
+        path = root / rel
+        if not path.is_file() or path.is_symlink():
+            print(rel)
+            return 40
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            print(rel)
+            return 40
+    for rel in install:
+        if rel in baseline:
+            continue
+        if (root / rel).exists() or (root / rel).is_symlink():
+            print(rel)
+            return 40
+    return 0
 
 
 def interrupted(args: argparse.Namespace) -> int:
@@ -261,6 +278,11 @@ def main() -> int:
     guard.add_argument("--ready", required=True)
     guard.add_argument("cmd", nargs=argparse.REMAINDER)
     guard.set_defaults(func=guard_section)
+
+    baseline = sub.add_parser("source-baseline")
+    baseline.add_argument("--root", type=Path, required=True)
+    baseline.add_argument("--manifest", type=Path, required=True)
+    baseline.set_defaults(func=source_matches_baseline)
 
     jobs = sub.add_parser("interrupted")
     jobs.add_argument("--root", type=Path, required=True)

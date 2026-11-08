@@ -14,6 +14,7 @@ import os
 import shutil
 import stat
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -229,9 +230,18 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
                 target = backup / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(dest, target)
+        # Test hook only. Unset in production. Holds this copy loop open so a
+        # second SQLite writer can observe the reservation during copy2 itself.
+        copy_pause = os.environ.get("SCREENSHOT_APPLY_COPY_PAUSE_SECONDS", "")
+        paused = False
         for rel in INSTALL_PATHS:
             dest = host / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
+            if os.environ.get("SCREENSHOT_APPLY_CRASH_AT") == rel and "backups" not in dest.parts:
+                raise RuntimeError(f"simulated crash during copy of {rel}")
+            if copy_pause and not paused:
+                time.sleep(float(copy_pause))
+                paused = True
             shutil.copy2(source / rel, dest)
         existing = gitignore_bytes.decode("utf-8") if gitignore_bytes is not None else ""
         lines = existing.splitlines()
@@ -258,8 +268,13 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
             report["protected_after"] = protected_fingerprints(host)
             report["protected_unchanged"] = stable_protected(report["protected_before"]) == stable_protected(report["protected_after"])
             return report
-    except Exception:
+    except Exception as exc:
         _restore(host, originals, gitignore_existed, gitignore_bytes)
+        try:
+            if backup.exists():
+                exc.install_backup = str(backup)
+        except Exception:
+            pass
         raise
     report["wrote"] = True
     report["backup"] = str(backup)
@@ -287,6 +302,7 @@ def main() -> int:
     try:
         report = apply_tree(host, source, manifest, args.apply)
     except Exception as exc:
+        backup = getattr(exc, "install_backup", "") or ""
         payload = {
             "ok": False,
             "wrote": False,
@@ -294,6 +310,8 @@ def main() -> int:
             "restored": True,
             "error": f"{type(exc).__name__}: {exc}. Install was rolled back. Do not restart.",
         }
+        if backup:
+            payload["backup"] = backup
         text = json.dumps(payload, indent=2)
         print(text)
         if args.out:

@@ -98,26 +98,6 @@ def _env(tmp: Path, live: Path, dest: Path, plist: Path, pid: str) -> dict[str, 
     }
 
 
-def _env(tmp: Path, live: Path, dest: Path, plist: Path, pid: str) -> dict[str, str]:
-    home = tmp / "home"
-    home.mkdir(exist_ok=True)
-    (tmp / "outside").mkdir(exist_ok=True)
-    return {
-        "ROOT": str(live),
-        "ARTIFACT": str(ROOT),
-        "DEST": str(dest),
-        "HOME": str(home),
-        "IDENTITY": str(home / "screenshot-prestop-identity.json"),
-        "PATH": str(tmp / "bin") + os.pathsep + os.environ.get("PATH", ""),
-        "FIXTURE_PLIST_PATH": str(plist),
-        "FIXTURE_PYTHON": str(_venv()),
-        "FIXTURE_SERVICE_PID": pid,
-        "FIXTURE_LAUNCHCTL_LOG": str(tmp / "launchctl.log"),
-        "FIXTURE_LAUNCHCTL_STATE_FILE": str(tmp / "launchctl-state"),
-        "SCREENSHOT_PORT": "8090",
-    }
-
-
 def _run(script: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     merged = os.environ.copy()
     merged.pop("SCREENSHOT_OFFLINE_AUTHORIZATION", None)
@@ -192,40 +172,41 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
         proc = None
         time.sleep(0.2)
         env["SCREENSHOT_OFFLINE_AUTHORIZATION"] = AUTH
-        ready = tmp_path / "home" / "screenshot-critical-open"
-        (tmp_path / "home" / "screenshot-critical-open.wait").write_text("1\n", encoding="utf-8")
+        env["SCREENSHOT_APPLY_COPY_PAUSE_SECONDS"] = "0.4"
         writer = subprocess.Popen(
             [sys.executable, "-c",
              "import sqlite3,sys,time\n"
              "from pathlib import Path\n"
-             "db, ready, out = sys.argv[1:]\n"
+             "db, ready, backups, out = sys.argv[1:]\n"
              "deadline=time.time()+30\n"
              "while not Path(ready).exists():\n"
              "    if time.time()>deadline:\n"
              "        Path(out).write_text('missed\\n'); raise SystemExit(2)\n"
-             "    time.sleep(0.01)\n"
-             "seen=False\n"
-             "blocked=False\n"
-             "committed=False\n"
-             "while time.time()<deadline:\n"
-             "    if not Path(ready).exists():\n"
-             "        if seen: break\n"
-             "        time.sleep(0.005); continue\n"
-             "    seen=True\n"
-             "    w=sqlite3.connect(db, timeout=0.2)\n"
+             "    time.sleep(0.005)\n"
+             "blocked_during_copy=0\n"
+             "committed_during_copy=False\n"
+             "while time.time()<deadline and Path(ready).exists():\n"
+             "    w=sqlite3.connect(db, timeout=0.05)\n"
              "    try:\n"
              "        w.execute(\"INSERT INTO transcripts VALUES ('9','intruder')\")\n"
-             "        w.commit(); committed=True; break\n"
+             "        w.commit()\n"
+             "        if any(Path(backups).glob('screenshots-*')) and Path(ready).exists():\n"
+             "            committed_during_copy=True\n"
+             "        break\n"
              "    except sqlite3.OperationalError:\n"
-             "        blocked=True; break\n"
+             "        if Path(ready).exists() and any(Path(backups).glob('screenshots-*')):\n"
+             "            blocked_during_copy += 1\n"
              "    finally:\n"
              "        w.close()\n"
-             "if not seen: Path(out).write_text('missed\\n')\n"
-             "elif committed: Path(out).write_text('committed\\n')\n"
-             "else: Path(out).write_text('blocked\\n')\n"
-             "Path(str(ready) + '.attempted').write_text('1\\n')\n",
+             "if committed_during_copy:\n"
+             "    Path(out).write_text('committed\\n')\n"
+             "elif blocked_during_copy:\n"
+             "    Path(out).write_text('blocked\\n')\n"
+             "else:\n"
+             "    Path(out).write_text('missed\\n')\n",
              str(live / "data" / "transcripts.db"),
              str(tmp_path / "home" / "screenshot-critical-open"),
+             str(live / "backups"),
              str(tmp_path / "writer-result.txt")],
         )
         try:
@@ -243,10 +224,11 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
         assert recorded["live_jobs_rewritten"] is False
         assert recorded["jobs"] == [{"id": "abc123abc123", "status": "running", "stage": "transcribing"}]
         assert (live / "screenshots.py").is_file()
-        home = tmp_path / "home"
-        preflight = json.loads((home / "screenshot-preflight.json").read_text(encoding="utf-8"))
-        dry = json.loads((home / "screenshot-apply-dry-run.json").read_text(encoding="utf-8"))
-        applied = json.loads((home / "screenshot-apply.json").read_text(encoding="utf-8"))
+        receipt = _printed(deployed.stdout, "APPLY_RECEIPT")
+        run_dir = receipt.parent
+        preflight = json.loads((run_dir / "preflight.json").read_text(encoding="utf-8"))
+        dry = json.loads((run_dir / "dry-run.json").read_text(encoding="utf-8"))
+        applied = json.loads(receipt.read_text(encoding="utf-8"))
         assert preflight["ok"] is True
         assert dry["wrote"] is False and dry["restart"] is False
         assert applied["ok"] is True and applied["wrote"] is True and applied["restart"] is False
@@ -273,7 +255,7 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
 
 def _prepare_stopped(tmp: Path) -> tuple[Path, dict[str, str]]:
     live = tmp / "live"
-    live.mkdir()
+    live.mkdir(parents=True)
     _live(live)
     plist = tmp / "LaunchAgents" / "com.epic.transcript-api.plist"
     _write_plist(plist, _venv())
@@ -448,7 +430,7 @@ def test_failed_apply_restores_source_and_stays_stopped(tmp_path):
     before_app = (live / "app.py").read_bytes()
     artifact = _recovery_artifact(tmp_path / "restore-art", live, fail=False)
     env["ARTIFACT"] = str(artifact)
-    env["RECOVERY_BACKUP"] = str(tmp_path / "known-good-c943")
+    env["RECOVERY_BACKUP"] = str(live / "backups" / "known-good-c943")
     proc = _run("screenshot_host_offline_deploy.sh", env)
     assert proc.returncode != 0, proc.stdout + proc.stderr
     assert "RESTART=no" in proc.stdout
@@ -520,6 +502,143 @@ def _recovery_artifact(tmp: Path, live: Path, fail: bool) -> Path:
         encoding="utf-8",
     )
     return artifact
+
+
+def _printed(stdout: str, key: str) -> Path:
+    for line in stdout.splitlines():
+        if line.startswith(key + "="):
+            return Path(line.split("=", 1)[1])
+    raise AssertionError(stdout)
+
+
+def test_stale_receipt_and_other_drift_do_not_restore(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    wrong = tmp_path / "wrong-backup"
+    (wrong / "app.py").parent.mkdir(parents=True)
+    (wrong / "app.py").write_text("WRONG-SOURCE\n", encoding="utf-8")
+    (tmp_path / "home" / "screenshot-apply.json").write_text(
+        json.dumps({"ok": False, "wrote": False, "restored": False, "restart": False, "backup": str(wrong)}) + "\n",
+        encoding="utf-8",
+    )
+    (live / "app.py").write_text("preflight-drift\n", encoding="utf-8")
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert proc.returncode != 0
+    assert "RECOVERY=not-needed" in proc.stdout
+    assert "RECOVERY=source-restored" not in proc.stdout
+    assert "RESTART=no" in proc.stdout
+    assert (live / "app.py").read_text(encoding="utf-8") == "preflight-drift\n"
+    assert "WRONG-SOURCE" not in (live / "app.py").read_text(encoding="utf-8")
+
+    live2, env2 = _prepare_stopped(tmp_path / "other")
+    (tmp_path / "other" / "home" / "screenshot-apply.json").write_text(
+        json.dumps({"ok": False, "wrote": False, "backup": str(wrong)}) + "\n",
+        encoding="utf-8",
+    )
+    (live2 / "static" / "index.html").write_text("drifted index\n", encoding="utf-8")
+    (live2 / "Dockerfile").write_text("drifted docker\n", encoding="utf-8")
+    proc = _run("screenshot_host_offline_deploy.sh", env2)
+    assert "RECOVERY=not-needed" in proc.stdout
+    assert "RECOVERY=source-restored" not in proc.stdout
+    assert (live2 / "static" / "index.html").read_text(encoding="utf-8") == "drifted index\n"
+    assert (live2 / "Dockerfile").read_text(encoding="utf-8") == "drifted docker\n"
+    assert "WRONG-SOURCE" not in (live2 / "app.py").read_text(encoding="utf-8")
+
+
+def test_backup_that_disagrees_on_any_baseline_file_is_not_used(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    before_index = (live / "static" / "index.html").read_bytes()
+    before_docker = (live / "Dockerfile").read_bytes()
+    artifact = _recovery_artifact(tmp_path / "bad-hash-art", live, fail=True)
+    backup = live / "backups" / "not-baseline"
+    (backup / "static").mkdir(parents=True)
+    (backup / "app.py").write_bytes((live / "app.py").read_bytes())
+    (backup / "static" / "index.html").write_text("WRONG-SOURCE\n", encoding="utf-8")
+    (backup / "Dockerfile").write_text("WRONG-SOURCE\n", encoding="utf-8")
+    (backup / "README.md").write_bytes((live / "README.md").read_bytes())
+    marker = artifact / "scripts" / "screenshot_host_apply.py"
+    marker.write_text(
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "root = Path(os.environ['ROOT'])\n"
+        "args = sys.argv[1:]\n"
+        "out = args[args.index('--out') + 1]\n"
+        "if '--apply' not in args:\n"
+        "    Path(out).write_text(json.dumps({'ok': True, 'wrote': False, 'restart': False}) + '\\n')\n"
+        "    raise SystemExit(0)\n"
+        "(root / 'app.py').write_text('replaced-during-failed-apply\\n')\n"
+        "Path(out).write_text(json.dumps({'ok': False, 'wrote': False, 'restored': False, 'restart': False, 'backup': os.environ['RECOVERY_BACKUP']}) + '\\n')\n"
+        "raise SystemExit(3)\n",
+        encoding="utf-8",
+    )
+    env["ARTIFACT"] = str(artifact)
+    env["RECOVERY_BACKUP"] = str(backup)
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert proc.returncode != 0
+    assert "RECOVERY=failed" in proc.stdout
+    assert "RECOVERY=source-restored" not in proc.stdout
+    assert (live / "app.py").read_text(encoding="utf-8") == "replaced-during-failed-apply\n"
+    assert (live / "static" / "index.html").read_bytes() == before_index
+    assert (live / "Dockerfile").read_bytes() == before_docker
+    assert "WRONG-SOURCE" not in (live / "static" / "index.html").read_text(encoding="utf-8")
+    assert "WRONG-SOURCE" not in (live / "Dockerfile").read_text(encoding="utf-8")
+
+
+def test_copy_crash_restores_every_baseline_file(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    env["SCREENSHOT_APPLY_CRASH_AT"] = "screenshots.py"
+    before = {rel: (live / rel).read_bytes() for rel in ("app.py", "static/index.html", "Dockerfile", "README.md", ".env", "data/url_jobs.json")}
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "RECOVERY=source-restored" in proc.stdout
+    assert "RESTART=no" in proc.stdout
+    assert "BOOTSTRAP=not-run" in proc.stdout
+    assert "RESTART=allowed" not in proc.stdout
+    for rel, data in before.items():
+        assert (live / rel).read_bytes() == data
+    assert not (live / "screenshots.py").exists()
+    assert not (live / "docs" / "SCREENSHOT_DEPLOY.md").exists()
+    receipt = _printed(proc.stdout, "APPLY_RECEIPT")
+    body = json.loads(receipt.read_text(encoding="utf-8"))
+    assert body["restored"] is True
+    assert body["backup"]
+    assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+
+def test_restored_flag_without_every_baseline_file_is_not_success(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    original_index = (live / "static" / "index.html").read_bytes()
+    artifact = _recovery_artifact(tmp_path / "drift-art", live, fail=False)
+    marker = artifact / "scripts" / "screenshot_host_apply.py"
+    marker.write_text(
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "root = Path(os.environ['ROOT'])\n"
+        "args = sys.argv[1:]\n"
+        "out = args[args.index('--out') + 1]\n"
+        "if '--apply' not in args:\n"
+        "    Path(out).write_text(json.dumps({'ok': True, 'wrote': False, 'restart': False}) + '\\n')\n"
+        "    raise SystemExit(0)\n"
+        "(root / 'static' / 'index.html').write_text('still drifted\\n')\n"
+        "(root / 'Dockerfile').write_text('still drifted\\n')\n"
+        "Path(out).write_text(json.dumps({'ok': False, 'wrote': False, 'restored': True, 'restart': False}) + '\\n')\n"
+        "raise SystemExit(3)\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "home" / "screenshot-apply.json").write_text(
+        json.dumps({"ok": False, "wrote": False, "restored": False, "backup": str(tmp_path / "wrong-backup")}) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "wrong-backup").mkdir()
+    (tmp_path / "wrong-backup" / "app.py").write_text("WRONG-SOURCE\n", encoding="utf-8")
+    env["ARTIFACT"] = str(artifact)
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert "RECOVERY=failed" in proc.stdout
+    assert "WRONG-SOURCE" not in (live / "app.py").read_text(encoding="utf-8")
+    assert "RECOVERY=source-restored" not in proc.stdout
+    assert "RESTART=no" in proc.stdout
+    assert (live / "static" / "index.html").read_text(encoding="utf-8") == "still drifted\n"
+    assert (live / "Dockerfile").read_text(encoding="utf-8") == "still drifted\n"
+    assert original_index != (live / "static" / "index.html").read_bytes()
 
 
 def _replace_field(text: str, key: str, value: str) -> str:

@@ -18,41 +18,43 @@ trace() {
   fi
 }
 
-sha256_file() {
-  "$PY" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"
+source_is_baseline() {
+  "$PY" "$checks" source-baseline --root "$1" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json"
 }
 
 recover_failed_apply() {
-  receipt="$HOME/screenshot-apply.json"
+  # Only the receipt written by this process. Never $HOME/screenshot-apply.json.
+  receipt="$RUN_DIR/apply.json"
   if [ ! -s "$receipt" ]; then
-    if [ ! -e "$ROOT/screenshots.py" ]; then
-      printf '%s\n' "RECOVERY=source-unchanged"
-      return 0
-    fi
-    printf '%s\n' "RECOVERY=failed"
-    return 1
+    printf '%s\n' "RECOVERY=not-needed"
+    return 0
   fi
   backup=$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("backup") or "")' "$receipt") || backup=""
-  if [ -z "$backup" ] || [ ! -f "$backup/app.py" ]; then
-    printf '%s\n' "RECOVERY=failed"
-    return 1
-  fi
-  if [ "$(sha256_file "$ROOT/app.py")" != "$(sha256_file "$backup/app.py")" ] || { [ -e "$ROOT/screenshots.py" ] && [ ! -f "$backup/screenshots.py" ]; }; then
-    if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
+  if [ -n "$backup" ]; then
+    case "$backup" in
+      "$ROOT/backups/"*) ;;
+      *)
+        printf '%s\n' "RECOVERY=failed"
+        return 1
+        ;;
+    esac
+    if ! source_is_baseline "$backup"; then
       printf '%s\n' "RECOVERY=failed"
       return 1
     fi
+    if ! source_is_baseline "$ROOT"; then
+      if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
+        printf '%s\n' "RECOVERY=failed"
+        return 1
+      fi
+    fi
   fi
-  if [ "$(sha256_file "$ROOT/app.py")" != "$(sha256_file "$backup/app.py")" ]; then
-    printf '%s\n' "RECOVERY=failed"
-    return 1
+  if source_is_baseline "$ROOT"; then
+    printf '%s\n' "RECOVERY=source-restored"
+    return 0
   fi
-  if [ -e "$ROOT/screenshots.py" ] && [ ! -f "$backup/screenshots.py" ]; then
-    printf '%s\n' "RECOVERY=failed"
-    return 1
-  fi
-  printf '%s\n' "RECOVERY=source-restored"
-  return 0
+  printf '%s\n' "RECOVERY=failed"
+  return 1
 }
 
 if [ "${SCREENSHOT_OFFLINE_AUTHORIZATION:-}" != "interruptible-offline-window-approved" ]; then
@@ -72,6 +74,9 @@ if [ ! -w "$dest_parent" ]; then
   deny 1
 fi
 
+RUN_ID=$(date +%s%N)
+RUN_DIR="$HOME/screenshot-run-$RUN_ID"
+mkdir -p "$RUN_DIR" || deny 1
 LABEL="${LAUNCHD_LABEL:-gui/501/com.epic.transcript-api}"
 PORT="${SCREENSHOT_PORT:-8090}"
 IDENTITY="${IDENTITY:-$HOME/screenshot-prestop-identity.json}"
@@ -135,7 +140,7 @@ if [ -n "$jobs_before" ]; then
   fi
 fi
 
-export ROOT ARTIFACT DEST HOME PY PLIST PORT LABEL
+export ROOT ARTIFACT DEST HOME PY PLIST PORT LABEL RUN_DIR
 body="$HOME/screenshot-critical-body.sh"
 cat > "$body" <<'BODY'
 #!/usr/bin/env bash
@@ -157,7 +162,7 @@ preflight_exit=0
   --root "$ROOT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --port "$PORT" \
-  --out "$HOME/screenshot-preflight.json" || preflight_exit=$?
+  --out "$RUN_DIR/preflight.json" || preflight_exit=$?
 trace "preflight-exit=$preflight_exit"
 if [ "$preflight_exit" -ne 0 ]; then exit "$preflight_exit"; fi
 dry_exit=0
@@ -165,7 +170,7 @@ dry_exit=0
   --root "$ROOT" \
   --source "$ARTIFACT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
-  --out "$HOME/screenshot-apply-dry-run.json" || dry_exit=$?
+  --out "$RUN_DIR/dry-run.json" || dry_exit=$?
 trace "dry-run-exit=$dry_exit"
 if [ "$dry_exit" -ne 0 ]; then exit "$dry_exit"; fi
 trace "apply"
@@ -175,12 +180,12 @@ apply_exit=0
   --source "$ARTIFACT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --apply \
-  --out "$HOME/screenshot-apply.json" || apply_exit=$?
+  --out "$RUN_DIR/apply.json" || apply_exit=$?
 trace "apply-exit=$apply_exit"
 ok=no
 wrote=no
-if [ -s "$HOME/screenshot-apply.json" ]; then
-  parsed=$("$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); print("yes" if d.get("ok") is True else "no", "yes" if d.get("wrote") is True else "no")' "$HOME/screenshot-apply.json") || parsed="no no"
+if [ -s "$RUN_DIR/apply.json" ]; then
+  parsed=$("$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); print("yes" if d.get("ok") is True else "no", "yes" if d.get("wrote") is True else "no")' "$RUN_DIR/apply.json") || parsed="no no"
   ok=${parsed%% *}
   wrote=${parsed##* }
 fi
@@ -200,9 +205,13 @@ if [ "$section_exit" -ne 0 ]; then
   recover_failed_apply
   printf '%s\n' "RESTART=no"
   printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+  if [ -s "$RUN_DIR/apply.json" ]; then
+    printf '%s\n' "APPLY_RECEIPT=$RUN_DIR/apply.json"
+  fi
   exit "$section_exit"
 fi
 printf '%s\n' "APPLY=ok"
 printf '%s\n' "RESTART=not-run"
 printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+printf '%s\n' "APPLY_RECEIPT=$RUN_DIR/apply.json"
 exit 0
