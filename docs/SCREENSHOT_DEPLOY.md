@@ -27,55 +27,70 @@ while this pack was built:
 Use that virtualenv interpreter for the preflight and the copy. Do not
 substitute a different `python3`.
 
-The live job is launchd `gui/501/com.epic.transcript-api`. Find its plist
-from that label and copy the plist as part of the backup below. This pack
-does not edit or restart the job.
+The live job label is `gui/501/com.epic.transcript-api`. The plist path is
+whatever `launchctl print` reports for that label. Do not assume
+`~/Library/LaunchAgents/com.epic.transcript-api.plist`. This pack does not
+edit or restart the job.
 
 ## Outside backup, before any copy
 
 The installer does not make this backup. Its `backups/screenshots-<UTC>/`
 folder only keeps the previous source files it replaces. It does not contain
-`data/`, `.env`, or the launchd plist.
+`data/`, `.env`, or the launchd configuration.
 
-Put the backup outside the repository. One example location, which the owner
-must choose and create, is a new directory under the home folder and not
-inside the app tree:
+`cp -R data` while the service is running is not a consistent SQLite copy.
+The live `transcripts.db-wal` and `transcripts.db-shm` belong to the open
+database. Copying them next to a separate snapshot, or restoring them later
+on top of that snapshot, mixes two states. The command below uses the
+service interpreter's `sqlite3` backup API to write one `transcripts.db`.
+It does not copy the live WAL or SHM. It does not modify the live database,
+the transcript files, `data/url_jobs.json`, or `data/phase3_gemini_usage.json`.
+
+Those JSON files and the transcript files are byte copies of what was read.
+The live `transcripts.db` and `transcripts.db-wal` are not rewritten. SQLite
+can update the `transcripts.db-shm` reader mark while the snapshot is taken.
+That mark is not copied, and it is not an installer write. A later process
+start may rewrite `data/url_jobs.json` when it settles an interrupted job.
+That rewrite is a runtime write by the app. The installer does not write
+`data/` or `.env`.
+
+Set `ARTIFACT` to the unpacked screenshot pack. The backup script stays in
+that pack. It is not one of the files the installer copies onto the host.
+`set -o pipefail` is required because discovering the plist is a pipeline.
+The script writes `SHA256SUMS` only after every listed file hashes again.
+A failure leaves no hash listing. Do not pipe this through `tee`.
 
 ```bash
-ROOT=/Users/tc-imac/.openclaw/workspace/epic-transcript-tool
-PY="$ROOT/.venv/bin/python"
+# fixture: outside-backup
+set -euo pipefail
+ROOT="${ROOT:-/Users/tc-imac/.openclaw/workspace/epic-transcript-tool}"
+PY="${PY:-$ROOT/.venv/bin/python}"
+ARTIFACT="${ARTIFACT:?set ARTIFACT to the unpacked screenshot pack}"
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
-DEST="$HOME/transcript-machine-backups/screenshots-$STAMP"
-mkdir -p "$DEST"
-cp -R "$ROOT/data" "$DEST/data"
-cp "$ROOT/.env" "$DEST/.env"
-# Copy the plist that belongs to gui/501/com.epic.transcript-api.
-# The owner locates that file. A user agent often lives at
-# $HOME/Library/LaunchAgents/com.epic.transcript-api.plist
-cp "$HOME/Library/LaunchAgents/com.epic.transcript-api.plist" "$DEST/launchd.plist"
+DEST="${DEST:-$HOME/transcript-machine-backups/screenshots-$STAMP}"
+LABEL="${LAUNCHD_LABEL:-gui/501/com.epic.transcript-api}"
+mkdir -p "$(dirname "$DEST")"
+PLIST=$(launchctl print "$LABEL" | "$PY" -c 'import sys
+path = ""
+for line in sys.stdin:
+    stripped = line.strip()
+    if stripped.startswith("path ="):
+        path = stripped.split("=", 1)[1].strip().strip("\"")
+        break
+if not path:
+    raise SystemExit("launchctl print did not report a path")
+print(path)')
+test -n "$PLIST"
+test -f "$PLIST"
+"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --root "$ROOT" --dest "$DEST" --plist "$PLIST"
+test -s "$DEST/SHA256SUMS"
+"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --verify "$DEST"
 ```
 
-That `data` copy has to include `transcripts.db`, everything under
-`data/transcripts/`, `data/url_jobs.json`, and
-`data/phase3_gemini_usage.json`. Hash the backup with the service
-interpreter, or with `shasum -a 256` on macOS. Keep the listing next to
-the backup. `sha256sum` is not the command on this Mac.
-
-```bash
-"$PY" - "$DEST" <<'PY' | tee "$DEST/SHA256SUMS"
-import hashlib, pathlib, sys
-root = pathlib.Path(sys.argv[1])
-for path in sorted(p for p in root.rglob("*") if p.is_file() and not path.is_symlink()):
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    print(f"{digest}  {path.relative_to(root).as_posix()}")
-PY
-shasum -a 256 "$DEST/.env" "$DEST/launchd.plist" \
-  "$DEST/data/transcripts.db" \
-  "$DEST/data/url_jobs.json" \
-  "$DEST/data/phase3_gemini_usage.json"
-```
-
-Stop if that backup is incomplete. Do not continue to `--apply`.
+Stop if that command's exit code is not 0, if `SHA256SUMS` is missing or
+empty, or if `--verify` fails. Do not continue to `--apply`. On macOS,
+`shasum -a 256` can hash one file by hand. It is not a substitute for the
+verified listing above. `sha256sum` is not the command on this Mac.
 
 ## Files this installer may write
 
@@ -120,24 +135,37 @@ is reported and is not a reason to overwrite them.
 Dry run (no `--apply`) does not install. Exit 0 on a dry run is not a
 restart signal.
 
+Dry run and apply write different receipt files. Do not reuse one `--out`
+path for both. A dry run can exit 0 with `"wrote": false`. That receipt
+must still be there after the apply receipt is written.
+
 ```bash
-"$PY" /path/to/artifact/scripts/screenshot_host_apply.py \
+# fixture: apply-dry-run
+set -euo pipefail
+ROOT="${ROOT:-/Users/tc-imac/.openclaw/workspace/epic-transcript-tool}"
+PY="${PY:-$ROOT/.venv/bin/python}"
+ARTIFACT="${ARTIFACT:?set ARTIFACT to the unpacked screenshot pack}"
+"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
   --root "$ROOT" \
-  --source /path/to/artifact \
-  --manifest /path/to/artifact/docs/screenshot-install-manifest.json \
-  --out "$HOME/screenshot-apply.json"
+  --source "$ARTIFACT" \
+  --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
+  --out "$HOME/screenshot-apply-dry-run.json"
 ```
 
 Apply:
 
 ```bash
-"$PY" /path/to/artifact/scripts/screenshot_host_apply.py \
+# fixture: apply
+set -euo pipefail
+ROOT="${ROOT:-/Users/tc-imac/.openclaw/workspace/epic-transcript-tool}"
+PY="${PY:-$ROOT/.venv/bin/python}"
+ARTIFACT="${ARTIFACT:?set ARTIFACT to the unpacked screenshot pack}"
+"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
   --root "$ROOT" \
-  --source /path/to/artifact \
-  --manifest /path/to/artifact/docs/screenshot-install-manifest.json \
+  --source "$ARTIFACT" \
+  --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --apply \
   --out "$HOME/screenshot-apply.json"
-echo "apply_exit=$?"
 ```
 
 Restart `gui/501/com.epic.transcript-api` only when all three are true:
@@ -174,9 +202,29 @@ group and is not searched for.
 
 ## Rollback
 
-Use the outside backup for `data/`, `.env`, and the plist. For the source
-files, after a zero-exit copy that also had `ok` and `wrote`, stop the same
-launchd job and restore:
+Stop the service before restoring the database. Copy the single snapshot
+`transcripts.db` into place and remove any live WAL and SHM first. Do not
+copy a WAL or SHM from the live tree onto that snapshot.
+
+```bash
+# fixture: restore-database
+set -euo pipefail
+# The service must already be stopped. This command does not stop launchd.
+rm -f "$ROOT/data/transcripts.db-wal" "$ROOT/data/transcripts.db-shm"
+cp "$DEST/data/transcripts.db" "$ROOT/data/transcripts.db"
+test ! -e "$ROOT/data/transcripts.db-wal"
+test ! -e "$ROOT/data/transcripts.db-shm"
+cp "$DEST/.env" "$ROOT/.env"
+cp "$DEST/data/url_jobs.json" "$ROOT/data/url_jobs.json"
+cp "$DEST/data/phase3_gemini_usage.json" "$ROOT/data/phase3_gemini_usage.json"
+rm -rf "$ROOT/data/transcripts"
+cp -R "$DEST/data/transcripts" "$ROOT/data/transcripts"
+```
+
+The launchd file in the backup is the one `launchctl print` named, saved as
+`launchd.plist`. Put it back only at that same discovered path, and only
+after the service is stopped. For the source files, after a zero-exit copy
+that also had `ok` and `wrote`, restore:
 
 ```bash
 cp backups/screenshots-<UTC>/app.py app.py
