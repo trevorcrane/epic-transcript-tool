@@ -522,9 +522,19 @@
       const stage = stages[Math.min(Math.floor(elapsed / 12), stages.length - 1)];
       setStatus(`${stage} ${elapsed}s`);
       await sleep(attempt < 6 ? 1000 : 2000);
-      const data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      let data;
+      try {
+        data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+      } catch (err) {
+        // A restart drops the socket. Stay inside this 150-step cap and do not submit the URL again.
+        const message = err && err.message ? String(err.message) : '';
+        const transport = err instanceof TypeError || /failed to fetch|network|load failed|ECONNREFUSED|socket/i.test(message);
+        if (!transport) throw err;
+        continue;
+      }
       const job = data.job || {};
-      if (job.status === 'done' && job.record) {
+      const savedTranscript = job.record && String(job.record.transcript || '').trim();
+      if (savedTranscript && (job.status === 'done' || job.interrupted)) {
         const rec = job.record;
         if (includeScreenshots) {
           const shots = job.screenshots || rec.screenshots;

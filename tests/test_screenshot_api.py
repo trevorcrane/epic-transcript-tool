@@ -95,6 +95,7 @@ def test_screenshot_failure_keeps_transcript_and_hides_internal_error():
 
 def test_screenshot_success_serves_jpeg_and_zip(tmp_path, monkeypatch):
     monkeypatch.setattr(app, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(app, "resolve_binary", lambda *args, **kwargs: "ffmpeg")
     with patch.object(app, "transcribe_youtube_url_to_record", return_value=dict(FAKE_RECORD)), \
          patch.object(app, "capture_from_url", side_effect=_write_capture):
         client = TestClient(app.app)
@@ -114,6 +115,32 @@ def test_screenshot_success_serves_jpeg_and_zip(tmp_path, monkeypatch):
     with zipfile.ZipFile(io.BytesIO(archive.content)) as zf:
         assert shots["frames"][0]["filename"] in zf.namelist()
         assert "0:01" in zf.read("manifest.csv").decode()
+
+
+def test_downloader_failure_keeps_transcript_without_a_second_attempt(tmp_path, monkeypatch):
+    """Ordinary YouTube downloader failure. The stub is an explicit function, not PATH."""
+    monkeypatch.setattr(app, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(app, "resolve_binary", lambda *args, **kwargs: "ffmpeg")
+    calls = []
+
+    def fail_download(*args, **kwargs):
+        calls.append(args[0] if args else "")
+        raise RuntimeError("yt-dlp exited 1")
+
+    monkeypatch.setattr(screenshots, "public_http_url", lambda url: url)
+    monkeypatch.setattr(screenshots, "download_360p", fail_download)
+    with patch.object(app, "transcribe_youtube_url_to_record", return_value=dict(FAKE_RECORD)):
+        client = TestClient(app.app)
+        started = client.post(
+            "/api/transcribe-url-job",
+            data={"url": "https://youtu.be/abcdefghijk", "include_screenshots": "1"},
+        )
+        job = _wait_job(client, started.json()["job"]["id"])
+    assert job["status"] == "done"
+    assert job["record"]["transcript"] == "hello from captions"
+    assert job["screenshots"]["status"] == "error"
+    assert job["screenshots"]["error"] == "Screenshots could not be captured."
+    assert calls == ["https://www.youtube.com/watch?v=abcdefghijk"]
 
 
 def test_non_youtube_screenshot_does_not_resolve_or_download(tmp_path, monkeypatch):

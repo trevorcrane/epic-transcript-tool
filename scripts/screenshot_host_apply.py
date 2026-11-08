@@ -17,7 +17,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from screenshot_host_preflight import DO_NOT_TOUCH, inspect_tree, load_new_hashes, sha256, write_path_symlink
+from screenshot_host_preflight import (
+    DO_NOT_TOUCH,
+    inspect_tree,
+    load_new_hashes,
+    protected_layout_symlinks,
+    sha256,
+    write_path_symlink,
+)
 
 
 INSTALL_PATHS = (
@@ -163,15 +170,22 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
         report["restart"] = False
         return report
     blocked = symlink_blocks(host)
+    layout = protected_layout_symlinks(host)
+    refused = list(dict.fromkeys([*blocked, *layout]))
     protected_before = protected_fingerprints(host)
     report["protected_before"] = protected_before
+    report["protected_symlinks"] = layout
     report["restart"] = False
-    if blocked:
+    if refused:
         report["ok"] = False
-        report["error"] = "Refusing to write through a symlink. Nothing was copied."
-        report["symlink_blocked"] = blocked
+        report["error"] = "Refusing to write while an install path or protected path is a symlink. Nothing was copied."
+        report["symlink_blocked"] = refused
         report["protected_after"] = protected_fingerprints(host)
         report["protected_unchanged"] = report["protected_before"] == report["protected_after"]
+        report["protected_note"] = (
+            "A symlink fingerprint is the link text, not the bytes at the target. "
+            "This installer does not follow protected symlinks and does not write them."
+        )
         return report
     if not report["ok"]:
         report["error"] = "Host files do not match the reviewed baseline. Nothing was copied."

@@ -785,8 +785,63 @@ def load_url_jobs_locked() -> None:
         URL_JOBS.update({str(k): v for k, v in data.items() if isinstance(v, dict)})
 
 
+def _persisted_transcript(job: dict) -> str:
+    record = job.get("record")
+    if not isinstance(record, dict):
+        return ""
+    text = record.get("transcript")
+    if not isinstance(text, str):
+        return ""
+    return text.strip()
+
+
+def settle_interrupted_jobs_locked() -> int:
+    """Finish jobs left queued or running by a dead process.
+
+    A saved transcript becomes a done job with a screenshot error. Anything
+    else becomes an error. This does not start a thread and does not download.
+    """
+    changed = 0
+    now = time.time()
+    for job in URL_JOBS.values():
+        if not isinstance(job, dict) or job.get("status") not in {"queued", "running"}:
+            continue
+        transcript = _persisted_transcript(job)
+        if transcript:
+            record = dict(job.get("record") or {})
+            existing = job.get("screenshots") if isinstance(job.get("screenshots"), dict) else None
+            if not (existing and existing.get("status") == "done" and existing.get("frames")):
+                nested = record.get("screenshots") if isinstance(record.get("screenshots"), dict) else None
+                existing = nested if nested and nested.get("status") == "done" and nested.get("frames") else None
+            shots = existing or screenshot_error_payload()
+            record["screenshots"] = shots
+            job.update({
+                "status": "done",
+                "stage": "interrupted",
+                "record": record,
+                "screenshots": shots,
+                "finished_at": now,
+                "percent": 100,
+                "interrupted": True,
+                "message": "Transcript ready. Screenshots could not be captured." if shots.get("status") != "done" else "Transcript ready.",
+            })
+        else:
+            job.update({
+                "status": "error",
+                "stage": "interrupted",
+                "error": "The transcript job was interrupted before it finished.",
+                "finished_at": now,
+                "interrupted": True,
+            })
+        changed += 1
+    if changed:
+        save_url_jobs_locked()
+    return changed
+
+
 with URL_JOBS_LOCK:
     load_url_jobs_locked()
+    settle_interrupted_jobs_locked()
 
 
 def visitor_safe_transcription_error(detail: object) -> str:

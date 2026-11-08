@@ -213,6 +213,132 @@ def test_copy_failure_restores_every_replaced_file(tmp_path, monkeypatch):
     assert (host / ".gitignore").read_bytes() == before_ignore
 
 
+SENTINELS = {
+    ".env": b"SECRET=keep\n",
+    "data/transcripts.db": b"sqlite-bytes",
+    "data/url_jobs.json": b'{"drift":"url-jobs"}\n',
+    "data/phase3_gemini_usage.json": b'{"drift":"gemini"}\n',
+    "data/transcripts/kept.txt": b"existing transcript text\n",
+}
+
+
+def _write_sentinels(root: Path) -> dict[str, str]:
+    hashes = {}
+    for rel, data in SENTINELS.items():
+        path = root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        hashes[rel] = hashlib.sha256(data).hexdigest()
+    return hashes
+
+
+def test_env_symlink_is_refused_before_write(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    secret = outside / ".env"
+    secret.write_bytes(SENTINELS[".env"])
+    before = secret.read_bytes()
+    (host / ".env").unlink()
+    (host / ".env").symlink_to(secret)
+    report = apply_mod.apply_tree(host, source, manifest, True)
+    assert report["ok"] is False
+    assert report["wrote"] is False
+    assert report["restart"] is False
+    assert ".env" in report["symlink_blocked"]
+    assert secret.read_bytes() == before
+    assert not (host / "screenshots.py").exists()
+    assert (host / "app.py").read_text(encoding="utf-8") == "reviewed baseline\n"
+    assert report["protected_before"][".env"]["kind"] == "symlink"
+
+
+def test_data_directory_symlink_is_refused_before_write(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    outside = tmp_path / "outside-data"
+    hashes = _write_sentinels(outside)
+    before = {rel: (outside / rel).read_bytes() for rel in SENTINELS}
+    (host / "data").rename(tmp_path / "unused-data")
+    (host / "data").symlink_to(outside, target_is_directory=True)
+    report = apply_mod.apply_tree(host, source, manifest, False)
+    assert report["wrote"] is False
+    assert report["restart"] is False
+    assert report["ok"] is False
+    assert "data" in report["symlink_blocked"]
+    assert not (host / "screenshots.py").exists()
+    for rel, data in before.items():
+        assert (outside / rel).read_bytes() == data
+        assert hashlib.sha256(data).hexdigest() == hashes[rel]
+    assert report["protected_before"]["data"]["kind"] == "symlink"
+    assert "sha256" not in report["protected_before"]["data"]
+
+
+def test_nested_data_symlinks_are_refused_before_write(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    outside = tmp_path / "outside-nested"
+    outside.mkdir()
+    jobs = outside / "url_jobs.json"
+    usage = outside / "phase3_gemini_usage.json"
+    transcripts = outside / "transcripts"
+    transcripts.mkdir()
+    kept = transcripts / "kept.txt"
+    jobs.write_bytes(SENTINELS["data/url_jobs.json"])
+    usage.write_bytes(SENTINELS["data/phase3_gemini_usage.json"])
+    kept.write_bytes(SENTINELS["data/transcripts/kept.txt"])
+    before = {path: path.read_bytes() for path in (jobs, usage, kept)}
+    db_before = (host / "data" / "transcripts.db").read_bytes()
+    (host / "data" / "url_jobs.json").symlink_to(jobs)
+    (host / "data" / "phase3_gemini_usage.json").symlink_to(usage)
+    (host / "data" / "transcripts").rename(tmp_path / "unused-transcripts")
+    (host / "data" / "transcripts").symlink_to(transcripts, target_is_directory=True)
+    report = apply_mod.apply_tree(host, source, manifest, True)
+    assert report["ok"] is False
+    assert report["wrote"] is False
+    assert report["restart"] is False
+    assert "data/url_jobs.json" in report["symlink_blocked"]
+    assert "data/phase3_gemini_usage.json" in report["symlink_blocked"]
+    assert "data/transcripts" in report["symlink_blocked"]
+    assert not (host / "screenshots.py").exists()
+    assert (host / "app.py").read_text(encoding="utf-8") == "reviewed baseline\n"
+    assert (host / "data" / "transcripts.db").read_bytes() == db_before
+    for path, data in before.items():
+        assert path.read_bytes() == data
+
+
+def test_real_protected_sentinels_survive_success_and_crash(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    hashes = _write_sentinels(host)
+    report = apply_mod.apply_tree(host, source, manifest, True)
+    assert report["ok"] is True
+    assert report["wrote"] is True
+    assert report["restart"] is False
+    for rel, digest in hashes.items():
+        finger = report["protected_before"][rel]
+        assert finger["kind"] == "file"
+        assert finger["sha256"] == digest
+        assert report["protected_after"][rel]["sha256"] == digest
+        assert hashlib.sha256((host / rel).read_bytes()).hexdigest() == digest
+
+    crash_root = tmp_path / "crash"
+    crash_root.mkdir()
+    host2, source2, manifest2 = _small_host(crash_root, monkeypatch)
+    hashes2 = _write_sentinels(host2)
+    before_app = (host2 / "app.py").read_bytes()
+    original = apply_mod.shutil.copy2
+
+    def crash(src, dst, *args, **kwargs):
+        if Path(dst).name == "screenshots.py" and "backups" not in Path(dst).parts:
+            raise RuntimeError("simulated crash during copy")
+        return original(src, dst, *args, **kwargs)
+
+    monkeypatch.setattr(apply_mod.shutil, "copy2", crash)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        apply_mod.apply_tree(host2, source2, manifest2, True)
+    assert (host2 / "app.py").read_bytes() == before_app
+    assert not (host2 / "screenshots.py").exists()
+    for rel, digest in hashes2.items():
+        assert hashlib.sha256((host2 / rel).read_bytes()).hexdigest() == digest
+
+
 def test_empty_manifest_does_not_copy(tmp_path, monkeypatch):
     host, source, _manifest = _small_host(tmp_path, monkeypatch)
     empty = source / "empty.json"

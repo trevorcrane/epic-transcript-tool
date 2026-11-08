@@ -79,6 +79,9 @@ text upload roundtrip.
   `https://www.youtube.com/watch?v=ID` and `yt-dlp --use-extractors youtube`.
   Other links are not fetched for screenshots. A screenshot failure still
   returns the transcript and says `Screenshots could not be captured.`
+  If the process stops after the transcript was saved and before capture
+  finishes, the next start marks that job done with the same screenshot
+  error. It does not download the video again.
 - **File upload** → `txt`/`md` returned as-is, `srt`/`vtt` stripped to clean
   text, audio/video sent to Whisper.
 - Files >25 MB are auto-transcoded to mono 16 kHz 32 kbps mp3 before Whisper.

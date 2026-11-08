@@ -1,6 +1,14 @@
 {
-  "baseline_commit": "c943233222a021e91903e01fb626918e55b43ccc",
-  "do_not_deploy_previous_pack": "7246cbcdcdcf32d488326a3f4846d98d63ae013e",
+  "parent_commit": "c943233222a021e91903e01fb626918e55b43ccc",
+  "github_pr": "https://github.com/trevorcrane/epic-transcript-tool/pull/4",
+  "github_pr_base": "main",
+  "github_pr_base_commit": "28707a20b25d42ac52e38021cc1053ad42057ec2",
+  "do_not_merge_into_github_base": true,
+  "do_not_deploy_previous_pack": [
+    "e20e5dc",
+    "06c57d71",
+    "7246cbcdcdcf32d488326a3f4846d98d63ae013e"
+  ],
   "baseline": {
     "app.py": "61cb52a2318a3bbd304a7685f09161f3bc805eefc5bea06a20ed82c3347414be",
     "static/index.html": "e7513891be39bb0dcb845bcba05c97d4cad1398ed1e10d24759285dcf0375999",
@@ -8,21 +16,34 @@
     "README.md": "ecc30826cfe702c281d11b8b23663179c86c801bd58e1eac91a02205aeb7d035"
   },
   "install": {
-    "app.py": "a2df87f7da69ead4ff0c8f3b2c164498ca732a8bcee64aa2711e8f5b4b52b2c5",
-    "static/index.html": "ee7310185a4e8054147b9db3d6dadf53b39cff851eb74780e23fca572d4625ff",
+    "app.py": "f3e8c832f2fed044be7607f478ea2dd1f01e97c85dd29ef31c5601eedd15c8b2",
+    "static/index.html": "e3b7b32492f6fe8978fde1b5e95a5e0c12b5a44b08946d2a83fb9d8ad427e08d",
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
-    "README.md": "3890466ad3c74d8566bcd6e0e680758eea14d7d4ed46b077240872df721e8187",
+    "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "cc13ddf3f27446fd43e45df2c09e45874cd708f660fea293b48e0ea066e0811f",
-    "scripts/screenshot_host_preflight.py": "c5b4cf16484a0076904811eef907f44b5f7fc3bab7adb0131f2ac61c782c2787",
-    "scripts/screenshot_host_apply.py": "1e38446cd95b861c901682e89d4765ab7f49413dad626244bc621711130f5812"
+    "docs/SCREENSHOT_DEPLOY.md": "867b894fdb3715db4c989f44412ac8e85353a1591cda3a34b6764e1c03420bcc",
+    "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
+    "scripts/screenshot_host_apply.py": "0da74f7f97a9a94ced02fd2eb282315f239292687109d6b6cd849b625dddffd4"
   },
-  "preserve_byte_for_byte": [
+  "service_python": "/Users/tc-imac/.openclaw/workspace/epic-transcript-tool/.venv/bin/python",
+  "host_reported_versions_not_executed_in_this_build": {
+    "python": "3.14.3",
+    "yt_dlp": "2026.03.17",
+    "ffmpeg": "8.1.1"
+  },
+  "restart_rule": "Restart only when apply exits 0 and the JSON has ok true and wrote true. Dry-run exit 0 is not enough. The installer does not restart.",
+  "outside_backup_required_before_apply": [
+    "data/ (entire tree, including transcripts.db, transcripts/, url_jobs.json, phase3_gemini_usage.json)",
+    ".env",
+    "launchd plist for gui/501/com.epic.transcript-api"
+  ],
+  "installer_backup_is_not_the_data_backup": "backups/screenshots-<UTC>/ stores only replaced source files.",
+  "preserve_byte_for_byte_during_copy": [
     ".env",
     "data/transcripts.db",
     "data/url_jobs.json",
     "data/phase3_gemini_usage.json",
     "data/transcripts/"
   ],
-  "note": "sha256 of file bytes. The manifest file is copied but not hashed inside itself. This pack starts at production c943233. Do not apply the 28707a2/7246 pack."
+  "note": "sha256 of file bytes. The manifest file is copied but not hashed inside itself. parent_commit is the production diff baseline. github_pr_base_commit is main and must not be merged."
 }

@@ -59,6 +59,48 @@ def write_path_symlink(root: Path, rel: str) -> str | None:
     return None
 
 
+def protected_layout_symlinks(root: Path) -> list[str]:
+    """Return protected symlinks without opening their targets.
+
+    `.env`, the named data files, a `data` directory link, and any symlink
+    under `data/` are unsupported. Link text is not a fingerprint of the
+    target bytes.
+    """
+    found: list[str] = []
+
+    def add(rel: str) -> None:
+        if rel and rel not in found:
+            found.append(rel)
+
+    for rel in DO_NOT_TOUCH:
+        link = write_path_symlink(root, rel)
+        if link:
+            add(link)
+    data = root / "data"
+    if data.is_symlink():
+        add("data")
+        return found
+    if not data.is_dir():
+        return found
+    pending = [data]
+    while pending:
+        current = pending.pop()
+        try:
+            children = sorted(current.iterdir(), key=lambda item: item.name)
+        except OSError:
+            continue
+        for child in children:
+            if child.is_symlink():
+                try:
+                    add(child.relative_to(root).as_posix())
+                except ValueError:
+                    add(str(child))
+                continue
+            if child.is_dir():
+                pending.append(child)
+    return found
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -163,15 +205,19 @@ def inspect_tree(root: Path, new_hashes: dict[str, str] | None = None) -> dict:
         if link:
             files.append({"path": rel, "state": "symlink", "sha256": None, "baseline": None, "new": None, "symlink": link})
             blocking.append(rel)
+    layout_links = protected_layout_symlinks(root)
+    for rel in layout_links:
+        if rel not in blocking:
+            blocking.append(rel)
     untouched = []
     for rel in DO_NOT_TOUCH:
         path = root / rel
         link = write_path_symlink(root, rel)
         untouched.append({
             "path": rel,
-            "exists": path.exists() and not link,
+            "exists": bool(not link and path.exists()),
             "symlink": link,
-            "sha256": sha256(path) if path.is_file() and not link else None,
+            "sha256": sha256(path) if not link and path.is_file() else None,
         })
     gitignore = root / ".gitignore"
     gitignore_text = "" if gitignore.is_symlink() or not gitignore.is_file() else gitignore.read_text(encoding="utf-8")
@@ -183,6 +229,7 @@ def inspect_tree(root: Path, new_hashes: dict[str, str] | None = None) -> dict:
         "do_not_touch": untouched,
         "gitignore_has_screenshot_ignore": "data/screenshots/" in gitignore_text.splitlines(),
         "gitignore_has_backup_ignore": "backups/" in gitignore_text.splitlines(),
+        "protected_symlinks": layout_links,
         "git": git_report(root),
         "tools": tool_report(),
     }

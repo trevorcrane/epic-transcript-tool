@@ -349,6 +349,11 @@ def test_local_whisper_reports_detected_language_from_output(monkeypatch, tmp_pa
 
 
 def test_youtube_audio_download_retries_android_client_after_403(monkeypatch, tmp_path):
+    # subprocess.run is replaced below. This file is only so resolve_binary has a path.
+    stub = tmp_path / "yt-dlp"
+    stub.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    stub.chmod(0o755)
+    monkeypatch.setenv("YT_DLP_BIN", str(stub))
     attempts = []
     def fake_run(cmd, capture_output, text, timeout, env=None):
         attempts.append(cmd)
