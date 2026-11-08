@@ -339,6 +339,57 @@ def test_real_protected_sentinels_survive_success_and_crash(tmp_path, monkeypatc
         assert hashlib.sha256((host2 / rel).read_bytes()).hexdigest() == digest
 
 
+def test_wal_change_during_apply_keeps_the_write_and_the_code(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    wal = host / "data" / "transcripts.db-wal"
+    shm = host / "data" / "transcripts.db-shm"
+    wal.write_bytes(b"wal-before")
+    shm.write_bytes(b"shm-before")
+    real = apply_mod.protected_fingerprints
+    calls = {"n": 0}
+
+    def wrapped(root):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            wal.write_bytes(b"wal-during-request")
+            shm.write_bytes(b"shm-during-request")
+        return real(root)
+
+    monkeypatch.setattr(apply_mod, "protected_fingerprints", wrapped)
+    report = apply_mod.apply_tree(host, source, manifest, True)
+    assert report["ok"] is True
+    assert report["wrote"] is True
+    assert report["restart"] is False
+    assert wal.read_bytes() == b"wal-during-request"
+    assert shm.read_bytes() == b"shm-during-request"
+    assert (host / "app.py").read_text(encoding="utf-8") == "new app\n"
+    assert (host / ".env").read_text(encoding="utf-8") == "SECRET=keep\n"
+
+
+def test_live_json_write_during_apply_rolls_code_back_and_keeps_the_json(tmp_path, monkeypatch):
+    host, source, manifest = _small_host(tmp_path, monkeypatch)
+    jobs = host / "data" / "url_jobs.json"
+    jobs.write_text('{"drift":"url-jobs"}\n', encoding="utf-8")
+    real = apply_mod.protected_fingerprints
+    calls = {"n": 0}
+
+    def wrapped(root):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            jobs.write_text('{"drift":"newer-runtime"}\n', encoding="utf-8")
+        return real(root)
+
+    monkeypatch.setattr(apply_mod, "protected_fingerprints", wrapped)
+    report = apply_mod.apply_tree(host, source, manifest, True)
+    assert report["ok"] is False
+    assert report["wrote"] is False
+    assert report["restored"] is True
+    assert report["restart"] is False
+    assert (host / "app.py").read_text(encoding="utf-8") == "reviewed baseline\n"
+    assert not (host / "screenshots.py").exists()
+    assert jobs.read_text(encoding="utf-8") == '{"drift":"newer-runtime"}\n'
+
+
 def test_empty_manifest_does_not_copy(tmp_path, monkeypatch):
     host, source, _manifest = _small_host(tmp_path, monkeypatch)
     empty = source / "empty.json"

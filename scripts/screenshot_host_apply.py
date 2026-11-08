@@ -97,8 +97,20 @@ def protected_rels(root: Path) -> list[str]:
     return rels
 
 
+# SQLite updates these while a request is open. Their bytes are not an installer write.
+VOLATILE_RUNTIME_PATHS = frozenset({
+    "data/transcripts.db-wal",
+    "data/transcripts.db-shm",
+})
+
+
 def protected_fingerprints(root: Path) -> dict[str, dict]:
     return {rel: fingerprint(root / rel) for rel in protected_rels(root)}
+
+
+def stable_protected(fingerprints: dict[str, dict]) -> dict[str, dict]:
+    """Fingerprints that must stay still. WAL and SHM are excluded."""
+    return {rel: value for rel, value in fingerprints.items() if rel not in VOLATILE_RUNTIME_PATHS}
 
 
 def symlink_blocks(root: Path) -> list[str]:
@@ -236,14 +248,15 @@ def apply_tree(host: Path, source: Path, manifest: Path | None, apply: bool) -> 
             finally:
                 os.close(fd)
         protected_after = protected_fingerprints(host)
-        if protected_after != protected_before:
+        report["volatile_runtime_not_a_rollback_trigger"] = sorted(VOLATILE_RUNTIME_PATHS)
+        if stable_protected(protected_after) != stable_protected(protected_before):
             _restore(host, originals, gitignore_existed, gitignore_bytes)
             report["ok"] = False
             report["wrote"] = False
             report["restored"] = True
-            report["error"] = "Protected files changed during install. The tree was restored. Do not restart."
+            report["error"] = "Protected files changed during install. The copied source files were restored. Do not restart. Live data was not deleted."
             report["protected_after"] = protected_fingerprints(host)
-            report["protected_unchanged"] = report["protected_before"] == report["protected_after"]
+            report["protected_unchanged"] = stable_protected(report["protected_before"]) == stable_protected(report["protected_after"])
             return report
     except Exception:
         _restore(host, originals, gitignore_existed, gitignore_bytes)
