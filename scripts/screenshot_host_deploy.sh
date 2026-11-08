@@ -53,6 +53,23 @@ fi
 if [ -z "$PY" ] || [ ! -x "$PY" ]; then
   deny 1
 fi
+# The printed program must be the interpreter named in that plist.
+# This does not prove the Mac print format. Hermes still checks that print.
+configured=$("$PY" -c 'import plistlib, sys
+with open(sys.argv[1], "rb") as handle:
+    data = plistlib.load(handle)
+program = data.get("Program") or ""
+arguments = data.get("ProgramArguments") or []
+if not program and arguments:
+    program = arguments[0]
+if not isinstance(program, str):
+    program = ""
+print(program)' "$PLIST") || deny $?
+if [ -z "$configured" ] || [ "$configured" != "$PY" ]; then
+  trace "interpreter-mismatch"
+  deny 1
+fi
+trace "interpreter=$PY"
 
 backup_tool="$ARTIFACT/scripts/screenshot_outside_backup.py"
 preflight_tool="$ARTIFACT/scripts/screenshot_host_preflight.py"

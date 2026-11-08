@@ -21,7 +21,7 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "0bb86959c3aca378c80d7e541c13bdd43991acba3bb3bc3490eba88b5a9ab554",
+    "docs/SCREENSHOT_DEPLOY.md": "61623f486e823bf4cdb754d4a9fd66133c6593797171f98f573f5016ac50c231",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
     "scripts/screenshot_host_apply.py": "60f6e85e8dca2fb8fdb511011c2f3606e34ed545850019d71971c5003d63d2e6"
   },
@@ -55,7 +55,7 @@
   "note": "sha256 of file bytes. The manifest file is copied but not hashed inside itself. parent_commit is the production diff baseline. github_pr_base_commit is main and must not be merged. The outside backup is not restored by this procedure. Deploy and rollback entry points stay in the artifact.",
   "deploy_entry_points": {
     "scripts/screenshot_outside_backup.py": "20a660bceaabd7d89a77036203c79ad8b3ccad6df43724c817e190112195817d",
-    "scripts/screenshot_host_deploy.sh": "4f825822e564aed57004b3676da41a128c567c4c4a3bb228adadf056f41ace55",
+    "scripts/screenshot_host_deploy.sh": "08166d72de88cf46cf901f471b4853fe47c01cbbde175f2db172d9b210aaffca",
     "scripts/screenshot_host_rollback.sh": "0c2e5fec21289e7309c6b049b0bc9500e574b01040213e6eb0ee96e918c5099b"
   }
 }

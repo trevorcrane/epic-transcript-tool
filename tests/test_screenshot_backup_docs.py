@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import plistlib
 import sqlite3
 import subprocess
 import sys
@@ -52,18 +53,30 @@ def _live_data(root: Path) -> sqlite3.Connection:
     return conn
 
 
-def _service_bin(tmp: Path, plist: Path) -> Path:
+def _venv_interpreter() -> Path:
+    exe = Path(sys.executable)
+    if not (exe.parent.parent / "pyvenv.cfg").is_file():
+        raise AssertionError(f"{exe} is not a venv interpreter")
+    return exe
+
+
+def _write_plist(path: Path, python: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as handle:
+        plistlib.dump(
+            {
+                "Label": "com.epic.transcript-api",
+                "ProgramArguments": [str(python), str(python.parent.parent / "app.py")],
+            },
+            handle,
+        )
+
+
+def _service_bin(tmp: Path, plist: Path, python: Path | None = None) -> Path:
     bindir = tmp / "bin"
     bindir.mkdir()
-    python_log = tmp / "python-invocations.log"
-    wrapper = tmp / "service-python-from-launchctl"
-    wrapper.write_text(
-        "#!/bin/sh\n"
-        "printf '%s\\n' \"$0\" >> \"$FIXTURE_PYTHON_LOG\"\n"
-        "exec \"$REAL_PYTHON\" \"$@\"\n",
-        encoding="utf-8",
-    )
-    wrapper.chmod(0o755)
+    interpreter = python or _venv_interpreter()
+    _write_plist(plist, interpreter)
     launchctl = bindir / "launchctl"
     launchctl.write_text(
         "#!/bin/sh\n"
@@ -77,11 +90,7 @@ def _service_bin(tmp: Path, plist: Path) -> Path:
         encoding="utf-8",
     )
     launchctl.chmod(0o755)
-    plist.write_text(
-        "<?xml version=\"1.0\"?><plist><dict><key>Label</key><string>com.epic.transcript-api</string></dict></plist>\n",
-        encoding="utf-8",
-    )
-    python_log.write_text("", encoding="utf-8")
+    (tmp / "launchctl.log").write_text("", encoding="utf-8")
     return bindir
 
 
@@ -95,10 +104,8 @@ def _env(tmp: Path, live: Path, dest: Path, plist: Path) -> dict[str, str]:
         "HOME": str(home),
         "PATH": str(tmp / "bin") + os.pathsep + os.environ["PATH"],
         "FIXTURE_PLIST_PATH": str(plist),
-        "FIXTURE_PYTHON": str(tmp / "service-python-from-launchctl"),
-        "FIXTURE_PYTHON_LOG": str(tmp / "python-invocations.log"),
+        "FIXTURE_PYTHON": str(_venv_interpreter()),
         "FIXTURE_LAUNCHCTL_LOG": str(tmp / "launchctl.log"),
-        "REAL_PYTHON": sys.executable,
     }
 
 
@@ -168,10 +175,17 @@ def test_deploy_sequence_succeeds_and_code_rollback_keeps_newer_data(tmp_path):
     assert applied["ok"] is True and applied["wrote"] is True and applied["restart"] is False
     trace = (home / "screenshot-deploy-trace").read_text(encoding="utf-8").splitlines()
     assert "backup-exit=0" in trace and "verify-exit=0" in trace and "apply" in trace
+    assert applied["protected_unchanged"] is True
     assert "data/transcripts.db-wal" in applied["volatile_runtime_not_a_rollback_trigger"]
+    assert "data/transcripts.db-shm" in applied["volatile_runtime_not_a_rollback_trigger"]
+    interpreter = _venv_interpreter()
+    assert "interpreter=" + str(interpreter) in trace
+    assert str(interpreter) != "/usr/bin/python3"
+    with plist.open("rb") as handle:
+        configured = plistlib.load(handle)["ProgramArguments"][0]
+    assert configured == str(interpreter)
     launch_log = (tmp_path / "launchctl.log").read_text(encoding="utf-8")
     assert launch_log.splitlines() == ["print gui/501/com.epic.transcript-api"]
-    assert str(tmp_path / "service-python-from-launchctl") in (tmp_path / "python-invocations.log").read_text(encoding="utf-8")
 
     (live / "data" / "url_jobs.json").write_text('{"drift":"after-install"}\n', encoding="utf-8")
     holder.execute("INSERT INTO transcripts VALUES ('3', 'after-install')")
@@ -227,6 +241,28 @@ def test_deploy_sequence_failure_keeps_data_and_does_not_restart(tmp_path):
     trace = (tmp_path / "home" / "screenshot-deploy-trace").read_text(encoding="utf-8").splitlines()
     assert "apply" not in trace
     assert "bootout" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+    holder.close()
+
+
+def test_inconsistent_plist_and_interpreter_stop_before_backup(tmp_path):
+    live = tmp_path / "live"
+    live.mkdir()
+    _baseline_tree(live)
+    holder = _live_data(live)
+    before_app = (live / "app.py").read_bytes()
+    venv_python = _venv_interpreter()
+    other = Path("/usr/bin/python3")
+    assert other.is_file() and other != venv_python
+    plist = tmp_path / "service-config" / "printed-by-launchctl.plist"
+    _write_plist(plist, other)
+    _service_bin(tmp_path, plist, python=venv_python)
+    _write_plist(plist, other)
+    proc = _run_script(_env(tmp_path, live, tmp_path / "outside" / "backup", plist))
+    _stopped(proc, tmp_path / "home", live, before_app)
+    trace = (tmp_path / "home" / "screenshot-deploy-trace").read_text(encoding="utf-8")
+    assert "interpreter-mismatch" in trace
+    assert "backup" not in trace.splitlines()
+    assert (live / ".env").read_text(encoding="utf-8") == "SECRET=keep\n"
     holder.close()
 
 

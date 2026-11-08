@@ -26,8 +26,10 @@ while this pack was built, and this procedure does not assume them:
 
 The live job label is `gui/501/com.epic.transcript-api`. Hermes reads
 `launchctl print` for that label and uses the `program` and `path` lines
-it prints. Those are the service interpreter and the service plist. This
-procedure does not guess `$ROOT/.venv/bin/python` or
+it prints. The script then reads that plist. The printed program must be
+the `Program` value, or the first `ProgramArguments` value, in the plist.
+If they differ, the script stops before backup and apply. This procedure
+does not guess `$ROOT/.venv/bin/python` or
 `~/Library/LaunchAgents/com.epic.transcript-api.plist`.
 
 Hermes runs the deploy script only when the service is not inside a
@@ -109,10 +111,14 @@ exec "$ARTIFACT/scripts/screenshot_host_deploy.sh"
 
 Hermes restarts `gui/501/com.epic.transcript-api` only after reading
 `RESTART=allowed`. Any other line, a missing receipt, or a non-zero exit
-means do not restart. The first start after a successful copy may rewrite
-an interrupted job in `data/url_jobs.json`. That is a runtime write. The
-copy itself leaves `data/` and `.env` byte for byte, aside from the SQLite
-reader mark noted above.
+means do not restart. The script does not enforce that idle state. The
+first start after a successful copy may rewrite an interrupted job in
+`data/url_jobs.json`. That is a runtime write. The installer does not
+write `.env`, `transcripts.db`, the WAL, the SHM, the transcript files, or
+the two drift JSON files. A WAL-only commit need not change the
+`transcripts.db` bytes. The receipt field `protected_unchanged` compares
+the stable files only. `transcripts.db-shm` can change while that field is
+true. It is not a claim that every live data byte was identical.
 
 ## Screenshot behavior on this tree
 
