@@ -125,19 +125,55 @@ live `url_jobs.json`. The script does not start the new code and it does
 not run bootstrap. There is no second authorization step. Recovery does
 not restore or delete data, `.env`, or the plist.
 
-The operator restart, also not run by the script, uses the plist path
-captured in the identity file. On this host that path was reported as
-`/Users/tc-imac/Library/LaunchAgents/com.epic.transcript-api.plist`.
-The script prints `BOOTSTRAP=not-run` and that captured path. It does
-not hard-code the path, and it does not run the command:
+The scripts do not run launchctl. `BOOTSTRAP=not-run` plus the captured
+plist path means this process did not start the service. `RESTART` is
+only the permission for a person to do that later. `RESTART=not-run` is
+not a receipt and is not printed.
 
-`launchctl bootstrap gui/501 <captured-plist>`
+`RESTART=allowed` is printed only with one of these:
+`INSTALL=verified-new` after `APPLY=ok`, or `INSTALL=verified-c943` after
+`RECOVERY=source-restored`. Anything else, including `INSTALL=unchanged`
+and `INSTALL=incomplete`, is `RESTART=not-allowed`. Do not start the
+service then. A killed apply can exit 137 and still print
+`RESTART=allowed` when the nine c943 paths were verified. The exit code
+is not the permission.
+
+The plist on that `BOOTSTRAP=not-run` line is the one captured in the
+identity file. On this host that path was reported as
+`/Users/tc-imac/Library/LaunchAgents/com.epic.transcript-api.plist`.
+It is not hard-coded. Before using it, the file's sha256 must still equal
+`plist_sha256` in the identity file. The manual command, which no script
+runs, is:
+
+`launchctl bootstrap gui/501 <plist>`
+
+`AUTHORIZATION=original-window` means the script saw
+`SCREENSHOT_OFFLINE_AUTHORIZATION=interruptible-offline-window-approved`.
+That is the same original window string. It is not a second approval.
+
+If the operator process group is killed after the first replacement, the
+intent and the c943 backup remain in that run directory and the source
+tree can be mixed. The next offline copy starts a new run, does not read
+the old intent, and can print `RECOVERY=failed`. That refusal is not a
+restore. The explicit command names the old directory:
+
+```bash
+# fixture: offline-recover
+exec "$ARTIFACT/scripts/screenshot_host_offline_recover.sh"
+```
+
+Set `RUN_DIR` to that one directory, for example
+`$HOME/screenshot-run-<id>`. The script does not search `$HOME` and does
+not read `$HOME/screenshot-apply.json`. It checks the named intent's root,
+manifest hash, confined backup, and transaction id, restores from that
+backup only, then requires all nine baseline paths. `.env`,
+`data/url_jobs.json`, and `data/transcripts.db` must be unchanged. Invalid
+evidence prints `RECOVERY=failed` and `RESTART=not-allowed`.
 
 On the next start the new process marks queued and running jobs
 interrupted. A saved transcript is shown with the screenshot error and is
 not downloaded again. A job with no saved transcript becomes an error.
-That rewrite is process startup, not this copy. Errors print `RESTART=no`.
-Success prints `APPLY=ok` and `RESTART=not-run`.
+That rewrite is process startup, not this copy.
 
 ```bash
 # fixture: capture-identity
@@ -197,6 +233,11 @@ prints `RESTART=no`. Do not pipe the hash listing through `tee`.
 - `scripts/screenshot_host_preflight.py`
 - `scripts/screenshot_host_apply.py`
 
+`scripts/screenshot_host_apply.py` is copied onto the host so its bytes
+can be checked. Do not run that ROOT copy. It imports
+`screenshot_host_offline_checks.py`, and that helper stays in the pack.
+The supported command is `$ARTIFACT/scripts/screenshot_host_apply.py`.
+
 It may append `data/screenshots/` and `backups/` to a regular `.gitignore`.
 It refuses the copy, before writing, when an install path, `.env`, `data`,
 or anything already under `data/` is a symlink. A symlink fingerprint is the
@@ -219,9 +260,15 @@ restarts the service.
 exec "$ARTIFACT/scripts/screenshot_host_deploy.sh"
 ```
 
-Hermes restarts `gui/501/com.epic.transcript-api` only after reading
-`RESTART=allowed`. Any other line, a missing receipt, or a non-zero exit
-means do not restart. The script does not enforce that idle state. The
+`screenshot_host_deploy.sh` prints `RESTART=allowed` when apply exits 0
+and the receipt has ok true and wrote true. Otherwise it prints
+`RESTART=no`. It does not run launchctl. That script is the path used
+while `launchctl print` still succeeds. The offline copy and
+`screenshot_host_offline_recover.sh` use `RESTART=allowed` or
+`RESTART=not-allowed` together with `INSTALL=` and `BOOTSTRAP=not-run`,
+as written above. Do not treat `RESTART=no` and `RESTART=not-allowed` as
+the same line, and do not wait for `RESTART=not-run`. The script does not
+enforce that idle state. The
 first start after a successful copy may rewrite an interrupted job in
 `data/url_jobs.json`. That is a runtime write. The installer does not
 write `.env`, `transcripts.db`, the WAL, the SHM, the transcript files, or
@@ -253,7 +300,11 @@ group and is not searched for.
 Rollback restores the source files the installer replaced. It does not
 restore `$DEST`, and it does not delete or replace live data, `.env`, the
 WAL, the SHM, transcript files, the drift JSON files, or the plist.
-`$BACKUP` is the `backup` path in the apply receipt.
+`$BACKUP` is the backup directory named by the verified intent, or the
+`backup` path in an apply receipt from the same run. `ARTIFACT` is
+required. `PY`, when it is set and executable, is the captured service
+program. When `PY` is unset, the script uses `python3` on `PATH` for the
+stdlib confinement check.
 
 ```bash
 # fixture: rollback-code
@@ -262,5 +313,7 @@ exec "$ARTIFACT/scripts/screenshot_host_rollback.sh"
 
 A failed rollback prints `RESTART=no` and does not grant a restart. A
 successful rollback prints `ROLLBACK=ok` and `RESTART=no`. It never prints
-`RESTART=allowed`. Do not point `$BACKUP` at `$DEST`. Do not start or stop
+`RESTART=allowed`. Rollback alone is not the verified-c943 permission.
+That permission is `screenshot_host_offline_recover.sh` after the nine
+paths match. Do not point `$BACKUP` at `$DEST`. Do not start or stop
 launchd from this command.

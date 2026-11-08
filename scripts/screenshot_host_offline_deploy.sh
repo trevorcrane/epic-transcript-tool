@@ -8,7 +8,8 @@ set -u
 set -o pipefail
 
 deny() {
-  printf '%s\n' "RESTART=no"
+  printf '%s\n' "RESTART=not-allowed"
+  printf '%s\n' "BOOTSTRAP=not-run"
   exit "${1:-1}"
 }
 
@@ -19,38 +20,67 @@ trace() {
 }
 
 source_is_baseline() {
-  "$PY" "$checks" source-baseline --root "$1" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json"
+  "$PY" "$checks" source-baseline --root "$1" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" >&2
 }
 
 recover_failed_apply() {
   # This run's intent, written before the first replacement. Never a home-directory
   # receipt and never another run's valid c943 backup.
+  RECOVERY_RESULT=failed
   intent="$RUN_DIR/intent.json"
   receipt="$RUN_DIR/apply.json"
   if [ ! -s "$intent" ] && [ ! -s "$receipt" ]; then
+    RECOVERY_RESULT=not-needed
     printf '%s\n' "RECOVERY=not-needed"
     return 0
   fi
   if [ ! -s "$intent" ]; then
+    RECOVERY_RESULT=failed
     printf '%s\n' "RECOVERY=failed"
     return 1
   fi
   backup=$("$PY" "$checks" recovery-backup --intent "$intent" --run-dir "$RUN_DIR" --root "$ROOT" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" --receipt "$receipt") || {
+    RECOVERY_RESULT=failed
     printf '%s\n' "RECOVERY=failed"
     return 1
   }
   if ! source_is_baseline "$ROOT"; then
-    if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" PY="$PY" ARTIFACT="$ARTIFACT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
+    if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" PY="$PY" ARTIFACT="$ARTIFACT" "$ARTIFACT/scripts/screenshot_host_rollback.sh" >&2; then
+      RECOVERY_RESULT=failed
       printf '%s\n' "RECOVERY=failed"
       return 1
     fi
   fi
   if source_is_baseline "$ROOT"; then
+    RECOVERY_RESULT=source-restored
     printf '%s\n' "RECOVERY=source-restored"
     return 0
   fi
+  RECOVERY_RESULT=failed
   printf '%s\n' "RECOVERY=failed"
   return 1
+}
+
+emit_restart() {
+  # RESTART is permission for a later manual bootstrap. BOOTSTRAP=not-run means
+  # this process did not execute launchctl. RESTART=not-run is not a receipt.
+  case "$1" in
+    verified-new|verified-c943)
+      printf '%s\n' "INSTALL=$1"
+      printf '%s\n' "RESTART=allowed"
+      ;;
+    *)
+      printf '%s\n' "INSTALL=$1"
+      printf '%s\n' "RESTART=not-allowed"
+      ;;
+  esac
+  if [ -n "${PLIST:-}" ]; then
+    printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+    printf '%s\n' "PLIST=${PLIST}"
+  else
+    printf '%s\n' "BOOTSTRAP=not-run"
+  fi
+  printf '%s\n' "AUTHORIZATION=original-window"
 }
 
 if [ "${SCREENSHOT_OFFLINE_AUTHORIZATION:-}" != "interruptible-offline-window-approved" ]; then
@@ -215,16 +245,24 @@ if [ "$section_exit" -eq 23 ]; then
   deny 23
 fi
 if [ "$section_exit" -ne 0 ]; then
-  recover_failed_apply
-  printf '%s\n' "RESTART=no"
-  printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+  recover_failed_apply || true
+  case "$RECOVERY_RESULT" in
+    source-restored) emit_restart verified-c943 ;;
+    not-needed) emit_restart unchanged ;;
+    *) emit_restart incomplete ;;
+  esac
   if [ -s "$RUN_DIR/apply.json" ]; then
     printf '%s\n' "APPLY_RECEIPT=$RUN_DIR/apply.json"
   fi
   exit "$section_exit"
 fi
+if "$PY" "$checks" install-verified --root "$ROOT" --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" --artifact "$ARTIFACT" >&2; then
+  printf '%s\n' "APPLY=ok"
+  emit_restart verified-new
+  printf '%s\n' "APPLY_RECEIPT=$RUN_DIR/apply.json"
+  exit 0
+fi
 printf '%s\n' "APPLY=ok"
-printf '%s\n' "RESTART=not-run"
-printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+emit_restart incomplete
 printf '%s\n' "APPLY_RECEIPT=$RUN_DIR/apply.json"
-exit 0
+exit 1

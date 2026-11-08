@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Restore installer source files only. Never prints RESTART=allowed.
 # Does not copy DEST, and does not delete or replace live data, .env, or plist.
-# Required bindings: ROOT BACKUP
-# Optional: ARTIFACT (unused, accepted so the same environment can call this)
-#            DEST (refused if BACKUP points at it)
+# Required: ROOT, BACKUP, ARTIFACT.
+# ARTIFACT is the unpacked pack. The confinement checker lives there and is not
+# copied onto ROOT. PY, when set and executable, is the identity program.
+# Otherwise the script uses python3 on PATH. DEST is optional and is refused
+# when BACKUP points at it. This command does not grant a manual bootstrap.
 
 set -u
 set -o pipefail

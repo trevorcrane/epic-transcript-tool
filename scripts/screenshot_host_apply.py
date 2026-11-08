@@ -4,6 +4,12 @@
 Default mode prints the plan and writes nothing. --apply copies files and
 makes a backup. It does not restart the server, touch .env, or touch the
 transcript database.
+
+Run this file from the unpacked artifact:
+`$ARTIFACT/scripts/screenshot_host_apply.py`.
+It imports `screenshot_host_offline_checks.py` from that same directory.
+The copy installed under ROOT is not a supported entry point. That helper
+is not one of the files the installer copies onto the host.
 """
 from __future__ import annotations
 

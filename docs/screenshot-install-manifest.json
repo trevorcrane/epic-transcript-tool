@@ -21,9 +21,9 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "ce0d3517fb603af9cec82c21af2a2adca8856216cb2c555beb4c8d1c0e0c2866",
+    "docs/SCREENSHOT_DEPLOY.md": "97e0a379f989d0b98392640c8230c9e00cf4548815ef73c7a69800fe5c85be19",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
-    "scripts/screenshot_host_apply.py": "d108968a135fbf17dfc0e7e1161ec301a5bb42df813872b32779e440f932c119"
+    "scripts/screenshot_host_apply.py": "595be4fd30f321fb0dee8060c3d530e7a0d3d38db37be2428ce6638813170615"
   },
   "outside_backup_script": {
     "path": "scripts/screenshot_outside_backup.py",
@@ -56,10 +56,11 @@
   "deploy_entry_points": {
     "scripts/screenshot_outside_backup.py": "20a660bceaabd7d89a77036203c79ad8b3ccad6df43724c817e190112195817d",
     "scripts/screenshot_host_deploy.sh": "f390715f8abeb085c2b38b8edac2a8e0a7ebbc3eac0fed2dec338194d6171559",
-    "scripts/screenshot_host_rollback.sh": "3b65c25ac975479ec48e3bf6a312da8f8286e470ebbd03428f17c2f26afb9acb",
+    "scripts/screenshot_host_rollback.sh": "3d375cd6acabb2634f084ae9be082028ba856dc2f802d9f5fdeae7a7c684af99",
     "scripts/screenshot_host_capture_identity.sh": "7ebfa8fc92b465f7b19226074fc224874fdbd50ec8da04656cbccc03bf201037",
-    "scripts/screenshot_host_offline_deploy.sh": "8b45fa989b3ed013767934d2eac563b7d0bf4718a5486997a2c22ddb133b48a1",
-    "scripts/screenshot_host_offline_checks.py": "bc44d88ec69ab9cf04b48d29cfd8d621e500b2396e8b4c0637666b7432e68dc8"
+    "scripts/screenshot_host_offline_deploy.sh": "6ed8e456ae21cbd02b6c44d279acf7323cde7430cde57e60db4bebd07afebaa6",
+    "scripts/screenshot_host_offline_recover.sh": "c1a19592aa8268a7a6968dc50490a3312f5e900269c6dc3cfe4bcee58f21b250",
+    "scripts/screenshot_host_offline_checks.py": "136422ab5624a5c7db9f193b634b363dee0a5ec73f8d4cbc2e65ab2bfa763edb"
   },
   "offline_route": "conditional; not approved; scripts do not bootout or bootstrap",
   "sqlite_guard": "BEGIN IMMEDIATE held across backup and apply; read-only backup connection; close may checkpoint WAL; not an installer write of data or .env"

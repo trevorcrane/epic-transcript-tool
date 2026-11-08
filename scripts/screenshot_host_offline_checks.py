@@ -394,6 +394,28 @@ def recovery_backup_path(intent_path: Path, run_dir: Path, root: Path, manifest_
     return confined
 
 
+def install_problem(root: Path, manifest_path: Path, artifact: Path) -> str | None:
+    """Return the first installed path that is not the reviewed pack, or None."""
+    try:
+        manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+        artifact_manifest = (Path(artifact) / "docs" / "screenshot-install-manifest.json").read_bytes()
+    except (OSError, json.JSONDecodeError):
+        return "manifest"
+    install = manifest.get("install") if isinstance(manifest, dict) else None
+    if not isinstance(install, dict) or not install:
+        return "manifest"
+    for rel, digest in install.items():
+        path = root / rel
+        if not isinstance(digest, str) or _symlink_component(root, rel) or path.is_symlink() or not path.is_file():
+            return str(rel)
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            return str(rel)
+    host_manifest = root / "docs" / "screenshot-install-manifest.json"
+    if host_manifest.is_symlink() or not host_manifest.is_file() or host_manifest.read_bytes() != artifact_manifest:
+        return "docs/screenshot-install-manifest.json"
+    return None
+
+
 def source_matches_baseline(args: argparse.Namespace) -> int:
     """Exit 0 only when all nine rollback paths match the c943 baseline."""
     problem = baseline_problem(Path(args.root), Path(args.manifest))
@@ -425,6 +447,14 @@ def _cmd_recovery_backup(args: argparse.Namespace) -> int:
     if confined is None:
         return 42
     print(confined)
+    return 0
+
+
+def _cmd_install_verified(args: argparse.Namespace) -> int:
+    problem = install_problem(Path(args.root), Path(args.manifest), Path(args.artifact))
+    if problem is not None:
+        print(problem)
+        return 40
     return 0
 
 
@@ -515,6 +545,12 @@ def main() -> int:
     recover.add_argument("--manifest", type=Path, required=True)
     recover.add_argument("--receipt", type=Path)
     recover.set_defaults(func=_cmd_recovery_backup)
+
+    installed = sub.add_parser("install-verified")
+    installed.add_argument("--root", type=Path, required=True)
+    installed.add_argument("--manifest", type=Path, required=True)
+    installed.add_argument("--artifact", type=Path, required=True)
+    installed.set_defaults(func=_cmd_install_verified)
 
     jobs = sub.add_parser("interrupted")
     jobs.add_argument("--root", type=Path, required=True)

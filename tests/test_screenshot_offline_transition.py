@@ -209,9 +209,12 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
         finally:
             writer.wait(timeout=40)
         assert deployed.returncode == 0, deployed.stderr + deployed.stdout
-        assert "APPLY=ok" in deployed.stdout
-        assert "RESTART=not-run" in deployed.stdout
-        assert "RESTART=allowed" not in deployed.stdout
+        assert "APPLY=ok" in deployed.stdout.splitlines()
+        assert "INSTALL=verified-new" in deployed.stdout.splitlines()
+        assert "RESTART=allowed" in deployed.stdout.splitlines()
+        assert "RESTART=not-run" not in deployed.stdout.splitlines()
+        assert "RESTART=not-allowed" not in deployed.stdout.splitlines()
+        assert "AUTHORIZATION=original-window" in deployed.stdout.splitlines()
         assert (live / "data" / "url_jobs.json").read_bytes() == jobs_before
         assert (live / ".env").read_bytes() == env_before
         recorded = json.loads((tmp_path / "home" / "screenshot-interrupted-jobs.json").read_text(encoding="utf-8"))
@@ -428,9 +431,11 @@ def test_failed_apply_restores_source_and_stays_stopped(tmp_path):
     env["RECOVERY_BACKUP"] = str(live / "backups" / "known-good-c943")
     proc = _run("screenshot_host_offline_deploy.sh", env)
     assert proc.returncode != 0, proc.stdout + proc.stderr
-    assert "RESTART=no" in proc.stdout
-    assert "RESTART=allowed" not in proc.stdout
-    assert "RECOVERY=source-restored" in proc.stdout
+    assert "RECOVERY=source-restored" in proc.stdout.splitlines()
+    assert "INSTALL=verified-c943" in proc.stdout.splitlines()
+    assert "RESTART=allowed" in proc.stdout.splitlines()
+    assert "RESTART=not-allowed" not in proc.stdout.splitlines()
+    assert "RESTART=not-run" not in proc.stdout.splitlines()
     assert "BOOTSTRAP=not-run" in proc.stdout
     assert env["FIXTURE_PLIST_PATH"] in proc.stdout
     assert (live / "app.py").read_bytes() == before_app
@@ -447,10 +452,11 @@ def test_recovery_failure_stays_stopped(tmp_path):
     env["RECOVERY_BACKUP"] = str(tmp_path / "missing-known-good")
     proc = _run("screenshot_host_offline_deploy.sh", env)
     assert proc.returncode != 0
-    assert "RECOVERY=failed" in proc.stdout
-    assert "RESTART=no" in proc.stdout
-    assert "RESTART=allowed" not in proc.stdout
-    assert "APPLY=ok" not in proc.stdout
+    assert "RECOVERY=failed" in proc.stdout.splitlines()
+    assert "INSTALL=incomplete" in proc.stdout.splitlines()
+    assert "RESTART=not-allowed" in proc.stdout.splitlines()
+    assert "RESTART=allowed" not in proc.stdout.splitlines()
+    assert "APPLY=ok" not in proc.stdout.splitlines()
     assert (live / ".env").read_bytes() == before_env
     assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
 
@@ -1029,10 +1035,13 @@ def test_kill_after_first_copy_restores_from_the_intent(tmp_path):
     env["SCREENSHOT_KILL_LIVE_ROOT"] = str(live)
     proc = _run("screenshot_host_offline_deploy.sh", env)
     assert proc.returncode == 137, proc.stdout + proc.stderr
-    assert "RECOVERY=source-restored" in proc.stdout
-    assert "RECOVERY=not-needed" not in proc.stdout
-    assert "RESTART=no" in proc.stdout
-    assert "BOOTSTRAP=not-run" in proc.stdout
+    assert "RECOVERY=source-restored" in proc.stdout.splitlines()
+    assert "RECOVERY=not-needed" not in proc.stdout.splitlines()
+    assert "INSTALL=verified-c943" in proc.stdout.splitlines()
+    assert "RESTART=allowed" in proc.stdout.splitlines()
+    assert "RESTART=not-run" not in proc.stdout.splitlines()
+    assert "AUTHORIZATION=original-window" in proc.stdout.splitlines()
+    assert any(line.startswith("BOOTSTRAP=not-run ") for line in proc.stdout.splitlines())
     for rel, data in before.items():
         assert (live / rel).read_bytes() == data
     assert not (live / "screenshots.py").exists()
@@ -1041,6 +1050,165 @@ def test_kill_after_first_copy_restores_from_the_intent(tmp_path):
     assert len(runs) == 1
     assert not (runs[0] / "apply.json").exists()
     assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+
+def _merged(env: dict[str, str]) -> dict[str, str]:
+    merged = os.environ.copy()
+    for key in (
+        "SCREENSHOT_OFFLINE_AUTHORIZATION",
+        "SCREENSHOT_APPLY_CRASH_AT",
+        "SCREENSHOT_APPLY_COPY_PAUSE_SECONDS",
+        "SCREENSHOT_APPLY_TEST_HARNESS",
+        "PYTHONPATH",
+        "SCREENSHOT_KILL_AFTER_FIRST_COPY",
+        "SCREENSHOT_KILL_LIVE_ROOT",
+    ):
+        merged.pop(key, None)
+    merged.update(env)
+    return merged
+
+
+def _doc_fence(name: str) -> str:
+    text = (ROOT / "docs" / "SCREENSHOT_DEPLOY.md").read_text(encoding="utf-8")
+    marker = f"# fixture: {name}\n"
+    start = text.index(marker)
+    end = text.index("```", start)
+    return text[start:end]
+
+
+def test_operator_group_kill_then_explicit_old_intent_recovery(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    before = {rel: (live / rel).read_bytes() for rel in ("app.py", "static/index.html", "Dockerfile", "README.md", ".env", "data/url_jobs.json")}
+    new_app = (ROOT / "app.py").read_bytes()
+    hook = tmp_path / "stop-hook"
+    hook.mkdir()
+    (hook / "sitecustomize.py").write_text(
+        "import os, signal, shutil\n"
+        "_real = shutil.copy2\n"
+        "def _copy2(src, dst, *args, **kwargs):\n"
+        "    _real(src, dst, *args, **kwargs)\n"
+        "    live = os.environ.get('SCREENSHOT_KILL_LIVE_ROOT', '')\n"
+        "    if os.environ.get('SCREENSHOT_KILL_AFTER_FIRST_COPY') == '1' and live:\n"
+        "        if os.path.realpath(dst) == os.path.realpath(os.path.join(live, 'app.py')):\n"
+        "            os.kill(os.getpid(), signal.SIGSTOP)\n"
+        "shutil.copy2 = _copy2\n",
+        encoding="utf-8",
+    )
+    stopped = dict(env)
+    stopped["PYTHONPATH"] = str(hook)
+    stopped["SCREENSHOT_KILL_AFTER_FIRST_COPY"] = "1"
+    stopped["SCREENSHOT_KILL_LIVE_ROOT"] = str(live)
+    proc = subprocess.Popen(
+        ["bash", str(ROOT / "scripts" / "screenshot_host_offline_deploy.sh")],
+        env=_merged(stopped),
+        start_new_session=True,
+        text=True,
+    )
+    intent = None
+    try:
+        deadline = time.time() + 30
+        while time.time() < deadline:
+            if (live / "app.py").read_bytes() == new_app:
+                found = list(Path(env["HOME"]).glob("screenshot-run-*/intent.json"))
+                if found:
+                    intent = found[0]
+                    break
+            time.sleep(0.01)
+        assert intent is not None
+        os.killpg(os.getpgid(proc.pid), 9)
+    finally:
+        try:
+            os.killpg(os.getpgid(proc.pid), 9)
+        except OSError:
+            pass
+        proc.wait(timeout=5)
+    assert (live / "app.py").read_bytes() == new_app
+    assert (live / "Dockerfile").read_bytes() == before["Dockerfile"]
+    assert not (live / "screenshots.py").exists()
+    assert not (intent.parent / "apply.json").exists()
+    wrong = tmp_path / "wrong-backup"
+    wrong.mkdir()
+    (wrong / "app.py").write_text("WRONG-SOURCE\n", encoding="utf-8")
+    (Path(env["HOME"]) / "screenshot-apply.json").write_text(
+        json.dumps({"ok": False, "backup": str(wrong)}) + "\n",
+        encoding="utf-8",
+    )
+    env_again = dict(env)
+    env_again["DEST"] = str(tmp_path / "outside" / "second-backup")
+    again = _run("screenshot_host_offline_deploy.sh", env_again)
+    assert "RECOVERY=failed" in again.stdout.splitlines(), again.stdout + again.stderr
+    assert "RESTART=not-allowed" in again.stdout.splitlines()
+    assert "RESTART=allowed" not in again.stdout.splitlines()
+    assert (live / "app.py").read_bytes() == new_app
+    refused = _run("screenshot_host_offline_recover.sh", env)
+    assert refused.returncode != 0
+    assert "RECOVERY=failed" in refused.stdout.splitlines()
+    assert "RESTART=not-allowed" in refused.stdout.splitlines()
+    assert (live / "app.py").read_bytes() == new_app
+    recover_env = dict(env)
+    recover_env["RUN_DIR"] = str(intent.parent)
+    recovered = subprocess.run(["bash", "-c", _doc_fence("offline-recover")], env=_merged(recover_env), text=True, capture_output=True, check=False)
+    assert recovered.returncode == 0, recovered.stdout + recovered.stderr
+    lines = recovered.stdout.splitlines()
+    assert "RECOVERY=source-restored" in lines
+    assert "INSTALL=verified-c943" in lines
+    assert "RESTART=allowed" in lines
+    assert "RESTART=not-run" not in lines
+    assert "RESTART=not-allowed" not in lines
+    assert "AUTHORIZATION=original-window" in lines
+    assert f"RUN_DIR={intent.parent.resolve()}" in lines or f"RUN_DIR={intent.parent}" in lines
+    assert any(line == f"BOOTSTRAP=not-run {env['FIXTURE_PLIST_PATH']}" for line in lines)
+    for rel in ("app.py", "static/index.html", "Dockerfile", "README.md", ".env", "data/url_jobs.json"):
+        assert (live / rel).read_bytes() == before[rel]
+    assert not (live / "screenshots.py").exists()
+    assert not (live / "docs" / "screenshot-install-manifest.json").exists()
+    assert "WRONG-SOURCE" not in (live / "app.py").read_text(encoding="utf-8")
+    connection = sqlite3.connect(f"file:{live / 'data' / 'transcripts.db'}?mode=ro", uri=True)
+    bodies = [row[0] for row in connection.execute("SELECT transcript FROM transcripts")]
+    connection.close()
+    assert bodies == ["saved"]
+    assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+
+def test_documented_rollback_accepts_explicit_py_and_path_python3(tmp_path):
+    live = tmp_path / "live"
+    live.mkdir()
+    for rel in ("app.py", "static/index.html", "Dockerfile", "README.md"):
+        target = live / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(subprocess.check_output(["git", "show", f"{PARENT}:{rel}"], cwd=ROOT))
+    (live / ".env").write_text("SECRET=keep\n", encoding="utf-8")
+    backup = live / "backups" / "screenshots-documented"
+    for rel in ("app.py", "static/index.html", "Dockerfile", "README.md"):
+        dest = backup / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes((live / rel).read_bytes())
+    (live / "app.py").write_text("replaced\n", encoding="utf-8")
+    base = {"ROOT": str(live), "BACKUP": str(backup), "ARTIFACT": str(ROOT), "HOME": str(tmp_path / "home")}
+    (tmp_path / "home").mkdir()
+    with_py = subprocess.run(["bash", "-c", _doc_fence("rollback-code")], env=_merged({**base, "PY": str(_venv())}), text=True, capture_output=True, check=False)
+    assert with_py.returncode == 0, with_py.stdout + with_py.stderr
+    assert "ROLLBACK=ok" in with_py.stdout.splitlines()
+    assert "RESTART=no" in with_py.stdout.splitlines()
+    assert "RESTART=allowed" not in with_py.stdout.splitlines()
+    assert (live / "app.py").read_bytes() == (backup / "app.py").read_bytes()
+    assert (live / ".env").read_text(encoding="utf-8") == "SECRET=keep\n"
+    (live / "app.py").write_text("replaced-again\n", encoding="utf-8")
+    without_py = _merged(base)
+    without_py.pop("PY", None)
+    fallback = subprocess.run(["bash", "-c", _doc_fence("rollback-code")], env=without_py, text=True, capture_output=True, check=False)
+    assert fallback.returncode == 0, fallback.stdout + fallback.stderr
+    assert "ROLLBACK=ok" in fallback.stdout.splitlines()
+    assert (live / "app.py").read_bytes() == (backup / "app.py").read_bytes()
+    assert (live / ".env").read_text(encoding="utf-8") == "SECRET=keep\n"
+    pack = subprocess.run([str(_venv()), str(ROOT / "scripts" / "screenshot_host_apply.py"), "--help"], text=True, capture_output=True, check=False)
+    assert pack.returncode == 0, pack.stderr
+    isolated = tmp_path / "installed"
+    (isolated / "scripts").mkdir(parents=True)
+    (isolated / "scripts" / "screenshot_host_apply.py").write_bytes((ROOT / "scripts" / "screenshot_host_apply.py").read_bytes())
+    bare = subprocess.run([str(_venv()), str(isolated / "scripts" / "screenshot_host_apply.py"), "--help"], text=True, capture_output=True, check=False)
+    assert bare.returncode != 0
+    assert "screenshot_host_offline_checks" in bare.stderr
 
 
 def test_copy_loop_blocks_four_intruder_writes(tmp_path):
