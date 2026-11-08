@@ -138,6 +138,7 @@ def _no_apply(proc: subprocess.CompletedProcess[str], tmp: Path, live: Path) -> 
     assert "RESTART=allowed" not in proc.stdout
     assert "APPLY=ok" not in proc.stdout
     assert "apply\n" not in _trace(tmp)
+    assert not any(line.startswith("INSTALL=") for line in proc.stdout.splitlines())
     assert not (live / "screenshots.py").exists()
     log = (tmp / "launchctl.log").read_text(encoding="utf-8")
     assert "bootout" not in log and "bootstrap" not in log
@@ -784,8 +785,12 @@ def test_repeated_bsd_date_does_not_reuse_a_stale_receipt(tmp_path):
     env["PATH"] = str(date_dir) + os.pathsep + env["PATH"]
     proc = _run("screenshot_host_offline_deploy.sh", env)
     assert proc.returncode != 0
-    assert "RECOVERY=not-needed" in proc.stdout
-    assert "RECOVERY=source-restored" not in proc.stdout
+    assert "RECOVERY=not-needed" in proc.stdout.splitlines()
+    assert "INSTALL=unverified" in proc.stdout.splitlines()
+    assert "INSTALL=verified-untouched-c943" not in proc.stdout.splitlines()
+    assert "RESTART=not-allowed" in proc.stdout.splitlines()
+    assert "RESTART=allowed" not in proc.stdout.splitlines()
+    assert "RECOVERY=source-restored" not in proc.stdout.splitlines()
     assert (live / "README.md").read_text(encoding="utf-8") == "CURRENT-README\n"
     assert (stale / "intent.json").read_bytes() == stale_intent
     created = [path for path in Path(env["HOME"]).glob("screenshot-run-*") if path != stale]
@@ -953,6 +958,7 @@ def test_ambient_crash_and_unbounded_pause_are_rejected(tmp_path):
     assert proc.returncode != 0
     assert "HOOKS=rejected" in proc.stdout
     assert "RECOVERY=not-needed" in proc.stdout
+    assert not any(line.startswith("INSTALL=") for line in proc.stdout.splitlines())
     assert "RECOVERY=source-restored" not in proc.stdout
     assert (live / "app.py").read_bytes() == before
     assert not (live / "screenshots.py").exists()
@@ -964,6 +970,7 @@ def test_ambient_crash_and_unbounded_pause_are_rejected(tmp_path):
     proc = _run("screenshot_host_offline_deploy.sh", env2)
     assert time.time() - started < 2
     assert "HOOKS=rejected" in proc.stdout
+    assert not any(line.startswith("INSTALL=") for line in proc.stdout.splitlines())
     assert (live2 / "app.py").read_bytes() == before2
 
 
@@ -1209,6 +1216,69 @@ def test_documented_rollback_accepts_explicit_py_and_path_python3(tmp_path):
     bare = subprocess.run([str(_venv()), str(isolated / "scripts" / "screenshot_host_apply.py"), "--help"], text=True, capture_output=True, check=False)
     assert bare.returncode != 0
     assert "screenshot_host_offline_checks" in bare.stderr
+
+
+def test_clean_preapply_failure_can_return_and_drift_cannot(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    before = {rel: (live / rel).read_bytes() for rel in ("app.py", "static/index.html", "Dockerfile", "README.md", ".env", "data/url_jobs.json")}
+    dest = Path(env["DEST"])
+    dest.mkdir(parents=True)
+    (dest / "occupied").write_text("keep\n", encoding="utf-8")
+    clean = _run("screenshot_host_offline_deploy.sh", env)
+    lines = clean.stdout.splitlines()
+    assert clean.returncode != 0
+    assert "RECOVERY=not-needed" in lines
+    assert "INSTALL=verified-untouched-c943" in lines
+    assert "RESTART=allowed" in lines
+    assert "RESTART=not-allowed" not in lines
+    assert "AUTHORIZATION=original-window" in lines
+    assert any(line == f"BOOTSTRAP=not-run {env['FIXTURE_PLIST_PATH']}" for line in lines)
+    assert not list(Path(env["HOME"]).glob("screenshot-run-*/intent.json"))
+    for rel, data in before.items():
+        assert (live / rel).read_bytes() == data
+    assert not (live / "screenshots.py").exists()
+    assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+    live2, env2 = _prepare_stopped(tmp_path / "drift")
+    (live2 / "README.md").write_text("DRIFTED-README\n", encoding="utf-8")
+    dest2 = Path(env2["DEST"])
+    dest2.mkdir(parents=True)
+    (dest2 / "occupied").write_text("keep\n", encoding="utf-8")
+    drifted = _run("screenshot_host_offline_deploy.sh", env2)
+    dlines = drifted.stdout.splitlines()
+    assert "RECOVERY=not-needed" in dlines
+    assert "INSTALL=unverified" in dlines
+    assert "INSTALL=verified-untouched-c943" not in dlines
+    assert "RESTART=not-allowed" in dlines
+    assert "RESTART=allowed" not in dlines
+    assert (live2 / "README.md").read_text(encoding="utf-8") == "DRIFTED-README\n"
+    untouched = dict(env2)
+    untouched["SCREENSHOT_RECOVER_UNTOUCHED"] = "1"
+    again = _run("screenshot_host_offline_recover.sh", untouched)
+    assert "INSTALL=unverified" in again.stdout.splitlines()
+    assert "RESTART=not-allowed" in again.stdout.splitlines()
+    assert "RESTART=allowed" not in again.stdout.splitlines()
+    assert (live2 / "README.md").read_text(encoding="utf-8") == "DRIFTED-README\n"
+
+    live3, env3 = _prepare_stopped(tmp_path / "mixed")
+    (live3 / "app.py").write_bytes((ROOT / "app.py").read_bytes())
+    mixed = dict(env3)
+    mixed["SCREENSHOT_RECOVER_UNTOUCHED"] = "1"
+    refused = _run("screenshot_host_offline_recover.sh", mixed)
+    assert "INSTALL=unverified" in refused.stdout.splitlines()
+    assert "RESTART=not-allowed" in refused.stdout.splitlines()
+    assert "RESTART=allowed" not in refused.stdout.splitlines()
+    assert (live3 / "app.py").read_bytes() == (ROOT / "app.py").read_bytes()
+    assert not (live3 / "screenshots.py").exists()
+
+    both = dict(env)
+    both["SCREENSHOT_RECOVER_UNTOUCHED"] = "1"
+    both["RUN_DIR"] = str(Path(env["HOME"]) / ("screenshot-run-1-" + ("ab" * 8)))
+    ambiguous = _run("screenshot_host_offline_recover.sh", both)
+    assert ambiguous.returncode != 0
+    assert "RESTART=not-allowed" in ambiguous.stdout.splitlines()
+    assert "RESTART=allowed" not in ambiguous.stdout.splitlines()
+    assert not any(line.startswith("INSTALL=") for line in ambiguous.stdout.splitlines())
 
 
 def test_copy_loop_blocks_four_intruder_writes(tmp_path):

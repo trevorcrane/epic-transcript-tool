@@ -65,7 +65,7 @@ emit_restart() {
   # RESTART is permission for a later manual bootstrap. BOOTSTRAP=not-run means
   # this process did not execute launchctl. RESTART=not-run is not a receipt.
   case "$1" in
-    verified-new|verified-c943)
+    verified-new|verified-c943|verified-untouched-c943)
       printf '%s\n' "INSTALL=$1"
       printf '%s\n' "RESTART=allowed"
       ;;
@@ -248,7 +248,13 @@ if [ "$section_exit" -ne 0 ]; then
   recover_failed_apply || true
   case "$RECOVERY_RESULT" in
     source-restored) emit_restart verified-c943 ;;
-    not-needed) emit_restart unchanged ;;
+    not-needed)
+      if source_is_baseline "$ROOT"; then
+        emit_restart verified-untouched-c943
+      else
+        emit_restart unverified
+      fi
+      ;;
     *) emit_restart incomplete ;;
   esac
   if [ -s "$RUN_DIR/apply.json" ]; then

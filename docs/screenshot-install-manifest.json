@@ -21,7 +21,7 @@
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",
-    "docs/SCREENSHOT_DEPLOY.md": "97e0a379f989d0b98392640c8230c9e00cf4548815ef73c7a69800fe5c85be19",
+    "docs/SCREENSHOT_DEPLOY.md": "3a4c2f79ab488bb8ab0b18adf84388c42ce309f53f91a3124a452d181d4751e0",
     "scripts/screenshot_host_preflight.py": "f4387d98c0c1edad357e2b31be025940f452a2ac9b23feebe16baca2cc9501e3",
     "scripts/screenshot_host_apply.py": "595be4fd30f321fb0dee8060c3d530e7a0d3d38db37be2428ce6638813170615"
   },
@@ -58,8 +58,8 @@
     "scripts/screenshot_host_deploy.sh": "f390715f8abeb085c2b38b8edac2a8e0a7ebbc3eac0fed2dec338194d6171559",
     "scripts/screenshot_host_rollback.sh": "3d375cd6acabb2634f084ae9be082028ba856dc2f802d9f5fdeae7a7c684af99",
     "scripts/screenshot_host_capture_identity.sh": "7ebfa8fc92b465f7b19226074fc224874fdbd50ec8da04656cbccc03bf201037",
-    "scripts/screenshot_host_offline_deploy.sh": "6ed8e456ae21cbd02b6c44d279acf7323cde7430cde57e60db4bebd07afebaa6",
-    "scripts/screenshot_host_offline_recover.sh": "c1a19592aa8268a7a6968dc50490a3312f5e900269c6dc3cfe4bcee58f21b250",
+    "scripts/screenshot_host_offline_deploy.sh": "eac54b3db1ffc45affc494ba4dbfc283b8ac00c84c6aca9150904047c93b1caa",
+    "scripts/screenshot_host_offline_recover.sh": "db1d87fc85051a8abd551313d7f0822dc2970018e5d9f13b9157bfbd4746aa6a",
     "scripts/screenshot_host_offline_checks.py": "136422ab5624a5c7db9f193b634b363dee0a5ec73f8d4cbc2e65ab2bfa763edb"
   },
   "offline_route": "conditional; not approved; scripts do not bootout or bootstrap",

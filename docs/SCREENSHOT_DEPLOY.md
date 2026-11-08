@@ -130,13 +130,22 @@ plist path means this process did not start the service. `RESTART` is
 only the permission for a person to do that later. `RESTART=not-run` is
 not a receipt and is not printed.
 
-`RESTART=allowed` is printed only with one of these:
-`INSTALL=verified-new` after `APPLY=ok`, or `INSTALL=verified-c943` after
-`RECOVERY=source-restored`. Anything else, including `INSTALL=unchanged`
-and `INSTALL=incomplete`, is `RESTART=not-allowed`. Do not start the
-service then. A killed apply can exit 137 and still print
+`RESTART=allowed` is printed only with one of these, after the captured
+identity is valid and this process did not start launchctl:
+`INSTALL=verified-new` after `APPLY=ok`, `INSTALL=verified-c943` after
+`RECOVERY=source-restored`, or `INSTALL=verified-untouched-c943` when no
+replacement started and all nine c943 paths still match. `INSTALL=unverified`
+is a tree that was checked and is not one of those. It is `RESTART=not-allowed`.
+A drifted file and a clean tree are not the same result. Do not start the
+service on `INSTALL=unverified`. A killed apply can exit 137 and still print
 `RESTART=allowed` when the nine c943 paths were verified. The exit code
 is not the permission.
+
+`INSTALL` is omitted when the script stops before that classification.
+Authorization, hook rejection, missing bindings, a bad identity, a service
+that is still loaded, a busy port, and a live process are in that group.
+They print `RESTART=not-allowed` and `BOOTSTRAP=not-run`. They do not print
+`INSTALL=unchanged`.
 
 The plist on that `BOOTSTRAP=not-run` line is the one captured in the
 identity file. On this host that path was reported as
@@ -166,9 +175,31 @@ Set `RUN_DIR` to that one directory, for example
 `$HOME/screenshot-run-<id>`. The script does not search `$HOME` and does
 not read `$HOME/screenshot-apply.json`. It checks the named intent's root,
 manifest hash, confined backup, and transaction id, restores from that
-backup only, then requires all nine baseline paths. `.env`,
-`data/url_jobs.json`, and `data/transcripts.db` must be unchanged. Invalid
-evidence prints `RECOVERY=failed` and `RESTART=not-allowed`.
+backup only, then requires all nine baseline paths. Invalid evidence
+prints `RECOVERY=failed` and `RESTART=not-allowed`.
+
+A failure before any intent exists, such as the outside backup refusing
+a destination, has nothing for that named-run restore to use. If the live
+tree is still the nine-path c943 baseline, the same offline copy prints
+`INSTALL=verified-untouched-c943` and `RESTART=allowed`. If any of those
+nine paths differs, including a drifted `README.md` or a mixed `app.py`,
+it prints `INSTALL=unverified` and `RESTART=not-allowed` and does not
+roll anything back. The same check can be repeated without naming a run
+and without restoring:
+
+```bash
+SCREENSHOT_RECOVER_UNTOUCHED=1 \
+SCREENSHOT_OFFLINE_AUTHORIZATION=interruptible-offline-window-approved \
+ROOT=<live tree> ARTIFACT=<pack> HOME=<home> \
+"$ARTIFACT/scripts/screenshot_host_offline_recover.sh"
+```
+
+Leave `RUN_DIR` unset for that command. Setting both is refused. The
+builtin runtime gate on either recover path is the sha256 of `.env`,
+`data/url_jobs.json`, and `data/transcripts.db` around the check. It does
+not hash `transcripts.db-wal`, `transcripts.db-shm`, transcript text, or
+`phase3_gemini_usage.json`. A SQLite checkpoint can change the WAL and
+SHM without those three files being restored or deleted.
 
 On the next start the new process marks queued and running jobs
 interrupted. A saved transcript is shown with the screenshot error and is
