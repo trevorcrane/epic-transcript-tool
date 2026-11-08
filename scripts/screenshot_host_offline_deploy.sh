@@ -18,6 +18,43 @@ trace() {
   fi
 }
 
+sha256_file() {
+  "$PY" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"
+}
+
+recover_failed_apply() {
+  receipt="$HOME/screenshot-apply.json"
+  if [ ! -s "$receipt" ]; then
+    if [ ! -e "$ROOT/screenshots.py" ]; then
+      printf '%s\n' "RECOVERY=source-unchanged"
+      return 0
+    fi
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  fi
+  backup=$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("backup") or "")' "$receipt") || backup=""
+  if [ -z "$backup" ] || [ ! -f "$backup/app.py" ]; then
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  fi
+  if [ "$(sha256_file "$ROOT/app.py")" != "$(sha256_file "$backup/app.py")" ] || { [ -e "$ROOT/screenshots.py" ] && [ ! -f "$backup/screenshots.py" ]; }; then
+    if ! BACKUP="$backup" DEST="$DEST" ROOT="$ROOT" "$ARTIFACT/scripts/screenshot_host_rollback.sh"; then
+      printf '%s\n' "RECOVERY=failed"
+      return 1
+    fi
+  fi
+  if [ "$(sha256_file "$ROOT/app.py")" != "$(sha256_file "$backup/app.py")" ]; then
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  fi
+  if [ -e "$ROOT/screenshots.py" ] && [ ! -f "$backup/screenshots.py" ]; then
+    printf '%s\n' "RECOVERY=failed"
+    return 1
+  fi
+  printf '%s\n' "RECOVERY=source-restored"
+  return 0
+}
+
 if [ "${SCREENSHOT_OFFLINE_AUTHORIZATION:-}" != "interruptible-offline-window-approved" ]; then
   deny 1
 fi
@@ -86,13 +123,6 @@ if [ "$proc_exit" -ne 0 ]; then
   deny "$proc_exit"
 fi
 
-lock_exit=0
-"$PY" "$checks" exclusive --db "$ROOT/data/transcripts.db" || lock_exit=$?
-trace "exclusive-exit=$lock_exit"
-if [ "$lock_exit" -ne 0 ]; then
-  deny "$lock_exit"
-fi
-
 jobs_before=""
 if [ -f "$ROOT/data/url_jobs.json" ]; then
   jobs_before=$("$PY" -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$ROOT/data/url_jobs.json") || deny $?
@@ -105,49 +135,42 @@ if [ -n "$jobs_before" ]; then
   fi
 fi
 
+export ROOT ARTIFACT DEST HOME PY PLIST PORT LABEL
+body="$HOME/screenshot-critical-body.sh"
+cat > "$body" <<'BODY'
+#!/usr/bin/env bash
+set -u
+set -o pipefail
+trace() { printf '%s\n' "$1" >> "$HOME/screenshot-offline-trace"; }
 trace "backup"
 backup_exit=0
-"$PY" "$backup_tool" --root "$ROOT" --dest "$DEST" --plist "$PLIST" || backup_exit=$?
+"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --root "$ROOT" --dest "$DEST" --plist "$PLIST" || backup_exit=$?
 trace "backup-exit=$backup_exit"
-if [ "$backup_exit" -ne 0 ]; then
-  deny "$backup_exit"
-fi
-if [ ! -s "$DEST/SHA256SUMS" ]; then
-  trace "sums-missing"
-  deny 1
-fi
+if [ "$backup_exit" -ne 0 ]; then exit "$backup_exit"; fi
+if [ ! -s "$DEST/SHA256SUMS" ]; then trace "sums-missing"; exit 1; fi
 verify_exit=0
-"$PY" "$backup_tool" --verify "$DEST" || verify_exit=$?
+"$PY" "$ARTIFACT/scripts/screenshot_outside_backup.py" --verify "$DEST" || verify_exit=$?
 trace "verify-exit=$verify_exit"
-if [ "$verify_exit" -ne 0 ]; then
-  deny "$verify_exit"
-fi
-
+if [ "$verify_exit" -ne 0 ]; then exit "$verify_exit"; fi
 preflight_exit=0
-"$PY" "$preflight_tool" \
+"$PY" "$ARTIFACT/scripts/screenshot_host_preflight.py" \
   --root "$ROOT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --port "$PORT" \
   --out "$HOME/screenshot-preflight.json" || preflight_exit=$?
 trace "preflight-exit=$preflight_exit"
-if [ "$preflight_exit" -ne 0 ]; then
-  deny "$preflight_exit"
-fi
-
+if [ "$preflight_exit" -ne 0 ]; then exit "$preflight_exit"; fi
 dry_exit=0
-"$PY" "$apply_tool" \
+"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
   --root "$ROOT" \
   --source "$ARTIFACT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
   --out "$HOME/screenshot-apply-dry-run.json" || dry_exit=$?
 trace "dry-run-exit=$dry_exit"
-if [ "$dry_exit" -ne 0 ]; then
-  deny "$dry_exit"
-fi
-
+if [ "$dry_exit" -ne 0 ]; then exit "$dry_exit"; fi
 trace "apply"
 apply_exit=0
-"$PY" "$apply_tool" \
+"$PY" "$ARTIFACT/scripts/screenshot_host_apply.py" \
   --root "$ROOT" \
   --source "$ARTIFACT" \
   --manifest "$ARTIFACT/docs/screenshot-install-manifest.json" \
@@ -162,9 +185,24 @@ if [ -s "$HOME/screenshot-apply.json" ]; then
   wrote=${parsed##* }
 fi
 if [ "$apply_exit" -ne 0 ] || [ "$ok" != "yes" ] || [ "$wrote" != "yes" ]; then
+  exit "${apply_exit:-1}"
+fi
+exit 0
+BODY
+chmod 700 "$body"
+section_exit=0
+"$PY" "$checks" guard --db "$ROOT/data/transcripts.db" --ready "$HOME/screenshot-critical-open" -- bash "$body" || section_exit=$?
+if [ "$section_exit" -eq 23 ]; then
+  trace "exclusive-exit=23"
+  deny 23
+fi
+if [ "$section_exit" -ne 0 ]; then
+  recover_failed_apply
   printf '%s\n' "RESTART=no"
-  exit "$apply_exit"
+  printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
+  exit "$section_exit"
 fi
 printf '%s\n' "APPLY=ok"
 printf '%s\n' "RESTART=not-run"
+printf '%s\n' "BOOTSTRAP=not-run ${PLIST}"
 exit 0

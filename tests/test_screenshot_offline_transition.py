@@ -192,7 +192,46 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
         proc = None
         time.sleep(0.2)
         env["SCREENSHOT_OFFLINE_AUTHORIZATION"] = AUTH
-        deployed = _run("screenshot_host_offline_deploy.sh", env)
+        ready = tmp_path / "home" / "screenshot-critical-open"
+        (tmp_path / "home" / "screenshot-critical-open.wait").write_text("1\n", encoding="utf-8")
+        writer = subprocess.Popen(
+            [sys.executable, "-c",
+             "import sqlite3,sys,time\n"
+             "from pathlib import Path\n"
+             "db, ready, out = sys.argv[1:]\n"
+             "deadline=time.time()+30\n"
+             "while not Path(ready).exists():\n"
+             "    if time.time()>deadline:\n"
+             "        Path(out).write_text('missed\\n'); raise SystemExit(2)\n"
+             "    time.sleep(0.01)\n"
+             "seen=False\n"
+             "blocked=False\n"
+             "committed=False\n"
+             "while time.time()<deadline:\n"
+             "    if not Path(ready).exists():\n"
+             "        if seen: break\n"
+             "        time.sleep(0.005); continue\n"
+             "    seen=True\n"
+             "    w=sqlite3.connect(db, timeout=0.2)\n"
+             "    try:\n"
+             "        w.execute(\"INSERT INTO transcripts VALUES ('9','intruder')\")\n"
+             "        w.commit(); committed=True; break\n"
+             "    except sqlite3.OperationalError:\n"
+             "        blocked=True; break\n"
+             "    finally:\n"
+             "        w.close()\n"
+             "if not seen: Path(out).write_text('missed\\n')\n"
+             "elif committed: Path(out).write_text('committed\\n')\n"
+             "else: Path(out).write_text('blocked\\n')\n"
+             "Path(str(ready) + '.attempted').write_text('1\\n')\n",
+             str(live / "data" / "transcripts.db"),
+             str(tmp_path / "home" / "screenshot-critical-open"),
+             str(tmp_path / "writer-result.txt")],
+        )
+        try:
+            deployed = _run("screenshot_host_offline_deploy.sh", env)
+        finally:
+            writer.wait(timeout=40)
         assert deployed.returncode == 0, deployed.stderr + deployed.stdout
         assert "APPLY=ok" in deployed.stdout
         assert "RESTART=not-run" in deployed.stdout
@@ -211,7 +250,12 @@ def test_initial_transition_captures_then_copies_only_after_stop(tmp_path):
         assert preflight["ok"] is True
         assert dry["wrote"] is False and dry["restart"] is False
         assert applied["ok"] is True and applied["wrote"] is True and applied["restart"] is False
-        assert "backup-exit=0" in _trace(tmp_path) and "exclusive-exit=0" in _trace(tmp_path)
+        assert "backup-exit=0" in _trace(tmp_path)
+        assert (tmp_path / "writer-result.txt").read_text(encoding="utf-8") == "blocked\n"
+        snap = sqlite3.connect(f"file:{tmp_path / 'outside' / 'backup' / 'data' / 'transcripts.db'}?mode=ro", uri=True)
+        bodies = [row[0] for row in snap.execute("SELECT transcript FROM transcripts")]
+        snap.close()
+        assert "saved" in bodies and "intruder" not in bodies
         log = (tmp_path / "launchctl.log").read_text(encoding="utf-8")
         assert "bootout" not in log and "bootstrap" not in log
         (live / "data" / "url_jobs.json").write_text('{"drift":"after-install"}\n', encoding="utf-8")
@@ -325,6 +369,157 @@ def test_database_lock_stale_plist_and_mismatch_block_apply(tmp_path):
     _no_apply(mismatched, tmp_path, live)
     assert "identity-exit=11" in _trace(tmp_path)
     assert (live / ".env").read_text(encoding="utf-8") == "SECRET=keep\n"
+
+
+def test_port_timeout_fails_closed_and_only_refusal_passes():
+    import argparse
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("offline_checks", ROOT / "scripts" / "screenshot_host_offline_checks.py")
+    checks = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(checks)
+    refused = socket.socket()
+    refused.bind(("127.0.0.1", 0))
+    port = refused.getsockname()[1]
+    refused.close()
+    assert checks.port_free(argparse.Namespace(port=port)) == 0
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    try:
+        assert checks.port_free(argparse.Namespace(port=listener.getsockname()[1])) == 20
+    finally:
+        listener.close()
+
+    class TimingOut:
+        def settimeout(self, _seconds: float) -> None:
+            return None
+        def connect(self, _addr: tuple[str, int]) -> None:
+            raise TimeoutError("timed out")
+        def close(self) -> None:
+            return None
+
+    original = checks.socket.socket
+    checks.socket.socket = lambda *args, **kwargs: TimingOut()  # type: ignore[assignment]
+    try:
+        assert checks.port_free(argparse.Namespace(port=9)) == 20
+    finally:
+        checks.socket.socket = original
+
+
+def test_setsid_orphan_is_outside_the_recorded_group():
+    import argparse
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("offline_checks", ROOT / "scripts" / "screenshot_host_offline_checks.py")
+    checks = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(checks)
+    parent = subprocess.Popen(
+        [sys.executable, "-c", "import os,subprocess,time; print(os.getpid(), os.getpgid(0), flush=True); subprocess.Popen(['sleep','30']); time.sleep(30)"],
+        stdout=subprocess.PIPE, text=True, start_new_session=True,
+    )
+    assert parent.stdout is not None
+    pid, pgid = parent.stdout.readline().strip().split()
+    time.sleep(0.2)
+    try:
+        os.kill(int(pid), 9)
+        parent.wait(timeout=2)
+        assert checks.processes_gone(argparse.Namespace(pid=pid, pgid=pgid)) == 22
+        orphan = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        try:
+            assert str(os.getpgid(orphan.pid)) != pgid
+            assert checks.processes_gone(argparse.Namespace(pid=pid, pgid=pgid)) == 22
+            subprocess.run(["pkill", "-f", "sleep 30"], check=False)
+            time.sleep(0.2)
+            assert checks.processes_gone(argparse.Namespace(pid=pid, pgid=pgid)) == 0
+        finally:
+            orphan.kill()
+            orphan.wait(timeout=2)
+    finally:
+        try:
+            os.killpg(int(pgid), 9)
+        except OSError:
+            pass
+
+
+def test_failed_apply_restores_source_and_stays_stopped(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    before_env = (live / ".env").read_bytes()
+    before_app = (live / "app.py").read_bytes()
+    artifact = _recovery_artifact(tmp_path / "restore-art", live, fail=False)
+    env["ARTIFACT"] = str(artifact)
+    env["RECOVERY_BACKUP"] = str(tmp_path / "known-good-c943")
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "RESTART=no" in proc.stdout
+    assert "RESTART=allowed" not in proc.stdout
+    assert "RECOVERY=source-restored" in proc.stdout
+    assert "BOOTSTRAP=not-run" in proc.stdout
+    assert env["FIXTURE_PLIST_PATH"] in proc.stdout
+    assert (live / "app.py").read_bytes() == before_app
+    assert not (live / "screenshots.py").exists()
+    assert (live / ".env").read_bytes() == before_env
+    assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+
+def test_recovery_failure_stays_stopped(tmp_path):
+    live, env = _prepare_stopped(tmp_path)
+    before_env = (live / ".env").read_bytes()
+    artifact = _recovery_artifact(tmp_path / "fail-art", live, fail=True)
+    env["ARTIFACT"] = str(artifact)
+    env["RECOVERY_BACKUP"] = str(tmp_path / "missing-known-good")
+    proc = _run("screenshot_host_offline_deploy.sh", env)
+    assert proc.returncode != 0
+    assert "RECOVERY=failed" in proc.stdout
+    assert "RESTART=no" in proc.stdout
+    assert "RESTART=allowed" not in proc.stdout
+    assert "APPLY=ok" not in proc.stdout
+    assert (live / ".env").read_bytes() == before_env
+    assert "bootstrap" not in (tmp_path / "launchctl.log").read_text(encoding="utf-8")
+
+
+def _recovery_artifact(tmp: Path, live: Path, fail: bool) -> Path:
+    artifact = tmp
+    (artifact / "scripts").mkdir(parents=True)
+    (artifact / "docs").mkdir()
+    for name in (
+        "screenshot_host_offline_checks.py",
+        "screenshot_outside_backup.py",
+        "screenshot_host_preflight.py",
+        "screenshot_host_rollback.sh",
+    ):
+        (artifact / "scripts" / name).write_bytes((ROOT / "scripts" / name).read_bytes())
+        if name.endswith(".sh"):
+            (artifact / "scripts" / name).chmod(0o755)
+    (artifact / "docs" / "screenshot-install-manifest.json").write_bytes((ROOT / "docs" / "screenshot-install-manifest.json").read_bytes())
+    marker = artifact / "scripts" / "screenshot_host_apply.py"
+    marker.write_text(
+        "import json, os, shutil, sys\n"
+        "from pathlib import Path\n"
+        "root = Path(os.environ['ROOT'])\n"
+        "home = Path(os.environ['HOME'])\n"
+        "args = sys.argv[1:]\n"
+        "out = args[args.index('--out') + 1]\n"
+        "if '--apply' not in args:\n"
+        "    Path(out).write_text(json.dumps({'ok': True, 'wrote': False, 'restart': False}) + '\\n')\n"
+        "    raise SystemExit(0)\n"
+        "backup = Path(os.environ['RECOVERY_BACKUP'])\n"
+        f"fail = {fail!r}\n"
+        "if not fail:\n"
+        "    backup.mkdir(parents=True, exist_ok=True)\n"
+        "    for rel in ('app.py', 'static/index.html', 'Dockerfile', 'README.md'):\n"
+        "        src = root / rel\n"
+        "        if src.is_file():\n"
+        "            dest = backup / rel\n"
+        "            dest.parent.mkdir(parents=True, exist_ok=True)\n"
+        "            shutil.copy2(src, dest)\n"
+        "(root / 'app.py').write_text('replaced-during-failed-apply\\n')\n"
+        "(root / 'screenshots.py').write_text('new\\n')\n"
+        "Path(out).write_text(json.dumps({'ok': False, 'wrote': False, 'restored': False, 'restart': False, 'backup': str(backup)}) + '\\n')\n"
+        "raise SystemExit(3)\n",
+        encoding="utf-8",
+    )
+    return artifact
 
 
 def _replace_field(text: str, key: str, value: str) -> str:

@@ -11,6 +11,7 @@ import socket
 import sqlite3
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -98,14 +99,15 @@ def check_identity(args: argparse.Namespace) -> int:
 
 
 def port_free(args: argparse.Namespace) -> int:
-    probe = socket.socket()
+    """IPv4 127.0.0.1 only. Connection refused is free. Timeout and other errors are not."""
+    probe = socket.socket(socket.AF_INET)
     probe.settimeout(0.3)
     try:
         probe.connect(("127.0.0.1", args.port))
     except ConnectionRefusedError:
         return 0
     except OSError:
-        return 0
+        return 20
     else:
         return 20
     finally:
@@ -127,18 +129,71 @@ def processes_gone(args: argparse.Namespace) -> int:
 
 
 def exclusive(args: argparse.Namespace) -> int:
+    """Kept for callers that only probe. The offline copy uses guard instead."""
     db = Path(args.db)
     if not db.is_file():
         return 23
     conn = sqlite3.connect(db, timeout=0.4)
     try:
-        conn.execute("BEGIN EXCLUSIVE")
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute("COMMIT")
     except sqlite3.OperationalError:
         return 23
     finally:
         conn.close()
     return 0
+
+
+def guard_section(args: argparse.Namespace) -> int:
+    """Hold BEGIN IMMEDIATE across the given command.
+
+    The read-only backup connection can still copy. Another writer cannot
+    commit until this connection closes. Closing it can checkpoint WAL into
+    the main database file and remove the WAL and SHM files. Rows stay.
+    """
+    db = Path(args.db)
+    if not db.is_file():
+        return 23
+    cmd = list(args.cmd)
+    if cmd[:1] == ["--"]:
+        cmd = cmd[1:]
+    if not cmd:
+        return 1
+    conn = sqlite3.connect(db, timeout=0.4)
+    ready = Path(args.ready)
+    try:
+        conn.execute("PRAGMA wal_autocheckpoint=0")
+        conn.execute("BEGIN IMMEDIATE")
+    except sqlite3.OperationalError:
+        conn.close()
+        return 23
+    ready.parent.mkdir(parents=True, exist_ok=True)
+    ready.write_text(
+        "lock=BEGIN IMMEDIATE\n"
+        "held_across=backup,verify,preflight,dry-run,apply\n"
+        "blocks=other sqlite writers\n"
+        "backup_uses=a separate read-only connection\n"
+        "close_may_checkpoint=true\n",
+        encoding="utf-8",
+    )
+    # A fixture may ask to attempt a writer before the copy continues.
+    # Production does not create this file, so it does not wait.
+    pause = Path(str(ready) + ".wait")
+    if pause.is_file():
+        attempted = Path(str(ready) + ".attempted")
+        deadline = time.time() + 5
+        while not attempted.exists() and time.time() < deadline:
+            time.sleep(0.01)
+    try:
+        proc = subprocess.run(cmd)
+        return proc.returncode
+    finally:
+        try:
+            conn.commit()
+        except sqlite3.Error:
+            pass
+        conn.close()
+        ready.unlink(missing_ok=True)
 
 
 def interrupted(args: argparse.Namespace) -> int:
@@ -200,6 +255,12 @@ def main() -> int:
     lock = sub.add_parser("exclusive")
     lock.add_argument("--db", required=True)
     lock.set_defaults(func=exclusive)
+
+    guard = sub.add_parser("guard")
+    guard.add_argument("--db", required=True)
+    guard.add_argument("--ready", required=True)
+    guard.add_argument("cmd", nargs=argparse.REMAINDER)
+    guard.set_defaults(func=guard_section)
 
     jobs = sub.add_parser("interrupted")
     jobs.add_argument("--root", type=Path, required=True)
