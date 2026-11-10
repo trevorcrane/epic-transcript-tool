@@ -673,14 +673,31 @@
     }
   }
 
+  // Browsers only accept image/png on the clipboard, and frames are JPEG.
+  // Convert to PNG and hand ClipboardItem a promise so Safari keeps the click gesture.
+  async function screenshotPngBlob(path) {
+    const res = await fetch(apiUrl(path));
+    if (!res.ok) throw new Error('missing');
+    const blob = await res.blob();
+    if (blob.type === 'image/png') return blob;
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      const url = URL.createObjectURL(blob);
+      el.onload = () => { URL.revokeObjectURL(url); resolve(el); };
+      el.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      el.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+    return await new Promise((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('encode')), 'image/png'));
+  }
+
   async function copyScreenshot(path, timestamp) {
     try {
-      const res = await fetch(apiUrl(path));
-      if (!res.ok) throw new Error('missing');
-      const blob = await res.blob();
-      const type = blob.type || 'image/jpeg';
       if (navigator.clipboard && window.ClipboardItem) {
-        await navigator.clipboard.write([new ClipboardItem({ [type]: blob })]);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': screenshotPngBlob(path) })]);
         showToast(`Copied image at ${timestamp}`);
         return;
       }
