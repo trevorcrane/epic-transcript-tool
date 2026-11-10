@@ -142,9 +142,10 @@
 
   .proof-strip { max-width:var(--form-max); margin:28px auto 0; display:block; text-align:center; color:rgba(255,255,255,.35); font-size:14px; min-height:30px; }
   .proof-strip span:not(.success-wipe) { display:none; }
-  .proof-strip::before { content:'Quick and simple. No catch.'; }
+  .proof-strip::before { content:'Quick and simple. No catch. '; }
   .proof-strip.success-ready { color:#fff; font-family:var(--font-heading); font-size:clamp(24px,3vw,36px); font-weight:800; letter-spacing:-.04em; }
-  .proof-strip.success-ready::before { content:''; }
+  .proof-strip.success-ready::before,
+  .proof-strip:has(.success-wipe)::before { content:none; }
   .success-wipe { display:inline-block; position:relative; overflow:hidden; animation:successWipe .58s ease both; }
   @keyframes successWipe { 0% { clip-path:inset(0 100% 0 0); transform:translateY(8px); opacity:.3; } 100% { clip-path:inset(0 0 0 0); transform:translateY(0); opacity:1; } }
 
@@ -703,7 +704,7 @@
       }
     } catch (err) { /* text fallback below */ }
     const ok = await copyTextToClipboard(`Screenshot at ${timestamp}`);
-    showToast(ok ? `Copied screenshot time ${timestamp}` : 'Could not copy that screenshot.', !ok);
+    showToast(ok ? "Couldn't copy the image here, so I copied the timestamp text instead." : 'Could not copy that screenshot.', !ok);
   }
 
   function renderResult(rec) {
