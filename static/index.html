@@ -470,13 +470,20 @@
   let shotObjectUrls = [];
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   const HISTORY_KEY = 'epicTranscriptHistory';
+  function rememberOwnerToken(token) {
+    token = String(token || '').trim();
+    if (token.length < 32) return;
+    try { sessionStorage.setItem(OWNER_KEY, token); } catch (e) { /* ignore */ }
+    try { localStorage.setItem(OWNER_KEY, token); } catch (e) { /* ignore */ }
+  }
   function ownerToken() {
-    let token = localStorage.getItem(OWNER_KEY);
+    let token = '';
+    try { token = sessionStorage.getItem(OWNER_KEY) || localStorage.getItem(OWNER_KEY) || ''; } catch (e) { token = ''; }
     if (!token) {
       const bytes = new Uint8Array(24);
       crypto.getRandomValues(bytes);
       token = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-      localStorage.setItem(OWNER_KEY, token);
+      rememberOwnerToken(token);
     }
     return token;
   }
@@ -506,6 +513,7 @@
     if (includeScreenshots) fd.append('include_screenshots', '1');
     setStatus(includeScreenshots ? 'Preparing transcript and screenshots...' : 'Preparing transcript job...');
     const started = await jfetch('/api/transcribe-url-job', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd });
+    if (started && started.job && started.job.owner_token) rememberOwnerToken(started.job.owner_token);
     const jobId = started && started.job && started.job.id;
     if (!jobId) throw new Error('Transcript job did not return an ID.');
 

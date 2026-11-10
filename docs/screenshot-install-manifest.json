@@ -16,8 +16,8 @@
     "README.md": "ecc30826cfe702c281d11b8b23663179c86c801bd58e1eac91a02205aeb7d035"
   },
   "install": {
-    "app.py": "f3e8c832f2fed044be7607f478ea2dd1f01e97c85dd29ef31c5601eedd15c8b2",
-    "static/index.html": "eb491c494d10c4d0d90a50fbfa4fb454ca95fe5649a06236dc33739ec971c4df",
+    "app.py": "5a70fa4b447ea19b3b561071e82f080618b8f880af494aeadde2aa9bb17cacff",
+    "static/index.html": "13511825c43c670eb706822f8f471a8a1f2585e212ff22efc6c6b1596f493bd8",
     "Dockerfile": "9f31b3b4ad97193f9bdc9e94011093daeddf265179a6bad539f85c85804c8c48",
     "README.md": "c09fb076bada5a8df9dafe640527c0c1b2a4767c76970396e7c67cdd216e6761",
     "screenshots.py": "fce696e8929f74cb401b9a22ebae5428cbb93e47abcb86ffe40ae132803424ae",

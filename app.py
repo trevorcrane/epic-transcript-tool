@@ -5,6 +5,7 @@ timestamped segments, and downloadable transcript formats.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import html
 import json
@@ -446,6 +447,48 @@ def require_owner(row: sqlite3.Row | dict, owner: Optional[str]) -> None:
 
 def header_owner(value: Optional[str]) -> Optional[str]:
     return valid_owner_token(value)
+
+
+def stored_owner_tokens(job: dict) -> list[str]:
+    found: list[str] = []
+    direct = job.get("owner_token")
+    if isinstance(direct, str) and direct.strip():
+        found.append(direct.strip())
+    record = job.get("record")
+    if isinstance(record, dict):
+        nested = record.get("owner_token")
+        if isinstance(nested, str) and nested.strip():
+            found.append(nested.strip())
+    return found
+
+
+def owner_token_presented(stored_tokens: list[str], presented_owner: Optional[str]) -> bool:
+    supplied = valid_owner_token(presented_owner)
+    if not supplied:
+        return False
+    for stored in stored_tokens:
+        if len(stored) == len(supplied) and secrets.compare_digest(stored, supplied):
+            return True
+    return False
+
+
+def strip_owner_tokens(value) -> None:
+    if isinstance(value, dict):
+        value.pop("owner_token", None)
+        for child in value.values():
+            strip_owner_tokens(child)
+    elif isinstance(value, list):
+        for child in value:
+            strip_owner_tokens(child)
+
+
+def public_job_view(job: dict, presented_owner: Optional[str]) -> dict:
+    """Job payload for a client. A plain GET never includes owner_token."""
+    view = copy.deepcopy(job)
+    view.pop("private_error_detail", None)
+    if not owner_token_presented(stored_owner_tokens(job), presented_owner):
+        strip_owner_tokens(view)
+    return view
 
 
 def language_base(value: Optional[str]) -> str:
@@ -1976,12 +2019,21 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
     job_id = uuid.uuid4().hex[:12]
     want_shots = str(include_screenshots or "").strip().lower() in {"1", "true", "yes", "on"}
     with URL_JOBS_LOCK:
-        URL_JOBS[job_id] = {"id": job_id, "status": "queued", "url": url, "created_at": time.time(), "include_screenshots": want_shots}
+        URL_JOBS[job_id] = {
+            "id": job_id,
+            "status": "queued",
+            "url": url,
+            "created_at": time.time(),
+            "include_screenshots": want_shots,
+            "owner_token": owner_token,
+        }
         save_url_jobs_locked()
     force_failure = (phase1_qc_force_failure or "").lower() in {"1", "true", "yes"} and url == "https://example.com/hermes-forced-failure.mp3"
     thread = threading.Thread(target=run_url_job, args=(job_id, url, owner_token, force_failure, want_shots), daemon=True)
     thread.start()
-    return JSONResponse({"ok": True, "job": URL_JOBS[job_id]}, status_code=202)
+    with URL_JOBS_LOCK:
+        created = copy.deepcopy(URL_JOBS[job_id])
+    return JSONResponse({"ok": True, "job": created}, status_code=202)
 
 
 def _screenshot_job(job_id: str) -> dict:
@@ -2027,15 +2079,14 @@ def api_job_screenshot(job_id: str, filename: str):
 
 
 @app.get("/api/jobs/{job_id}")
-def api_get_job(job_id: str) -> JSONResponse:
+def api_get_job(job_id: str, x_transcript_owner: Optional[str] = Header(None)) -> JSONResponse:
     with URL_JOBS_LOCK:
         if job_id not in URL_JOBS:
             load_url_jobs_locked()
-        job = dict(URL_JOBS.get(job_id) or {})
+        job = copy.deepcopy(URL_JOBS.get(job_id) or {})
     if not job:
         raise HTTPException(404, "Job not found")
-    job.pop("private_error_detail", None)
-    return JSONResponse({"ok": True, "job": job})
+    return JSONResponse({"ok": True, "job": public_job_view(job, x_transcript_owner)})
 
 
 @app.post("/api/transcribe-url")
