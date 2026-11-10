@@ -220,12 +220,14 @@
   .recent-item .when { margin-top:3px; color:var(--white-45); font-size:11px; }
   .recent-item .del { background:transparent; border:1px solid transparent; color:var(--white-45); border-radius:8px; width:28px; height:28px; cursor:pointer; }
   .recent-item .del:hover { color:var(--color-coral); border-color:rgba(255,61,107,.3); }
-  .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-12px); opacity:0; pointer-events:none; z-index:50; padding:10px 16px; border-radius:999px; background:rgba(5,150,105,.12); border:1px solid rgba(5,150,105,.3); color:#bbf7d0; font-weight:700; transition:.18s ease; }
+  .toast { position:fixed; left:50%; bottom:24px; z-index:1000; max-width:min(440px, calc(100vw - 32px)); padding:12px 18px; border:0; border-radius:14px; background:#064e3b; color:#ffffff; font-size:15px; font-weight:700; line-height:1.35; text-align:center; box-shadow:0 12px 32px rgba(0,0,0,.35); opacity:0; pointer-events:none; transform:translateX(-50%) translateY(10px); transition:opacity .18s ease, transform .18s ease; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .shot-copy.is-copied { background:#064e3b; color:#ffffff; border-color:#064e3b; }
   .new-transcript { margin-left:auto; }
   .tap-copy { width:100%; margin:10px 0 0; padding:14px; border:0; border-radius:12px; background:#7b2ff7; color:#fff; font-weight:800; font-size:16px; cursor:pointer; }
   .tap-copy:active { transform:scale(.99); }
-  .toast.error { background:var(--color-error-bg); color:var(--color-error-text); border-color:var(--color-error-border); }
+  .toast.error { background:#7f1d1d; color:#ffffff; }
+  @media (max-width: 760px) { .toast { bottom:76px; } }
   .machine-band h2 { font-family:var(--font-heading); color:#171719; }
   .machine-band { padding:34px 20px 18px; background:#f7f6f3; color:#171719; }
   .machine-card-grid { max-width:980px; margin:16px auto 0; display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
@@ -416,7 +418,7 @@
   <footer class="footer">EPIC Transcript Machine · v<span id="releaseVersion"></span> · Powered by <a href="https://epic.media" target="_blank" rel="noopener">epic.media</a></footer>
 </div>
 
-<div id="toast" class="toast">Copied to clipboard ✓</div>
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <div class="drawer" id="drawer">
   <div class="drawer-head" id="drawerHead" role="button" tabindex="0" aria-expanded="false" aria-controls="drawerBody">
@@ -585,7 +587,19 @@
     els.toast.classList.toggle('error', !!isError);
     els.toast.classList.add('show');
     clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => els.toast.classList.remove('show'), 3000);
+    showToast._t = setTimeout(() => els.toast.classList.remove('show'), 2500);
+  }
+
+  function markCopied(button) {
+    if (!button) return;
+    if (!button.dataset.label) button.dataset.label = button.textContent;
+    button.textContent = 'Copied ✓';
+    button.classList.add('is-copied');
+    clearTimeout(button._copiedTimer);
+    button._copiedTimer = setTimeout(() => {
+      button.textContent = button.dataset.label;
+      button.classList.remove('is-copied');
+    }, 2500);
   }
 
   function screenshotApiPath(url) {
@@ -647,7 +661,7 @@
       copy.className = 'shot-copy';
       copy.textContent = 'Copy image';
       if (path) {
-        copy.addEventListener('click', () => copyScreenshot(path, frame.timestamp || ''));
+        copy.addEventListener('click', () => copyScreenshot(path, frame.timestamp || '', copy));
         fetch(apiUrl(path)).then(async (res) => {
           if (!res.ok) throw new Error('missing');
           const blob = await res.blob();
@@ -703,15 +717,17 @@
     return await new Promise((resolve, reject) => canvas.toBlob((b) => b ? resolve(b) : reject(new Error('encode')), 'image/png'));
   }
 
-  async function copyScreenshot(path, timestamp) {
+  async function copyScreenshot(path, timestamp, button) {
     try {
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': screenshotPngBlob(path) })]);
+        markCopied(button);
         showToast(`Copied image at ${timestamp}`);
         return;
       }
     } catch (err) { /* text fallback below */ }
     const ok = await copyTextToClipboard(`Screenshot at ${timestamp}`);
+    if (ok) markCopied(button);
     showToast(ok ? "Couldn't copy the image here, so I copied the timestamp text instead." : 'Could not copy that screenshot.', !ok);
   }
 
