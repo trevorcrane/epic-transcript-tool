@@ -53,6 +53,7 @@ if mode == "plant":
             "percent": 90,
             "url": "https://www.youtube.com/watch?v=abcdefghijk",
             "include_screenshots": True,
+            "owner_token": "owner-token-restart-aaaaaaaaaaaaaa",
             "record": record,
         }
         app.save_url_jobs_locked()
@@ -97,7 +98,11 @@ def _start(data: Path, mode: str) -> tuple[subprocess.Popen, int]:
 
 
 def _get(port: int) -> dict:
-    with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/jobs/{JOB_ID}", timeout=2) as response:
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{port}/api/jobs/{JOB_ID}",
+        headers={"X-Transcript-Owner": "owner-token-restart-aaaaaaaaaaaaaa"},
+    )
+    with urllib.request.urlopen(request, timeout=2) as response:
         return json.loads(response.read().decode("utf-8"))["job"]
 
 

@@ -120,6 +120,10 @@
   .grab-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
   .grab-btn-secondary { background:rgba(255,255,255,.14); box-shadow:none; }
   .grab-btn-secondary:hover:not(:disabled) { background:rgba(255,255,255,.22); filter:none; }
+  body[data-theme='light'] .grab-btn-secondary { background:#fff; color:#171719; border:2px solid #7b2ff7; box-shadow:none; }
+  body[data-theme='light'] .grab-btn-secondary:hover:not(:disabled) { background:#f3ecff; color:#171719; filter:none; }
+  body[data-theme='light'] .grab-btn-secondary:active:not(:disabled) { background:#e9dcff; color:#171719; }
+  body[data-theme='light'] .grab-btn-secondary:disabled { background:#fff; color:#171719; border-color:#7b2ff7; }
   .shots-note { margin:0 24px 14px; color:#3a3a42; font-size:14px; line-height:1.45; }
   .shots-zip { border:0; background:transparent; color:#7b2ff7; font-weight:800; cursor:pointer; padding:0; font-size:14px; }
   .shots-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; margin:0 24px 18px; }
@@ -223,6 +227,15 @@
   .toast { position:fixed; left:50%; bottom:24px; z-index:1000; max-width:min(440px, calc(100vw - 32px)); padding:12px 18px; border:0; border-radius:14px; background:#064e3b; color:#ffffff; font-size:15px; font-weight:700; line-height:1.35; text-align:center; box-shadow:0 12px 32px rgba(0,0,0,.35); opacity:0; pointer-events:none; transform:translateX(-50%) translateY(10px); transition:opacity .18s ease, transform .18s ease; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .shot-copy.is-copied { background:#064e3b; color:#ffffff; border-color:#064e3b; }
+  .share-panel { display:grid; gap:10px; padding:0 24px 16px; background:#fff; }
+  .share-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .share-label { color:#3a3a42; font-size:13px; font-weight:800; }
+  .share-url { flex:1; min-width:220px; height:40px; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:0 12px; color:var(--color-text-dark); background:#fbfaf8; font-family:var(--font-mono); font-size:12px; }
+  a.btn { display:inline-flex; align-items:center; text-decoration:none; }
+  .btn.is-copied { background:#064e3b; color:#ffffff; border-color:#064e3b; }
+  .share-readonly { color:var(--color-purple); font-size:13px; font-weight:800; }
+  .share-panel[hidden], .share-panel [hidden] { display:none !important; }
+  body.shared-view #downloadMenu, body.shared-view #summaryBtn, body.shared-view #actionsBtn, body.shared-view .ask-row, body.shared-view #shareOwnerRow { display:none !important; }
   .new-transcript { margin-left:auto; }
   .tap-copy { width:100%; margin:10px 0 0; padding:14px; border:0; border-radius:12px; background:#7b2ff7; color:#fff; font-weight:800; font-size:16px; cursor:pointer; }
   .tap-copy:active { transform:scale(.99); }
@@ -374,6 +387,23 @@
           <button class="btn new-transcript" id="newBtn" type="button" title="Start another transcript">+ New transcript</button>
         </div>
         <button class="tap-copy" id="tapCopy" type="button" hidden>Tap to copy transcript to clipboard</button>
+        <div class="share-panel" id="sharePanel" hidden>
+          <div class="share-readonly" id="shareReadonly" hidden>Shared transcript · read-only</div>
+          <div class="share-row" id="shareOwnerRow">
+            <button class="btn" id="shareCreateBtn" type="button">Create share link</button>
+            <input class="share-url" id="shareUrl" type="text" readonly hidden aria-label="Share link" />
+            <button class="btn" id="shareCopyBtn" type="button" hidden>Copy link</button>
+            <a class="btn" id="shareOpen" target="_blank" rel="noopener" hidden>Open ↗</a>
+            <button class="btn" id="shareRevokeBtn" type="button" hidden>Revoke link</button>
+          </div>
+          <div class="share-row" id="jobDownloads">
+            <span class="share-label">Downloads</span>
+            <button class="btn" type="button" data-job-download="transcript.txt">Transcript .txt</button>
+            <button class="btn" type="button" data-job-download="transcript.md">Transcript .md</button>
+            <button class="btn" type="button" data-job-download="screenshots.zip">Screenshots ZIP</button>
+            <button class="btn" type="button" data-job-download="everything.zip">Everything ZIP</button>
+          </div>
+        </div>
         <div class="question-row ask-row">
           <input id="questionInput" type="text" placeholder="Ask anything about this transcript... (Quotes · Chapters · Hooks · FAQ)" />
           <button class="btn ai" id="askBtn" type="button">Ask</button>
@@ -443,6 +473,8 @@
     const p = window.location.pathname || '/';
     const m = p.match(/^(\/epic-transcript)(?:\/|$)/);
     if (m) return m[1];
+    const shared = p.match(/^(.*?)\/r\/[A-Za-z0-9_-]{32,64}\/?$/);
+    if (shared) return shared[1];
     if (window.location.hostname && window.location.hostname.includes('netlify.app')) {
       return 'https://epic-transcript.robyncrane.com';
     }
@@ -464,12 +496,14 @@
     summaryBtn: $('summaryBtn'), actionsBtn: $('actionsBtn'), analysisPanel: $('analysisPanel'), analysisTitle: $('analysisTitle'), questionInput: $('questionInput'), askBtn: $('askBtn'), analysisBox: $('analysisBox'), copyAnalysisBtn: $('copyAnalysisBtn'),
     toast: $('toast'),
     drawer: $('drawer'), drawerHead: $('drawerHead'), drawerBody: $('drawerBody'), drawerCount: $('drawerCount'), clearHistoryBtn: $('clearHistoryBtn'), releaseVersion: $('releaseVersion'),
+    sharePanel: $('sharePanel'), shareReadonly: $('shareReadonly'), shareCreateBtn: $('shareCreateBtn'), shareUrl: $('shareUrl'), shareCopyBtn: $('shareCopyBtn'), shareOpen: $('shareOpen'), shareRevokeBtn: $('shareRevokeBtn'), jobDownloads: $('jobDownloads'),
     banner: $('banner'), browserLocal: $('browserLocal'), how: $('how'), lightStage: $('results'), successMessage: $('successMessage'),
   };
   let currentRecord = null;
   let currentAnalysis = null;
   let wantScreenshots = false;
   let shotObjectUrls = [];
+  let sharedView = null;
   const OWNER_KEY = 'epicTranscriptOwnerToken';
   const HISTORY_KEY = 'epicTranscriptHistory';
   function rememberOwnerToken(token) {
@@ -535,7 +569,7 @@
       await sleep(attempt < 6 ? 1000 : 2000);
       let data;
       try {
-        data = await jfetch('/api/jobs/' + encodeURIComponent(jobId));
+        data = await jfetch('/api/jobs/' + encodeURIComponent(jobId), { headers: ownerHeaders() });
       } catch (err) {
         // A restart drops the socket. Stay inside this 150-step cap and do not submit the URL again.
         const message = err && err.message ? String(err.message) : '';
@@ -553,6 +587,7 @@
             ? shots
             : { status: 'error', error: 'Screenshots could not be captured.', frames: [], count: 0, shown: 0, zip_url: null });
         }
+        rec.job_id = jobId;
         return rec;
       }
       if (job.status === 'error') throw new Error(job.error || 'Transcript job failed.');
@@ -603,8 +638,13 @@
   }
 
   function screenshotApiPath(url) {
-    if (typeof url !== 'string' || !url.startsWith('/api/jobs/') || url.includes('..') || url.includes('\\') || url.includes('://')) return '';
+    if (typeof url !== 'string' || !(url.startsWith('/api/jobs/') || url.startsWith('/api/share/')) || url.includes('..') || url.includes('\\') || url.includes('://')) return '';
     return url;
+  }
+
+  // Owner routes need the owner code; share-link routes are public.
+  function shotHeaders(path) {
+    return path.startsWith('/api/jobs/') ? ownerHeaders() : {};
   }
 
   function clearShotPreviews() {
@@ -662,7 +702,7 @@
       copy.textContent = 'Copy image';
       if (path) {
         copy.addEventListener('click', () => copyScreenshot(path, frame.timestamp || '', copy));
-        fetch(apiUrl(path)).then(async (res) => {
+        fetch(apiUrl(path), { headers: shotHeaders(path) }).then(async (res) => {
           if (!res.ok) throw new Error('missing');
           const blob = await res.blob();
           const objectUrl = URL.createObjectURL(blob);
@@ -680,7 +720,7 @@
 
   async function downloadScreenshotsZip(path) {
     try {
-      const res = await fetch(apiUrl(path));
+      const res = await fetch(apiUrl(path), { headers: shotHeaders(path) });
       if (!res.ok) throw new Error('Could not download screenshots.');
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
@@ -696,10 +736,129 @@
     }
   }
 
+  async function downloadApiFile(path, filename, headers) {
+    try {
+      const res = await fetch(apiUrl(path), { headers: headers || {} });
+      if (!res.ok) throw new Error('missing');
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+      showToast(`Downloading ${filename} ✓`);
+    } catch (err) {
+      showToast(`Could not download ${filename}.`, true);
+    }
+  }
+
+  function shareLinkFor(path) {
+    return new URL(apiUrl(path), window.location.href).href;
+  }
+
+  function showShareLink(url) {
+    const has = !!url;
+    els.shareUrl.value = url || '';
+    els.shareUrl.hidden = !has;
+    els.shareCopyBtn.hidden = !has;
+    els.shareOpen.hidden = !has;
+    els.shareRevokeBtn.hidden = !has;
+    if (has) els.shareOpen.href = url; else els.shareOpen.removeAttribute('href');
+    els.shareCreateBtn.hidden = has;
+  }
+
+  // One panel for the owner (create/copy/revoke a share link + 3 downloads) and for a read-only share view.
+  function renderSharePanel(rec) {
+    const panel = els.sharePanel;
+    if (!panel) return;
+    const shared = !!sharedView;
+    const jobId = rec && rec.job_id;
+    if (!shared && !jobId) { panel.hidden = true; return; }
+    panel.hidden = false;
+    els.shareReadonly.hidden = !shared;
+    showShareLink('');
+    const shots = rec.screenshots;
+    const hasShots = !!(shots && shots.status === 'done' && (shots.frames || []).length);
+    els.jobDownloads.querySelectorAll('[data-job-download]').forEach((btn) => {
+      btn.hidden = btn.dataset.jobDownload === 'screenshots.zip' && !hasShots;
+    });
+  }
+
+  function jobDownload(kind) {
+    if (sharedView) {
+      const path = screenshotApiPath((sharedView.downloads || {})[kind] || '');
+      if (path) downloadApiFile(path, kind);
+      return;
+    }
+    if (!currentRecord || !currentRecord.job_id) return;
+    downloadApiFile('/api/jobs/' + encodeURIComponent(currentRecord.job_id) + '/download/' + kind, kind, ownerHeaders());
+  }
+
+  async function createShareLink() {
+    if (!currentRecord || !currentRecord.job_id) return;
+    els.shareCreateBtn.disabled = true;
+    try {
+      const data = await jfetch('/api/jobs/' + encodeURIComponent(currentRecord.job_id) + '/share', { method: 'POST', headers: ownerHeaders() });
+      const url = shareLinkFor(data.path);
+      showShareLink(url);
+      const ok = await copyTextToClipboard(url);
+      showToast(ok ? 'Share link created and copied ✓' : 'Share link created ✓');
+    } catch (err) {
+      showToast('Could not create share link: ' + err.message, true);
+    } finally {
+      els.shareCreateBtn.disabled = false;
+    }
+  }
+
+  async function revokeShareLink() {
+    if (!currentRecord || !currentRecord.job_id) return;
+    try {
+      await jfetch('/api/jobs/' + encodeURIComponent(currentRecord.job_id) + '/share', { method: 'DELETE', headers: ownerHeaders() });
+      showShareLink('');
+      showToast('Share link revoked ✓');
+    } catch (err) {
+      showToast('Could not revoke share link: ' + err.message, true);
+    }
+  }
+
+  function shareTokenFromLocation() {
+    const fromQuery = new URLSearchParams(window.location.search).get('share') || '';
+    const fromPath = ((window.location.pathname || '').match(/\/r\/([A-Za-z0-9_-]{32,64})\/?$/) || [])[1] || '';
+    const token = fromQuery || fromPath;
+    return /^[A-Za-z0-9_-]{32,64}$/.test(token) ? token : '';
+  }
+
+  async function loadSharedResult(token) {
+    setStatus('Opening shared transcript...');
+    try {
+      const data = await jfetch('/api/share/' + encodeURIComponent(token));
+      const rec = data.share || {};
+      sharedView = rec;
+      document.body.classList.add('shared-view');
+      currentRecord = rec;
+      els.source.textContent = rec.title || rec.source || '(unknown source)';
+      const words = wordCount(rec.transcript || '');
+      const dur = rec.duration_seconds ? ` · ${formatDuration(rec.duration_seconds)}` : '';
+      els.method.textContent = `Shared · ${words.toLocaleString()} words${dur}`;
+      els.transcript.textContent = rec.transcript || '';
+      renderScreenshots(rec);
+      renderSharePanel(rec);
+      els.result.classList.add('show');
+      hideHowAfterTranscriptReady();
+      if (els.lightStage) { els.lightStage.classList.add('compact-after-result'); els.lightStage.scrollIntoView({ behavior: 'smooth' }); }
+      clearStatus();
+    } catch (err) {
+      setStatus('This share link is not available. It may have been revoked.', 'error');
+    }
+  }
+
   // Browsers only accept image/png on the clipboard, and frames are JPEG.
   // Convert to PNG and hand ClipboardItem a promise so Safari keeps the click gesture.
   async function screenshotPngBlob(path) {
-    const res = await fetch(apiUrl(path));
+    const res = await fetch(apiUrl(path), { headers: shotHeaders(path) });
     if (!res.ok) throw new Error('missing');
     const blob = await res.blob();
     if (blob.type === 'image/png') return blob;
@@ -733,6 +892,8 @@
 
   function renderResult(rec) {
     currentRecord = rec;
+    sharedView = null;
+    document.body.classList.remove('shared-view');
     els.source.textContent = rec.source || '(unknown source)';
     const words = wordCount(rec.transcript || '');
     const methodLabel = rec.method === 'captions' ? 'native captions'
@@ -744,6 +905,7 @@
     els.method.textContent = `${methodLabel} · ${words.toLocaleString()} words${dur}${proc}`;
     els.transcript.textContent = rec.transcript || '';
     renderScreenshots(rec);
+    renderSharePanel(rec);
     currentAnalysis = null;
     els.analysisPanel.classList.remove('show');
     els.analysisBox.textContent = '';
@@ -849,6 +1011,9 @@ ${seg.text || ''}
 
   function resetForNewTranscript() {
     currentRecord = null;
+    sharedView = null;
+    document.body.classList.remove('shared-view');
+    if (els.sharePanel) els.sharePanel.hidden = true;
     currentAnalysis = null;
     els.result.classList.remove('show');
     if (els.lightStage) els.lightStage.classList.remove('compact-after-result');
@@ -1359,8 +1524,18 @@ ${seg.text || ''}
     if (a) a.hidden = !isOpen;
     if (item) item.classList.toggle('open', isOpen);
   }));
+  if (els.shareCreateBtn) els.shareCreateBtn.addEventListener('click', createShareLink);
+  if (els.shareRevokeBtn) els.shareRevokeBtn.addEventListener('click', revokeShareLink);
+  if (els.shareCopyBtn) els.shareCopyBtn.addEventListener('click', async () => {
+    const ok = await copyTextToClipboard(els.shareUrl.value);
+    if (ok) markCopied(els.shareCopyBtn);
+    showToast(ok ? 'Share link copied ✓' : 'Copy failed', !ok);
+  });
+  if (els.jobDownloads) els.jobDownloads.querySelectorAll('[data-job-download]').forEach((btn) => btn.addEventListener('click', () => jobDownload(btn.dataset.jobDownload)));
   loadSetup();
   loadRecent();
+  const initialShareToken = shareTokenFromLocation();
+  if (initialShareToken) loadSharedResult(initialShareToken);
 })();
 </script>
 </body>

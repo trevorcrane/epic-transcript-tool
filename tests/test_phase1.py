@@ -560,10 +560,12 @@ def test_sync_route_still_rejects_long_video_but_async_job_allows_queued_chunks(
     assert "too long" in sync.json()["detail"]
     job = client.post("/api/transcribe-url-job", data={"url": "https://youtu.be/lgvid1234AB", "owner": "owner-token-long-async-aaaaaaaa"})
     assert job.status_code == 202
-    job_id = job.json()["job"]["id"]
+    created = job.json()["job"]
+    job_id = created["id"]
+    owner = created["owner_token"]
     deadline = time.time() + 5
     while time.time() < deadline:
-        got = client.get(f"/api/jobs/{job_id}").json()["job"]
+        got = client.get(f"/api/jobs/{job_id}", headers={"X-Transcript-Owner": owner}).json()["job"]
         if got["status"] == "done":
             break
         time.sleep(0.05)

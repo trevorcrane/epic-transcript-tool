@@ -31,16 +31,22 @@ def _ffmpeg() -> str:
     return path
 
 
-def _wait_job(client: TestClient, job_id: str) -> dict:
+def _wait_job(client: TestClient, job_id: str, owner: str | None = None) -> dict:
+    headers = {"X-Transcript-Owner": owner} if owner else {}
     job = {}
     for _ in range(80):
-        res = client.get(f"/api/jobs/{job_id}")
+        res = client.get(f"/api/jobs/{job_id}", headers=headers)
         assert res.status_code == 200, res.text
         job = res.json()["job"]
         if job.get("status") in {"done", "error"}:
             return job
         time.sleep(0.05)
     raise AssertionError(f"job did not finish: {job}")
+
+
+def _owner_job(started):
+    job = started.json()["job"]
+    return job["id"], job["owner_token"]
 
 
 def _write_capture(url, out_dir, yt_bin, ffmpeg_bin, work_dir=None, progress=None):
@@ -66,7 +72,8 @@ def test_transcript_only_does_not_capture_screenshots():
         started = client.post("/api/transcribe-url-job", data={"url": "https://youtu.be/abcdefghijk"})
         assert started.status_code == 202
         assert started.json()["job"]["include_screenshots"] is False
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     assert job["record"]["transcript"] == "hello from captions"
     assert job.get("screenshots") in (None, {})
@@ -83,7 +90,8 @@ def test_screenshot_failure_keeps_transcript_and_hides_internal_error():
             data={"url": "https://youtu.be/abcdefghijk", "include_screenshots": "1"},
         )
         assert started.status_code == 202
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     assert job["record"]["transcript"] == "hello from captions"
     assert job["screenshots"]["status"] == "error"
@@ -103,12 +111,14 @@ def test_screenshot_success_serves_jpeg_and_zip(tmp_path, monkeypatch):
             "/api/transcribe-url-job",
             data={"url": "https://youtu.be/abcdefghijk", "include_screenshots": "1"},
         )
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     shots = job["screenshots"]
     assert shots["frames"][0]["timestamp"] == "0:01"
-    image = client.get(shots["frames"][0]["url"])
-    archive = client.get(shots["zip_url"])
+    headers = {"X-Transcript-Owner": owner}
+    image = client.get(shots["frames"][0]["url"], headers=headers)
+    archive = client.get(shots["zip_url"], headers=headers)
     assert image.status_code == 200
     assert image.content[:3] == b"\xff\xd8\xff"
     assert archive.status_code == 200
@@ -135,7 +145,8 @@ def test_downloader_failure_keeps_transcript_without_a_second_attempt(tmp_path, 
             "/api/transcribe-url-job",
             data={"url": "https://youtu.be/abcdefghijk", "include_screenshots": "1"},
         )
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     assert job["record"]["transcript"] == "hello from captions"
     assert job["screenshots"]["status"] == "error"
@@ -161,7 +172,8 @@ def test_non_youtube_screenshot_does_not_resolve_or_download(tmp_path, monkeypat
             "/api/transcribe-url-job",
             data={"url": "https://cdn.example/video.mp4", "include_screenshots": "1"},
         )
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     assert job["record"]["transcript"] == "hello from captions"
     assert job["screenshots"]["status"] == "error"
@@ -209,7 +221,8 @@ def test_busy_screenshot_slot_keeps_the_transcript(monkeypatch):
             "/api/transcribe-url-job",
             data={"url": "https://youtu.be/abcdefghijk", "include_screenshots": "1"},
         )
-        job = _wait_job(client, started.json()["job"]["id"])
+        job_id, owner = _owner_job(started)
+        job = _wait_job(client, job_id, owner)
     assert job["status"] == "done"
     assert job["screenshots"]["status"] == "error"
     capture.assert_not_called()

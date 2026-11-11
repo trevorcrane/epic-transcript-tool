@@ -79,11 +79,13 @@ def test_plain_job_get_hides_owner_token_and_owner_actions_reject_without_it(mon
 
     done = _wait_done(client, job_id)
     assert done["status"] == "done"
-    assert "owned words" in done["record"]["transcript"]
+    assert "owned words" not in json.dumps(done)
     revealed = client.get(f"/api/jobs/{job_id}")
     _no_owner_token(revealed.json(), OWNER)
+    assert "owned words" not in revealed.text
     with_token = client.get(f"/api/jobs/{job_id}", headers={"X-Transcript-Owner": OWNER})
     assert with_token.json()["job"]["record"]["owner_token"] == OWNER
+    assert "owned words" in with_token.json()["job"]["record"]["transcript"]
 
     rec_id = done["record"]["id"]
     assert client.get(f"/api/transcripts/{rec_id}").status_code == 403

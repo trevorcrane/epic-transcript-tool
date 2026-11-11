@@ -8,6 +8,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import html
+import io
 import json
 import mimetypes
 import logging
@@ -22,6 +23,7 @@ import threading
 import time
 import secrets
 import uuid
+import zipfile
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Optional
@@ -39,7 +41,7 @@ import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
@@ -123,6 +125,19 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def no_shared_cache_for_api(request: Request, call_next):
+    """v8.2: owner-only API responses (screenshots, ZIPs, transcripts) must never be stored by the
+    Cloudflare edge, whose cache key ignores X-Transcript-Owner. Share routes already send no-store."""
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/api/") or path.startswith("/r/"):
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["CDN-Cache-Control"] = "no-store"
+        response.headers["Vary"] = "X-Transcript-Owner"
+    return response
+
+
 def db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -193,6 +208,17 @@ def init_db() -> None:
             if name not in analysis_existing:
                 conn.execute(f"ALTER TABLE analyses ADD COLUMN {name} {ddl}")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_analyses_transcript_id ON analyses(transcript_id)")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS job_shares (
+                token TEXT PRIMARY KEY,
+                job_id TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+                revoked_at TEXT
+            )
+            """
+        )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_job_shares_job_id ON job_shares(job_id)")
 
 
 init_db()
@@ -482,12 +508,25 @@ def strip_owner_tokens(value) -> None:
             strip_owner_tokens(child)
 
 
+TRANSCRIPT_TEXT_KEYS = ("transcript", "segments", "text", "transcript_text", "partial_transcript")
+
+
+def strip_transcript_text(view: dict) -> None:
+    for key in TRANSCRIPT_TEXT_KEYS:
+        view.pop(key, None)
+    record = view.get("record")
+    if isinstance(record, dict):
+        for key in TRANSCRIPT_TEXT_KEYS:
+            record.pop(key, None)
+
+
 def public_job_view(job: dict, presented_owner: Optional[str]) -> dict:
-    """Job payload for a client. A plain GET never includes owner_token."""
+    """Job payload for a client. Without the owner header: status only, no owner_token or transcript text."""
     view = copy.deepcopy(job)
     view.pop("private_error_detail", None)
     if not owner_token_presented(stored_owner_tokens(job), presented_owner):
         strip_owner_tokens(view)
+        strip_transcript_text(view)
     return view
 
 
@@ -1923,7 +1962,7 @@ def prune_screenshot_dirs(keep: Optional[set[str]] = None) -> int:
     root = DATA_DIR / "screenshots"
     if not root.is_dir():
         return 0
-    keep = keep or set()
+    keep = (keep or set()) | shared_job_ids()
     max_age = _shot_int("SCREENSHOT_RETENTION_HOURS", 24) * 3600
     now = time.time()
     removed = 0
@@ -2036,13 +2075,16 @@ def api_transcribe_url_job(url: str = Form(...), owner: Optional[str] = Form(Non
     return JSONResponse({"ok": True, "job": created}, status_code=202)
 
 
-def _screenshot_job(job_id: str) -> dict:
+def _screenshot_job(job_id: str, presented_owner: Optional[str]) -> dict:
+    """Owner-only. Share links use /api/share/{token}/... instead."""
     with URL_JOBS_LOCK:
         if job_id not in URL_JOBS:
             load_url_jobs_locked()
         job = dict(URL_JOBS.get(job_id) or {})
     if not job:
         raise HTTPException(404, "Screenshots not found")
+    if not owner_token_presented(stored_owner_tokens(job), presented_owner):
+        raise HTTPException(403, "These screenshots require their owner code.")
     shots = job.get("screenshots") or {}
     if shots.get("status") != "done" or not shots.get("frames"):
         raise HTTPException(404, "Screenshots not found")
@@ -2050,8 +2092,8 @@ def _screenshot_job(job_id: str) -> dict:
 
 
 @app.get("/api/jobs/{job_id}/screenshots.zip")
-def api_job_screenshots_zip(job_id: str):
-    job = _screenshot_job(job_id)
+def api_job_screenshots_zip(job_id: str, x_transcript_owner: Optional[str] = Header(None)):
+    job = _screenshot_job(job_id, x_transcript_owner)
     try:
         job_dir = safe_job_dir(DATA_DIR / "screenshots", job_id)
     except ValueError as exc:
@@ -2063,8 +2105,8 @@ def api_job_screenshots_zip(job_id: str):
 
 
 @app.get("/api/jobs/{job_id}/screenshots/{filename}")
-def api_job_screenshot(job_id: str, filename: str):
-    job = _screenshot_job(job_id)
+def api_job_screenshot(job_id: str, filename: str, x_transcript_owner: Optional[str] = Header(None)):
+    job = _screenshot_job(job_id, x_transcript_owner)
     names = {frame.get("filename") for frame in (job.get("screenshots") or {}).get("frames") or []}
     if filename not in names:
         raise HTTPException(404, "Screenshot not found")
@@ -2087,6 +2129,223 @@ def api_get_job(job_id: str, x_transcript_owner: Optional[str] = Header(None)) -
     if not job:
         raise HTTPException(404, "Job not found")
     return JSONResponse({"ok": True, "job": public_job_view(job, x_transcript_owner)})
+
+
+SHARE_TOKEN_RE = re.compile(r"[A-Za-z0-9_-]{32,64}")
+JOB_DOWNLOADS = ("transcript.txt", "transcript.md", "screenshots.zip", "everything.zip")
+SHARE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"}
+
+
+def load_job(job_id: str) -> dict:
+    with URL_JOBS_LOCK:
+        if job_id not in URL_JOBS:
+            load_url_jobs_locked()
+        return copy.deepcopy(URL_JOBS.get(job_id) or {})
+
+
+def finished_job_record(job: dict) -> Optional[dict]:
+    """The transcript record of a finished job, or None. A transcript the owner deleted counts as gone."""
+    rec = job.get("record")
+    if job.get("status") != "done" or not isinstance(rec, dict) or not str(rec.get("transcript") or "").strip():
+        return None
+    if rec.get("id"):
+        with db() as conn:
+            if not conn.execute("SELECT 1 FROM transcripts WHERE id=?", (rec["id"],)).fetchone():
+                return None
+    return rec
+
+
+def require_job_owner(job_id: str, owner: Optional[str]) -> tuple[dict, dict]:
+    job = load_job(job_id)
+    if not job:
+        raise HTTPException(404, "Job not found")
+    if not owner_token_presented(stored_owner_tokens(job), owner):
+        raise HTTPException(403, "This job requires its owner code.")
+    rec = finished_job_record(job)
+    if not rec:
+        raise HTTPException(409, "This job has no finished transcript.")
+    return job, rec
+
+
+def active_share_token(job_id: str) -> Optional[str]:
+    with db() as conn:
+        row = conn.execute("SELECT token FROM job_shares WHERE job_id=? AND revoked_at IS NULL ORDER BY created_at DESC LIMIT 1", (job_id,)).fetchone()
+    return row["token"] if row else None
+
+
+def shared_job_ids() -> set[str]:
+    """Jobs with a live share link keep their screenshots past the retention window."""
+    try:
+        with db() as conn:
+            return {r["job_id"] for r in conn.execute("SELECT DISTINCT job_id FROM job_shares WHERE revoked_at IS NULL").fetchall()}
+    except sqlite3.Error:
+        return set()
+
+
+def shared_job(token: str) -> tuple[dict, dict]:
+    if not SHARE_TOKEN_RE.fullmatch(token or ""):
+        raise HTTPException(404, "Share link not found")
+    with db() as conn:
+        row = conn.execute("SELECT job_id FROM job_shares WHERE token=? AND revoked_at IS NULL", (token,)).fetchone()
+    job = load_job(row["job_id"]) if row else {}
+    rec = finished_job_record(job) if job else None
+    if not rec:
+        raise HTTPException(404, "Share link not found")
+    return job, rec
+
+
+def job_frames(job: dict) -> list[dict]:
+    shots = job.get("screenshots") or {}
+    return list(shots.get("frames") or []) if shots.get("status") == "done" else []
+
+
+def job_frame_path(job: dict, filename: str) -> Path:
+    if filename not in {frame.get("filename") for frame in job_frames(job)}:
+        raise HTTPException(404, "Screenshot not found")
+    try:
+        path = safe_frame_path(safe_job_dir(DATA_DIR / "screenshots", job.get("id") or ""), filename)
+    except ValueError as exc:
+        raise HTTPException(404, "Screenshot not found") from exc
+    if not path.is_file():
+        raise HTTPException(404, "Screenshot not found")
+    return path
+
+
+def everything_zip_bytes(job: dict, rec: dict) -> bytes:
+    """transcript.txt, transcript.md, every screenshot and manifest.csv for one job."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("transcript.txt", rec.get("transcript") or "")
+        zf.writestr("transcript.md", make_markdown(rec))
+        frames = job_frames(job)
+        for frame in frames:
+            try:
+                path = job_frame_path(job, frame.get("filename") or "")
+            except HTTPException:
+                continue
+            zf.write(path, arcname=path.name)
+        if frames:
+            manifest = safe_job_dir(DATA_DIR / "screenshots", job["id"]) / "manifest.csv"
+            if manifest.is_file():
+                zf.write(manifest, arcname="manifest.csv")
+    return buf.getvalue()
+
+
+def job_download_response(job: dict, rec: dict, kind: str, headers: Optional[dict] = None) -> Response:
+    headers = dict(headers or {})
+    if kind not in JOB_DOWNLOADS:
+        raise HTTPException(404, "Download not found")
+    headers["Content-Disposition"] = f'attachment; filename="{kind}"'
+    if kind == "transcript.txt":
+        return PlainTextResponse(rec.get("transcript") or "", media_type="text/plain", headers=headers)
+    if kind == "transcript.md":
+        return PlainTextResponse(make_markdown(rec), media_type="text/markdown", headers=headers)
+    if kind == "everything.zip":
+        return Response(everything_zip_bytes(job, rec), media_type="application/zip", headers=headers)
+    if not job_frames(job):
+        raise HTTPException(404, "Screenshots not found")
+    try:
+        zip_path = safe_job_dir(DATA_DIR / "screenshots", job.get("id") or "") / "screenshots.zip"
+    except ValueError as exc:
+        raise HTTPException(404, "Screenshots not found") from exc
+    if not zip_path.is_file():
+        raise HTTPException(404, "Screenshots not found")
+    return FileResponse(zip_path, media_type="application/zip", headers=headers)
+
+
+def share_view(token: str, job: dict, rec: dict) -> dict:
+    """Read-only payload for a share link: one job's transcript, gallery and downloads. No owner code or job ID."""
+    base = f"/api/share/{token}"
+    frames = [{"time": f.get("time"), "timestamp": f.get("timestamp"), "filename": f.get("filename"), "url": f"{base}/screenshots/{f.get('filename')}"} for f in job_frames(job)]
+    view = {k: rec.get(k) for k in ("title", "source", "source_url", "source_kind", "method", "language", "word_count", "segment_count", "duration_seconds", "created_at", "transcript", "segments")}
+    if frames:
+        view["screenshots"] = {"status": "done", "error": None, "count": len(frames), "shown": len(frames), "frames": frames, "zip_url": f"{base}/download/screenshots.zip"}
+    elif job.get("include_screenshots"):
+        view["screenshots"] = screenshot_error_payload()
+    view["downloads"] = {kind: f"{base}/download/{kind}" for kind in JOB_DOWNLOADS if kind != "screenshots.zip" or frames}
+    strip_owner_tokens(view)
+    return view
+
+
+def forget_deleted_transcript(rec_id: str) -> list[str]:
+    """After a transcript is deleted: revoke its share links and drop its text and screenshots from its jobs."""
+    with URL_JOBS_LOCK:
+        job_ids = [jid for jid, job in URL_JOBS.items() if isinstance(job, dict) and isinstance(job.get("record"), dict) and job["record"].get("id") == rec_id]
+        for jid in job_ids:
+            job = URL_JOBS[jid]
+            strip_transcript_text(job)
+            job.pop("screenshots", None)
+            job["record"].pop("screenshots", None)
+            job["deleted"] = True
+        if job_ids:
+            save_url_jobs_locked()
+    for jid in job_ids:
+        try:
+            shutil.rmtree(safe_job_dir(DATA_DIR / "screenshots", jid), ignore_errors=True)
+        except ValueError:
+            pass
+    if job_ids:
+        with db() as conn:
+            conn.executemany("UPDATE job_shares SET revoked_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE job_id=? AND revoked_at IS NULL", [(jid,) for jid in job_ids])
+    return job_ids
+
+
+@app.post("/api/jobs/{job_id}/share")
+def api_create_share(job_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    require_job_owner(job_id, x_transcript_owner)
+    token = active_share_token(job_id)
+    if not token:
+        token = secrets.token_urlsafe(32)
+        with db() as conn:
+            conn.execute("INSERT INTO job_shares (token, job_id) VALUES (?, ?)", (token, job_id))
+    return {"ok": True, "token": token, "path": f"/r/{token}"}
+
+
+@app.delete("/api/jobs/{job_id}/share")
+def api_revoke_share(job_id: str, x_transcript_owner: Optional[str] = Header(None)) -> dict:
+    job = load_job(job_id)
+    if not job:
+        raise HTTPException(404, "Job not found")
+    if not owner_token_presented(stored_owner_tokens(job), x_transcript_owner):
+        raise HTTPException(403, "This job requires its owner code.")
+    with db() as conn:
+        revoked = conn.execute("UPDATE job_shares SET revoked_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE job_id=? AND revoked_at IS NULL", (job_id,)).rowcount
+    return {"ok": True, "revoked": revoked}
+
+
+@app.get("/api/jobs/{job_id}/download/{kind}")
+def api_job_download(job_id: str, kind: str, x_transcript_owner: Optional[str] = Header(None)) -> Response:
+    job, rec = require_job_owner(job_id, x_transcript_owner)
+    return job_download_response(job, rec, kind)
+
+
+@app.get("/api/share/{token}")
+def api_share(token: str) -> JSONResponse:
+    job, rec = shared_job(token)
+    return JSONResponse({"ok": True, "share": share_view(token, job, rec)}, headers=SHARE_HEADERS)
+
+
+@app.get("/api/share/{token}/screenshots/{filename}")
+def api_share_screenshot(token: str, filename: str):
+    job, _ = shared_job(token)
+    return FileResponse(job_frame_path(job, filename), media_type="image/jpeg", headers=SHARE_HEADERS)
+
+
+@app.get("/api/share/{token}/download/{kind}")
+def api_share_download(token: str, kind: str) -> Response:
+    job, rec = shared_job(token)
+    return job_download_response(job, rec, kind, SHARE_HEADERS)
+
+
+@app.get("/r/{token}", include_in_schema=False)
+def share_page(token: str) -> FileResponse:
+    """The normal page; its script sees /r/{token} and renders the shared job read-only."""
+    try:
+        shared_job(token)
+        status = 200
+    except HTTPException:
+        status = 404
+    return FileResponse(STATIC_DIR / "index.html", status_code=status, headers=SHARE_HEADERS)
 
 
 @app.post("/api/transcribe-url")
@@ -2211,6 +2470,7 @@ def api_delete(rec_id: str, x_transcript_owner: Optional[str] = Header(None)) ->
         require_owner(row, x_transcript_owner)
         conn.execute("DELETE FROM analyses WHERE transcript_id=?", (rec_id,))
         conn.execute("DELETE FROM transcripts WHERE id=?", (rec_id,))
+    forget_deleted_transcript(rec_id)
     return {"ok": True}
 
 
